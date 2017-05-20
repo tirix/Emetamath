@@ -1,0 +1,450 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+   <extension
+         id="org.tirix.emetamath.metamathBuilder"
+         name="Metamath Loader / Parser / Verifier"
+         point="org.eclipse.core.resources.builders">
+      <builder
+            hasNature="true">
+         <run
+               class="org.tirix.emetamath.nature.MetamathBuilder">
+         </run>
+      </builder>
+   </extension>
+   <extension
+         id="org.tirix.emetamath.metamathNature"
+         name="Metamath Nature"
+         point="org.eclipse.core.resources.natures">
+      <runtime>
+         <run
+               class="org.tirix.emetamath.nature.MetamathProjectNature">
+         </run>
+      </runtime>
+      <builder
+            id="org.tirix.emetamath.metamathBuilder">
+      </builder>
+   </extension>
+   <extension point="org.eclipse.ui.ide.projectNatureImages">
+	  <image 
+	    id="org.eclipse.ui.javaNatureImage"
+	    natureId="org.tirix.emetamath.metamathNature"
+	    icon="icons/aleph0_decorator.gif">
+	  </image>
+   </extension>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            objectClass="org.eclipse.core.resources.IFile"
+            id="org.tirix.emetamath.contribution1"
+            nameFilter="*.mm">
+         <menu
+               label="Metamath"
+               path="additions"
+               id="org.tirix.emetamath.menu1">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+         <action
+               label="Set as Main metamath file"
+               class="org.tirix.emetamath.popup.actions.SetMainFileAction"
+               menubarPath="org.tirix.emetamath.menu1/group1"
+               enablesFor="1"
+               id="org.tirix.emetamath.SetMainFileAction">
+	         <enablement>
+	           <and>
+		           <objectState
+		                 name="projectNature"
+		                 value="org.tirix.emetamath.metamathNature"/>
+		         	<not>
+		               <objectState
+			                 name="persistentProperty"
+			                 value="org.tirix.emetamath.isMainFile">
+			           </objectState>
+		         	</not>
+		         </and>
+	         </enablement>
+         </action>
+      </objectContribution>
+   </extension>
+   <extension
+         id="org.tirix.emetamath.MMProblem"
+         name="MM Problem"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.problemmarker">
+      </super>
+      <persistent
+            value="true">
+      </persistent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.decorators">
+      <decorator
+            lightweight="true"
+            location="TOP_RIGHT"
+            label="Resource Decorator"
+            icon="icons/aleph0_decorator.gif"
+            id="org.tirix.emetamath.MetamathDecorator">
+         <enablement>
+            <and>
+               <objectClass name="org.eclipse.core.resources.IProject"/>
+               <objectState
+                     name="projectNature"
+                     value="org.tirix.emetamath.metamathNature"/>
+            </and>
+         </enablement>
+      </decorator>
+      <decorator
+            lightweight="true"
+            location="TOP_LEFT"
+            adaptable="true"
+            label="Main File Decorator"
+            icon="icons/run_co.gif"
+            state="true"
+            id="org.tirix.emetamath.MainFileDecorator">
+         <description>This project's main file, which is loaded first.</description>
+         <enablement>
+           <objectState
+                 name="persistentProperty"
+                 value="org.tirix.emetamath.isMainFile">
+           </objectState>
+         </enablement>
+      </decorator>
+    </extension>
+   <extension point="org.eclipse.ui.editors">
+      <editor
+            name="Metamath Editor"
+            extensions="mm"
+            icon="icons/mmFile.gif"
+            contributorClass="org.tirix.emetamath.editors.MetamathEditorContributor"
+            class="org.tirix.emetamath.editors.MetamathEditor"
+            id="org.tirix.emetamath.MetamathEditor">
+      </editor>
+      <editor
+            name="Metamath Proof Assistant"
+            extensions="mmp"
+            icon="icons/mmpFile.gif"
+            class="org.tirix.emetamath.editors.ProofAssistantEditor"
+            id="org.tirix.emetamath.ProofAssistant">
+      </editor>
+   </extension>
+   <extension point="org.eclipse.ui.editors.documentProviders">
+      <provider
+      		extensions="mm"
+            class="org.tirix.emetamath.editors.MMDocumentProvider"
+            id="org.tirix.emetamath.MetamathDocumentProvider">
+      </provider>
+      <provider
+      		extensions="mmp"
+            class="org.tirix.emetamath.editors.MMPDocumentProvider"
+            id="org.tirix.emetamath.ProofDocumentProvider">
+      </provider>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            name="Metamath Category"
+            id="org.tirix.emetamath.commandCategory">
+      </category>
+	<command
+	    name="Open Declaration"
+	    categoryId="org.tirix.emetamath.commandCategory"
+	    id="org.tirix.emetamath.openDeclarationCommand"
+	    description="Open in the editor the declaration of the selected Metamath element">
+    </command>
+	<command
+       categoryId="org.tirix.emetamath.commandCategory"
+       description="Open in the editor the notation of the selected Metamath variable"
+       id="org.tirix.emetamath.openNotationCommand"
+       name="Open Notation">
+	</command>
+	<command
+       categoryId="org.tirix.emetamath.commandCategory"
+       description="Open in the editor the definition of the selected Metamath constant"
+       id="org.tirix.emetamath.openDefinitionCommand"
+       name="Open Definition">
+	</command>
+	<command
+	    name="Search References"
+	    categoryId="org.tirix.emetamath.commandCategory"
+	    id="org.tirix.emetamath.SearchReferencesCommand"
+	    description="Search for all references of the selected Metamath element">
+    </command>
+      <command
+            name="Unify"
+            categoryId="org.tirix.emetamath.commandCategory"
+            id="org.tirix.emetamath.unifyCommand">
+      </command>
+      <command
+            name="StepSelector"
+            categoryId="org.tirix.emetamath.commandCategory"
+            id="org.tirix.emetamath.stepSelectorCommand">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            commandId="org.tirix.emetamath.openDeclarationCommand"
+            class="org.tirix.emetamath.handlers.OpenDeclarationHandler">
+	    <activeWhen>
+	      <with variable="activePartId">
+		    <equals value="org.tirix.emetamath.MetamathEditor"/>
+		  </with>
+	    </activeWhen>
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.OpenNotationHandler"
+            commandId="org.tirix.emetamath.openNotationCommand">
+         <activeWhen>
+            <with
+                  variable="activePartId">
+               <equals
+                     value="org.tirix.emetamath.MetamathEditor">
+               </equals>
+            </with>
+         </activeWhen>
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.OpenDefinitionHandler"
+            commandId="org.tirix.emetamath.openDefinitionCommand">
+         <activeWhen>
+            <with
+                  variable="activePartId">
+               <equals
+                     value="org.tirix.emetamath.MetamathEditor">
+               </equals>
+            </with>
+         </activeWhen>
+      </handler>
+      <handler
+            commandId="org.tirix.emetamath.SearchReferencesCommand"
+            class="org.tirix.emetamath.handlers.SearchReferencesHandler">
+	    <activeWhen>
+	      <with variable="activePartId">
+		    <equals value="org.tirix.emetamath.MetamathEditor"/>
+		  </with>
+	    </activeWhen>
+      </handler>
+      <handler
+            commandId="org.tirix.emetamath.unifyCommand"
+            class="org.tirix.emetamath.handlers.Unifier">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="org.tirix.emetamath.openDeclarationCommand"
+            contextId="org.eclipse.ui.contexts.window"
+            sequence="F3"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
+      </key>
+      <key
+            commandId="org.tirix.emetamath.SearchReferencesCommand"
+            contextId="org.eclipse.ui.contexts.window"
+            sequence="M1+M2+G"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
+      </key>
+      <key
+            commandId="org.tirix.emetamath.unifyCommand"
+            contextId="org.eclipse.ui.contexts.window"
+            sequence="M1+U"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
+      </key>
+   </extension>
+<extension point="org.eclipse.ui.menus">
+	<menuContribution
+			locationURI="popup:#TextEditorContext?after=group.open">
+		<command
+	         commandId="org.tirix.emetamath.openDeclarationCommand"
+	         id="openDeclaration"
+	         mnemonic="F3"
+	         style="push"
+	         tooltip="Open Declaration">
+		</command>
+	</menuContribution>
+  	<menuContribution
+        locationURI="popup:#TextEditorContext?after=group.open">
+     	<command
+			commandId="org.tirix.emetamath.openNotationCommand"
+			id="openNotation"
+			style="push"
+			tooltip="Open Notation">
+     	</command>
+  	</menuContribution>
+  	<menuContribution
+        locationURI="popup:#TextEditorContext?after=group.open">
+     	<command
+			commandId="org.tirix.emetamath.openDefinitionCommand"
+			id="openDefinition"
+			style="push"
+			tooltip="Open Definition">
+     	</command>
+  	</menuContribution>
+		<menuContribution locationURI="popup:#TextEditorContext?after=group.edit">
+			<command
+				commandId="org.tirix.emetamath.SearchReferencesCommand"
+				mnemonic="M1+M2+G"
+				style="push"
+				tooltip="References">
+			</command>
+		</menuContribution>
+		<!-- menuContribution locationURI="menu:org.eclipse.ui.main.menu?after=navigate">
+			<command
+				commandId="org.tirix.emetamath.SearchReferencesCommand"
+				mnemonic="M1+M2+G"
+				style="push"
+				tooltip="References">
+			</command>
+		</menuContribution -->
+		<menuContribution
+            locationURI="menu:org.eclipse.ui.main.menu?after=additions">
+         <menu
+               label="Metamath"
+               mnemonic="M"
+               id="org.tirix.emetamath.metamathMenu">
+            <command
+                  commandId="org.tirix.emetamath.unifyCommand"
+                  mnemonic="U"
+                  id="org.tirix.emetamath.unifyMenu">
+            </command>
+         </menu>
+      </menuContribution>
+      <menuContribution
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
+         <toolbar
+               id="org.tirix.emetamath.metamathToolbar">
+            <command
+                  commandId="org.tirix.emetamath.unifyCommand"
+                  icon="icons/aleph0.gif"
+                  tooltip="Unify this proof step"
+                  id="org.tirix.emetamath.toolbar.unifyCommand">
+            </command>
+            <command
+                  commandId="org.tirix.emetamath.stepSelectorCommand"
+                  icon="icons/aleph0.gif"
+                  tooltip="Show Step Selector"
+                  id="org.tirix.emetamath.toolbar.stepSelectorCommand">
+            </command>
+         </toolbar>
+      </menuContribution>
+	</extension>
+	<extension
+ 		id="MetamathSearchResultPage"
+    	point="org.eclipse.search.searchResultViewPages">
+		<viewPage
+			id="org.tirix.emetamath.search.MetamathSearchResultPage"
+			searchResultClass="org.tirix.emetamath.search.MetamathSearchResult"
+			class="org.tirix.emetamath.search.MetamathSearchResultViewPage">
+		</viewPage>
+	</extension>
+   <extension
+         point="org.eclipse.ui.importWizards">
+      <category
+            name="Metamath File Import"
+            id="org.tirix.emetamath.importWizards.sampleCategory">
+      </category>
+      <wizard
+            name="Import Metamath File"
+            icon="icons/aleph0.gif"
+            category="org.tirix.emetamath.importWizards.sampleCategory"
+            class="org.tirix.emetamath.importWizards.ImportWizard"
+            id="org.tirix.emetamath.importWizards.ImportWizard">
+         <description>
+            Import a file from the local file system into the workspace.
+         </description>
+      </wizard>
+   </extension>
+   <extension
+         point="org.eclipse.ui.newWizards">
+      <category
+            name="Metamath"
+            id="org.tirix.emetamath.categoty.wizards">
+      </category>
+      <wizard
+            name="Metamath File"
+            icon="icons/mmNewFile.gif"
+            category="org.tirix.emetamath.categoty.wizards"
+            class="org.tirix.emetamath.wizards.MetamathNewFileWizard"
+            id="org.tirix.emetamath.wizards.MetamathNewFileWizard">
+      </wizard>
+      <wizard
+            name="Metamath Proof File"
+            icon="icons/mmpNewFile.gif"
+            category="org.tirix.emetamath.categoty.wizards"
+            class="org.tirix.emetamath.wizards.ProofNewFileWizard"
+            id="org.tirix.emetamath.wizards.ProofNewFileWizard">
+      </wizard>
+      <wizard
+            category="org.tirix.emetamath.categoty.wizards"
+            class="org.tirix.emetamath.wizards.MetamathNewProjectWizard"
+            icon="icons/mmNewProject.gif"
+            id="org.tirix.emetamath.wizards.MetamathNewProjectWizard"
+            name="Metamath Project">
+      </wizard>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectives">
+      <perspective
+            name="Metamath"
+            icon="icons/aleph0.gif"
+            class="org.tirix.emetamath.perspectives.MetamathPerspective"
+            id="org.tirix.emetamath.perspectives.MetamathPerspective">
+      </perspective>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            name="Metamath Preferences"
+            class="org.tirix.emetamath.preferences.MetamathPreferencePage"
+            id="org.tirix.emetamath.preferences.MetamathPreferencePage">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="org.tirix.emetamath.preferences.PreferenceInitializer">
+      </initializer>
+   </extension>
+   <extension
+         point="org.eclipse.ui.propertyPages">
+      <page
+            objectClass="org.eclipse.core.resources.IFile"
+            name="Metamath Properties"
+            nameFilter="*.mm"
+            class="org.tirix.emetamath.properties.MetamathPropertyPage"
+            id="org.tirix.emetamath.properties.samplePropertyPage">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            name="Metamath"
+            id="org.tirix.emetamath.ViewCategory">
+      </category>
+      <view
+            name="Metamath File View"
+            icon="icons/aleph0.gif"
+            category="org.tirix.emetamath.ViewCategory"
+            class="org.tirix.emetamath.views.MetamathView"
+            id="org.tirix.emetamath.views.MetamathView">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml">
+      </contexts>
+   </extension>
+   <extension
+	  id="MetamathSearchResultPage"
+	  point="org.eclipse.search.searchResultViewPages">
+	  <viewPage
+		id="org.tirix.emetamath.views.MetamathSearchResultPage"
+		searchResultClass="org.tirix.emetamath.search.MetamathSearchResult"
+		class="org.eclipse.search.ui.text.AbstractTextSearchViewPage">
+	  </viewPage>
+   </extension>
+
+</plugin>

@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Eclipse Metamath Plug-in
+Bundle-SymbolicName: org.tirix.emetamath;singleton:=true
+Bundle-Version: 0.1.0
+Bundle-Activator: org.tirix.emetamath.Activator
+Bundle-Vendor: Thierry Arnoux
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.core.resources,
+ org.eclipse.jface.text,
+ org.eclipse.ui.editors,
+ org.eclipse.ui.ide,
+ org.eclipse.ui.console,
+ org.eclipse.search
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ActivationPolicy: lazy
+Import-Package: org.eclipse.core.expressions,
+ org.eclipse.search.ui.text,
+ org.eclipse.ui.views.contentoutline
