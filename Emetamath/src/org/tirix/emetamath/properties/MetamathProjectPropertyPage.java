@@ -4,6 +4,7 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import mmj.lang.Cnst;
+import mmj.lang.Sym;
 
 import org.eclipse.core.internal.resources.File;
 import org.eclipse.core.internal.resources.Workspace;
@@ -53,6 +54,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 
 	private static final int TYPE_COLUMN = 0;
 	private static final int COLOR_COLUMN = 1;
+	private static final int STMT_TYPE_COLUMN = 2;
 //	private static final String PATH_TITLE = "Path:";
 	private static final String BASE_EXPLORER_URL_TITLE = "Web Explorer Base &URL:";
 //	private static final String MAINFILE_TITLE = "Main File:";
@@ -66,6 +68,8 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 	private Text mainFileText;
 	private Button autoTransformCheckbox;
 
+	private String logicStmtType; // the selected logic statement type
+	
 	/**
 	 * Constructor for SamplePropertyPage.
 	 */
@@ -116,7 +120,20 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 
 	private void addSecondSection(Composite parent) {
 		//Composite composite = createDefaultComposite(parent);
-
+		String mainFileName = "";
+		String provableTypeString = "";
+		String logicStmtTypeString = "";
+		try {
+			mainFileName = getNature().getMainFile().getName();
+			provableTypeString = getNature().getProvableTypeString();
+			logicStmtTypeString = getNature().getLogicStmtTypeString();
+			System.out.println("Got provableType="+provableTypeString);
+			System.out.println("Got logicStmtType="+logicStmtTypeString);
+		} catch (CoreException e1) {
+		} catch (NullPointerException e1) {
+		}
+		logicStmtType = logicStmtTypeString;
+		
 		Composite composite = new Composite(parent, SWT.NONE);
 		GridData fileSelectionData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
 		composite.setLayoutData(fileSelectionData);
@@ -134,16 +151,12 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		mainFileLabel.setText("&Main file name:");
 		mainFileText = new Text(composite, SWT.BORDER | SWT.SINGLE);
 		mainFileText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		mainFileText.setText(mainFileName);
 		mainFileText.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				// TODO - validate ?
 			}
 		});
-		try {
-			mainFileText.setText(getNature().getMainFile().getName());
-		} catch (CoreException e1) {
-		} catch (NullPointerException e1) {
-		}
 		createMainFileChooserButton(composite);
 		
 		//////////////
@@ -153,10 +166,12 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		provableTypeText = new Text(composite, SWT.SINGLE | SWT.BORDER);
 		GridData gd = new GridData(GridData.FILL_HORIZONTAL);		//gd.widthHint = convertWidthInCharsToPixels(5);
 		provableTypeText.setLayoutData(gd);
-		try {
-			provableTypeText.setText(getNature().getProvableTypeString());
-		} catch (CoreException e1) { }
-		// TODO chooser/validation based on LogicalSystem ?
+		provableTypeText.setText(provableTypeString);
+		provableTypeText.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				// TODO chooser/validation based on LogicalSystem ?
+			}
+		});
 		new Label(composite, SWT.NONE).setEnabled(false);
 		
 		//////////////
@@ -172,16 +187,20 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		otherTypesTable.setHeaderVisible(true);
 		otherTypesTable.setLinesVisible(true);
 		otherTypesTable.setLayoutData(gridData);
-	    TableColumn typeColumn = new TableColumn(otherTypesTable, SWT.CENTER);
+	    TableColumn typeColumn = new TableColumn(otherTypesTable, SWT.LEFT);
 	    typeColumn.setText("Type");
+	    typeColumn.setWidth(100);
 	    typeColumn.pack();
 	    TableColumn colorColumn = new TableColumn(otherTypesTable, SWT.CENTER);
 	    colorColumn.setText("Color");
+	    typeColumn.setWidth(50);
 	    colorColumn.pack();
+	    TableColumn stmtTypeColumn = new TableColumn(otherTypesTable, SWT.LEFT);
+	    stmtTypeColumn.setText("Statement");
+	    stmtTypeColumn.pack();
 	    fillTypesTable(otherTypesTable, getNature().getTypeColors());
 		addTableEditor(otherTypesTable);
 
-	    //otherTypesTable.setText(getNature().getProvableType());
 		createAddRemoveTypeButtons(composite);
 
 		//////////////
@@ -210,6 +229,16 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 	private void fillTypesTable(Table table, Map<Cnst, RGB> typeColors) {
 		table.setItemCount(typeColors.size()+1);
 		table.removeAll();
+		
+		// If the logic statement type is not in the list of types with color configured, add it.
+		boolean addLogicStmtType = true;
+		for(Cnst type:typeColors.keySet()) addLogicStmtType &= !type.getId().equals(logicStmtType);
+		if(addLogicStmtType) {
+			Cnst logicStmtSym = getNature().getLogicStmtType();
+			if(logicStmtSym!=null) typeColors.put(logicStmtSym, table.getDisplay().getSystemColor(SWT.COLOR_BLUE).getRGB());
+		}
+
+		// Create the table items
 		for(Cnst type:typeColors.keySet()) {
 			createTypeTableItem(table, type.getId(), typeColors.get(type));
 		}
@@ -228,6 +257,20 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 //		editor.minimumHeight = button.getSize().y;
 //		editor.minimumWidth = button.getSize().x;
 //		editor.setEditor(button, item, 1);
+		TableEditor editor = new TableEditor(table);
+		Button button = new Button(table, SWT.RADIO);
+		button.setSelection(symbol.equals(logicStmtType));
+		button.pack();
+		button.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				if (((Button)e.widget).getSelection()) {
+					logicStmtType = symbol;
+				}
+			}
+		});
+		editor.minimumWidth = button.getSize().x;
+		editor.horizontalAlignment = SWT.LEFT;
+		editor.setEditor(button, item, STMT_TYPE_COLUMN);
 	}
 	
 	private void addTableEditor(final Table table) {
@@ -261,7 +304,8 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 						}
 					}
 
-					if(column == 1) {
+					switch(column) {
+					case COLOR_COLUMN:
 						ColorDialog dialog = new ColorDialog(table.getShell());
 						Color color = item.getBackground(COLOR_COLUMN);
 						dialog.setRGB(color.getRGB());
@@ -271,36 +315,39 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 							color = new Color(table.getShell().getDisplay(), rgb);
 							item.setBackground(COLOR_COLUMN, color);
 						} 
-						return;
+						break;
+
+					case TYPE_COLUMN:
+						// Create the Text object for our editor
+						final Text text = new Text(table, SWT.NONE);
+						text.setForeground(item.getForeground());
+	
+						// Transfer any text from the cell to the Text control,
+						// set the color to match this row, select the text,
+						// and set focus to the control
+						text.setText(item.getText(column));
+						text.setForeground(item.getForeground());
+						text.selectAll();
+						text.setFocus();
+	
+						// Recalculate the minimum width for the editor
+						editor.minimumWidth = text.getBounds().width;
+	
+						// Set the control into the editor
+						editor.setEditor(text, item, column);
+	
+						// Add a handler to transfer the text back to the cell
+						// any time it's modified
+						final int col = column;
+						text.addModifyListener(new ModifyListener() {
+							public void modifyText(ModifyEvent event) {
+								// TODO need to an a valiator here, value shall not be empty, and shall not contain space, at least
+								// Set the text of the editor's control back into the cell
+								item.setText(col, text.getText());
+							}
+						});
+					break;
 					}
-					
-					// Create the Text object for our editor
-					final Text text = new Text(table, SWT.NONE);
-					text.setForeground(item.getForeground());
-
-					// Transfer any text from the cell to the Text control,
-					// set the color to match this row, select the text,
-					// and set focus to the control
-					text.setText(item.getText(column));
-					text.setForeground(item.getForeground());
-					text.selectAll();
-					text.setFocus();
-
-					// Recalculate the minimum width for the editor
-					editor.minimumWidth = text.getBounds().width;
-
-					// Set the control into the editor
-					editor.setEditor(text, item, column);
-
-					// Add a handler to transfer the text back to the cell
-					// any time it's modified
-					final int col = column;
-					text.addModifyListener(new ModifyListener() {
-						public void modifyText(ModifyEvent event) {
-							// Set the text of the editor's control back into the cell
-							item.setText(col, text.getText());
-						}
-					});
 				}
 			}
 		});
@@ -345,7 +392,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 				if (dialog.open() == ContainerSelectionDialog.OK) {
 					int itemCount = otherTypesTable.getItemCount();
 					String newTypeSymbol = dialog.getValue();
-					createTypeTableItem(otherTypesTable, newTypeSymbol, new RGB(0, 0, 0) );
+					createTypeTableItem(otherTypesTable, newTypeSymbol, new RGB(0, 0, 0));
 					otherTypesTable.setItemCount(itemCount+1);
 					otherTypesTable.pack(true);
 					otherTypesTable.getParent().layout(true);
@@ -399,6 +446,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 	
 	protected void performDefaults() {
 		// Populate the explorer URL text field with the default value
+		logicStmtType = MetamathProjectNature.LOGIC_STMT_TYPE_DEFAULT_VALUE;
 		baseExplorerUrlText.setText(MetamathProjectNature.EXPLORER_BASE_URL_DEFAULT_VALUE);
 		provableTypeText.setText(MetamathProjectNature.PROVABLE_TYPE_DEFAULT_VALUE);
 		autoTransformCheckbox.setSelection(MetamathProjectNature.AUTO_TRANSFORMATIONS_ENABLED_DEFAULT_VALUE);
@@ -418,6 +466,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		try {
 			getNature().setWebExplorerURL(baseExplorerUrlText.getText());
 			getNature().setProvableType((Cnst)(getNature().getMObj(provableTypeText.getText())));
+			getNature().setLogicStmtType((Cnst)(getNature().getMObj(logicStmtType)));
 			getNature().setTypeColors(getTypeColors());
 			getNature().setMainFile(newMainFile);
 			getNature().setAutoTransformationsEnabled(autoTransformCheckbox.getSelection());

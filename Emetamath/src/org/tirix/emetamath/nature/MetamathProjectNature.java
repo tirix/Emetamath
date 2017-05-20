@@ -105,6 +105,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	public static final QualifiedName MAINFILE_PROPERTY = new QualifiedName("org.tirix.emetamath", "mainFile");
 	public static final QualifiedName ISMAINFILE_PROPERTY = new QualifiedName("org.tirix.emetamath", "isMainFile");
 	public static final QualifiedName PROVABLE_TYPE_PROPERTY = new QualifiedName("org.tirix.emetamath", "provableType");
+	public static final QualifiedName LOGIC_STMT_TYPE_PROPERTY = new QualifiedName("org.tirix.emetamath", "logicStmtType");
 	public static final QualifiedName TYPES_PROPERTY = new QualifiedName("org.tirix.emetamath", "types");
 	public static final QualifiedName COLORS_PROPERTY = new QualifiedName("org.tirix.emetamath", "typeColors");
 	public static final QualifiedName ICONS_PROPERTY = new QualifiedName("org.tirix.emetamath", "typeIcons");
@@ -115,6 +116,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	
 	public static final String EXPLORER_BASE_URL_DEFAULT_VALUE = "http://us.metamath.org/mpegif/";
 	public static final String PROVABLE_TYPE_DEFAULT_VALUE = "|-";
+	public static final String LOGIC_STMT_TYPE_DEFAULT_VALUE = "wff";
 	public static final String TYPES_DEFAULT_VALUE = "wff$set$class";
 	public static final String COLORS_DEFAULT_VALUE = "0,0,255$255,0,0$255,0,255";
 	public static final String ICONS_DEFAULT_VALUE = "mmWff.gif$mmSet.gif$mmClass.gif";
@@ -299,13 +301,20 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
         loadProofs                =
             MMIOConstants.LOAD_PROOFS_DEFAULT;
 
-        provableLogicStmtTypeParm =
-            GrammarConstants.
-                DEFAULT_PROVABLE_LOGIC_STMT_TYP_CODES[0];
-
-        logicStmtTypeParm         =
-            GrammarConstants.DEFAULT_LOGIC_STMT_TYP_CODES[0];
-
+        try {
+        	provableLogicStmtTypeParm = getProvableTypeString();
+        	logicStmtTypeParm = getLogicStmtTypeString();
+        	if(provableLogicStmtTypeParm.equals(logicStmtTypeParm)) throw new RuntimeException("Provable type shall not be the same as the statement type!");
+        } catch(Exception e) {
+        	e.printStackTrace();
+	        provableLogicStmtTypeParm =
+	            GrammarConstants.
+	                DEFAULT_PROVABLE_LOGIC_STMT_TYP_CODES[0];
+	
+	        logicStmtTypeParm         =
+	            GrammarConstants.DEFAULT_LOGIC_STMT_TYP_CODES[0];
+        }
+        
         bookManagerEnabledParm    =
             LangConstants.BOOK_MANAGER_ENABLED_DEFAULT;
         bookManager               = null;
@@ -860,6 +869,26 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		return null;
 	}
 
+	public Cnst getLogicStmtType() {
+		Sym logicStmtType = getLogicalSystem().getSymTbl().get(logicStmtTypeParm);
+		if(logicStmtType instanceof Cnst) return (Cnst)logicStmtType;
+		return null;
+	}
+
+	public String getLogicStmtTypeString() throws CoreException {
+		String logicStmtTypeString =  getProject().getPersistentProperty(LOGIC_STMT_TYPE_PROPERTY);
+		if(logicStmtTypeString == null) logicStmtTypeString = LOGIC_STMT_TYPE_DEFAULT_VALUE;
+		return logicStmtTypeString;
+	}
+
+	public void setLogicStmtType(Cnst logicStmtType) throws CoreException {
+		System.out.println("Setting logicStmtType="+logicStmtType);
+		if(logicStmtType == null) return;
+		this.logicStmtTypeParm = logicStmtType.getId();
+		getProject().setPersistentProperty(LOGIC_STMT_TYPE_PROPERTY, logicStmtType.getId());
+		rebuild();
+	}
+
 	public Cnst getProvableType() {
 		return provableType;
 	}
@@ -871,9 +900,11 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	}
 
 	public void setProvableType(Cnst provableType) throws CoreException {
+		System.out.println("Setting provableType="+provableType);
 		this.provableType = provableType;
 		if(provableType == null) return;
 		getProject().setPersistentProperty(PROVABLE_TYPE_PROPERTY, provableType.getId());
+		rebuild();
 	}
 
 	// TODO - generalize...
@@ -920,8 +951,11 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		mainFile.setPersistentProperty(ISMAINFILE_PROPERTY, Boolean.toString(true));
 		getProject().setPersistentProperty(MAINFILE_PROPERTY, mainFile.getName());
 		dependencies.setMainFile(mainFile);
-		
-//System.out.println("Rebuilding metamath");
+		rebuild();
+	}
+
+	public void rebuild() {
+		//System.out.println("Rebuilding metamath");
 		// perform an incremental build, starting from this new file
 		Job buildJob = new Job("Rebuild") {
 			@Override
@@ -939,7 +973,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		//buildJob.setSystem(true); // System jobs are typically not revealed to users in any UI presentation of jobs. 
 		buildJob.schedule();
 	}
-
+	
 	public IResource getLastFlatExport() throws CoreException {
 		String lastFlatExportFileName = getProject().getPersistentProperty(LAST_FLAT_EXPORT_PROPERTY);
 		if(lastFlatExportFileName == null) return null;
