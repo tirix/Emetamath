@@ -191,7 +191,7 @@ public class ProofExplorerViewPage extends Page implements ISelectionProvider, I
     public void selectionChanged(SelectionChangedEvent event) {
 		if(!linkWithEditor) return;
     	if(event.getSelection() instanceof ITreeSelection) {
-			if(((ITreeSelection)event.getSelection()).getFirstElement() instanceof SourceElement) {
+    		if(((ITreeSelection)event.getSelection()).getFirstElement() instanceof SourceElement) {
 				SourcePosition position = ((SourceElement)(((ITreeSelection)event.getSelection()).getFirstElement())).getPosition();
 				MetamathUI.selectAndReveal(position, false);
 			}

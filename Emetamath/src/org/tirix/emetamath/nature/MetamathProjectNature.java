@@ -2,46 +2,18 @@ package org.tirix.emetamath.nature;
 
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Deque;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import mmj.lang.Axiom;
-import mmj.lang.BookManager;
-import mmj.lang.Cnst;
-import mmj.lang.LangConstants;
-import mmj.lang.LogicalSystem;
-import mmj.lang.MObj;
-import mmj.lang.MessageHandler;
-import mmj.lang.SeqAssigner;
-import mmj.lang.Stmt;
-import mmj.lang.Sym;
-import mmj.lang.Var;
-import mmj.lang.VerifyException;
-import mmj.lang.WorkVarManager;
-import mmj.mmio.MMIOConstants;
-import mmj.mmio.MMIOException;
-import mmj.mmio.SourcePosition;
-import mmj.mmio.Systemizer;
-import mmj.mmio.IncludeFile.ReaderProvider;
-import mmj.mmio.Systemizer.DependencyListener;
-import mmj.pa.ProofAsst;
-import mmj.pa.ProofAsstPreferences;
-import mmj.tl.TheoremLoader;
-import mmj.tl.TlPreferences;
-import mmj.util.UtilConstants;
-import mmj.verify.Grammar;
-import mmj.verify.GrammarConstants;
-import mmj.verify.VerifyProofs;
-
-import org.eclipse.core.internal.resources.ResourceException;
 import org.eclipse.core.resources.ICommand;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
@@ -58,15 +30,55 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.QualifiedName;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jface.viewers.ILabelProvider;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.Position;
+import org.eclipse.jface.text.source.Annotation;
+import org.eclipse.jface.text.source.IAnnotationModel;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.ui.editors.text.TextEditor;
+import org.eclipse.ui.part.FileEditorInput;
 import org.tirix.emetamath.Activator;
 import org.tirix.emetamath.editors.proofassistant.ProofWorksheetDocumentProvider.ProofWorksheetInput;
+import org.tirix.emetamath.nature.MetamathProjectNature.DocumentSource;
 import org.tirix.emetamath.views.MMLabelProvider;
 import org.tirix.mmj.MathMLTypeSetting;
 import org.tirix.mmj.TypeSetting;
+
+import mmj.gmff.GMFFManager;
+import mmj.lang.Axiom;
+import mmj.lang.BookManager;
+import mmj.lang.Cnst;
+import mmj.lang.LangConstants;
+import mmj.lang.LogicalSystem;
+import mmj.lang.MObj;
+import mmj.lang.MessageHandler;
+import mmj.lang.SeqAssigner;
+import mmj.lang.Stmt;
+import mmj.lang.Sym;
+import mmj.lang.WorkVarManager;
+import mmj.mmio.MMIOConstants;
+import mmj.mmio.MMIOConstants.SourcePositionContext;
+import mmj.mmio.Source;
+import mmj.mmio.SourcePosition;
+import mmj.mmio.Systemizer;
+import mmj.mmio.Systemizer.DependencyListener;
+import mmj.pa.ErrorCode;
+import mmj.pa.MMJException;
+import mmj.pa.MMJException.ErrorContext;
+import mmj.pa.MacroManager;
+import mmj.pa.ProofAsst;
+import mmj.pa.ProofAsstPreferences;
+import mmj.tl.TheoremLoader;
+import mmj.tl.TlPreferences;
+import mmj.util.UtilConstants;
+import mmj.verify.Grammar;
+import mmj.verify.GrammarConstants;
+import mmj.verify.GrammaticalParser;
+import mmj.verify.VerifyException;
+import mmj.verify.VerifyProofs;
 
 /**
  * Metamath Project Nature
@@ -96,16 +108,18 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	public static final QualifiedName TYPES_PROPERTY = new QualifiedName("org.tirix.emetamath", "types");
 	public static final QualifiedName COLORS_PROPERTY = new QualifiedName("org.tirix.emetamath", "typeColors");
 	public static final QualifiedName ICONS_PROPERTY = new QualifiedName("org.tirix.emetamath", "typeIcons");
+	public static final QualifiedName AUTO_TRANSFORMATIONS_ENABLED_PROPERTY = new QualifiedName("org.tirix.emetamath", "autoTransformationsEnabled");
+	public static final QualifiedName LAST_FLAT_EXPORT_PROPERTY = new QualifiedName("org.tirix.emetamath", "lastFlatExport");
 	
 	private static final QualifiedName EXPLORER_BASE_URL_PROPERTY = new QualifiedName("org.tirix.emetamath", "explorerBaseUrl");
-
+	
 	public static final String EXPLORER_BASE_URL_DEFAULT_VALUE = "http://us.metamath.org/mpegif/";
 	public static final String PROVABLE_TYPE_DEFAULT_VALUE = "|-";
 	public static final String TYPES_DEFAULT_VALUE = "wff$set$class";
 	public static final String COLORS_DEFAULT_VALUE = "0,0,255$255,0,0$255,0,255";
 	public static final String ICONS_DEFAULT_VALUE = "mmWff.gif$mmSet.gif$mmClass.gif";
 	public static final String DEFINITION_PREFIX_DEFAULT_VALUE = "df-";
-
+	public static final Boolean AUTO_TRANSFORMATIONS_ENABLED_DEFAULT_VALUE = true;
 	private IProject project;
 	
 	/**
@@ -113,10 +127,10 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	 */
 	private Cnst provableType;
 	private List<Cnst> types;
-	private Hashtable<Cnst, RGB> typeColors;
-	private Hashtable<Cnst, Image> typeIcons;
-	private Hashtable<Cnst, String> typeIconURLs;
-	private Hashtable<Sym,Stmt> notations;
+	private Map<Cnst, RGB> typeColors;
+	private Map<Cnst, Image> typeIcons;
+	private Map<Cnst, String> typeIconURLs;
+	private Map<Sym,Stmt> notations;
 	//private Cnst wffType, classType, setType;
 	
 	/**
@@ -128,12 +142,12 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	 * The messageHandler to be provided to MMJ2
 	 * redirects messages to the Eclipse Error Log.
 	 */
-	protected MetamathMessageHandler messageHandler = new MetamathMessageHandler();
+	protected final MetamathMessageHandler messageHandler = new MetamathMessageHandler();
 
 	/**
 	 * The dependency map : contains the set of files depending on a given file
 	 */
-	protected Map<IFile, Set<IFile>> dependencies = new HashMap<IFile, Set<IFile>>();
+	protected final DependencyManager<IResource> dependencies = new DependencyManager<>();
 	
 	/**
 	 * A label provider for this nature
@@ -151,6 +165,8 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	 */
     protected String         provableLogicStmtTypeParm;
     protected String         logicStmtTypeParm;
+
+    protected GMFFManager    gmffManager;
 
     protected boolean        bookManagerEnabledParm;
     protected BookManager    bookManager;
@@ -170,6 +186,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 
     protected MetamathPreferences preferences;
     
+    protected Class<? extends GrammaticalParser> parserPrototype;
     
     protected LogicalSystem  logicalSystem;
 
@@ -178,7 +195,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	protected Grammar		 grammar;
 
 	protected boolean        logicalSystemLoaded;
-	private ArrayList<SystemLoadListener> listeners;
+	private Deque<SystemLoadListener> listeners;
 
 	protected WorkVarManager workVarManager;
 	protected VerifyProofs	 verifyProofs;
@@ -186,12 +203,10 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	protected boolean		 allStatementsParsedSuccessfully;
 	protected ProofAsst      proofAsst;
 
-    protected ReaderProvider readerProvider;
-
 	private TheoremLoader theoremLoader;
 
     public MetamathProjectNature() {
-    	listeners = new ArrayList<SystemLoadListener>();
+    	listeners = new ArrayDeque<SystemLoadListener>();
     	types = new ArrayList<Cnst>();
 		typeColors = new Hashtable<Cnst, RGB>();
 		typeIcons = new Hashtable<Cnst, Image>();
@@ -258,8 +273,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	 */
 	public void setProject(IProject project) {
 		this.project = project;
-    	readerProvider = new EclipseReaderProvider(project);
-    	preferences = new MetamathPreferences();
+    	preferences = MetamathPreferences.getInstance();
     	messageHandler.setDefaultResource(project);
     	initStateVariables();
 		try {
@@ -277,6 +291,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
         loadEndpointStmtNbrParm   = 0;
         loadEndpointStmtLabelParm = null;
         logicalSystem             = null;
+        gmffManager               = null;
         systemizer                = null;
 
         loadComments              =
@@ -309,8 +324,20 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 
     }
 
-    public void clearLogicalSystem(Object sourceId, MessageHandler messageHandler) {
-		logicalSystemLoaded   = false;
+    /**
+     * Clear the logical system.
+     * 
+     * This is called when the environment was just opened, or when the MM files have been changed, 
+     * before re-parsing and verifying it.
+     * 
+     * @param resource
+     * @param offset
+     * @param messageHandler
+     */
+    public void clearLogicalSystem(IResource resource, long offset, MessageHandler messageHandler) {
+    	dependencies.clearDependenciesFrom(null, offset);
+    	
+    	logicalSystemLoaded   = false;
 	    
 	    if (logicalSystem == null) {
 	        if (bookManager == null) {
@@ -319,6 +346,9 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	                                provableLogicStmtTypeParm);
 	        }
 	
+            if (gmffManager == null)
+                gmffManager = new GMFFManager(null, messageHandler);
+
 	        if (seqAssigner == null) {
 	            seqAssigner       =
 	                new SeqAssigner(
@@ -339,6 +369,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	            new LogicalSystem(
 	                    provableLogicStmtTypeParm,
 	                    logicStmtTypeParm,
+	                    gmffManager,
 	                    bookManager,
 	                    seqAssigner,
 	                    i,
@@ -358,15 +389,15 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	    }
 	
 	    if (systemizer == null) {
-	        systemizer        =
-	        new Systemizer(messageHandler,
-	                       logicalSystem);
+	        systemizer = new Systemizer();
 	        systemizer.setDependencyListener(this);
 	    }
 	    else {
 	    	systemizer.clearFilesAlreadyLoaded(); // TODO remove only the specified file
-	    	systemizer.setSystemLoader(logicalSystem);
-	        systemizer.setMessages(messageHandler);
+	    }
+	    
+	    if(workVarManager != null) {
+	    	workVarManager.clear();
 	    }
     }
     
@@ -393,6 +424,10 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
         return logicalSystem;
     }
 
+
+	public MetamathPreferences getPreferences() {
+		return preferences;
+	}
 
     /**
      *  An initializeGrammar subroutine.
@@ -442,10 +477,18 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
         boolean sComplete         =
           GrammarConstants.DEFAULT_COMPLETE_STATEMENT_AMBIG_EDITS;
 
-        grammar                   = new Grammar(pTyp,
-                                                lTyp,
-                                                gComplete,
-                                                sComplete);
+        parserPrototype = GrammarConstants.DEFAULT_PARSER_PROTOTYPE;
+        
+        try {
+			grammar                   = new Grammar(pTyp,
+			                                        lTyp,
+			                                        gComplete,
+			                                        sComplete,
+			                                        parserPrototype);
+		} catch (VerifyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         return grammar;
     }
 
@@ -490,7 +533,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
             workVarManager        = new WorkVarManager(grammar);
         }
         else {
-            messageHandler.accumErrorMessage(
+            messageHandler.accumMessage(
                 UtilConstants.ERRMSG_WV_MGR_REQUIRES_GRAMMAR_INIT);
         }
 
@@ -553,20 +596,31 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	            proofAsstPreferences.
 	                setWorkVarManager(
 	                    workVarManager);
+	            proofAsstPreferences.deriveAutocomplete.set(true); // TODO : include in a preference page
 	
 	            TheoremLoader theoremLoader = getTheoremLoader();
-	
+	            MacroManager macroManager = null;
+	            
 	            proofAsst             =
 	                new ProofAsst(proofAsstPreferences,
 	                              logicalSystem,
 	                              grammar,
 	                              verifyProofs,
-	                              theoremLoader);
-	
+	                              theoremLoader,
+	                              macroManager);
+	            
 	            if (!proofAsst.getInitializedOK()) {
 	                proofAsst.initializeLookupTables(messageHandler);
 	            }
 	
+	            // TODO : include in a preference page
+	            boolean autoTransformationsEnabled = true;
+	            boolean autoTransformationsDebugOutput = false;
+	            boolean autoTransformationsSupportPrefix = true;
+	            proofAsst.initAutotransformations(
+	            	autoTransformationsEnabled, autoTransformationsDebugOutput,
+	            	autoTransformationsSupportPrefix);
+
 	            logicalSystem.
 	                accumTheoremLoaderCommitListener(
 	                    proofAsst);
@@ -574,8 +628,8 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	        }
 	        else {
 	            proofAsst             = null;
-	            messageHandler.accumErrorMessage(
-	                UtilConstants.ERRMSG_PA_GUI_REQUIRES_GRAMMAR_INIT);
+	            messageHandler.accumMessage(
+	                UtilConstants.ERRMSG_PA_REQUIRES_GRAMMAR_INIT);
 	        }
 	
 	        return proofAsst;
@@ -606,9 +660,14 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		for(SystemLoadListener l:listeners) 
 			l.systemLoaded();
 	}
-	
+
+	public boolean getLoadProofs() {
+		return loadProofs;
+	}
+
 	private void initializeTypes() {
 		notations = new Hashtable<Sym, Stmt>();
+		types = new ArrayList<Cnst>();
 		
 		String provableTypeProperty = null;
 		String typesProperty = null;
@@ -630,31 +689,86 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		provableType = (Cnst)logicalSystem.getSymTbl().get(provableTypeProperty);
 
 		// get the other types
-		for(String type:typesProperty.split("\\$")) types.add((Cnst)logicalSystem.getSymTbl().get(type));
-
+		types = parseTypesString(typesProperty);
+		
 		// get the coloring attributes for the other types
-		String[] colors = colorsProperty.split("\\$");
-		for(int i=0;i<colors.length && i<types.size();i++) {
-			String[] rgb = colors[i].split(",");
-			RGB color = new RGB(Integer.parseInt(rgb[0]), Integer.parseInt(rgb[1]), Integer.parseInt(rgb[2]));
-			typeColors.put(types.get(i), color);
-		}
-		if(colors.length != types.size()) System.out.println("Project "+getProject()+": "+types.size()+" types ("+types+") but "+colors.length+" colors ("+colors+") defined!\n");
+		typeColors = parseTypeColorsString(colorsProperty, types);
 		
 		// get the icons for the other types
-		String[] icons = iconsProperty.split("\\$");
-		for(int i=0;i<icons.length && i<types.size();i++) {
-			typeIcons.put(types.get(i), Activator.getImage("icons/"+icons[i]));
-			typeIconURLs.put(types.get(i), "icons/"+icons[i]);
-		}
-		if(icons.length != types.size()) System.out.println("Project "+getProject()+": "+types.size()+" types ("+types+") but "+icons.length+" icons ("+icons+") defined!\n");
-
+		typeIcons = parseIconsString(iconsProperty, types);
+		
 //		wffType = (Cnst)logicalSystem.getSymTbl().get("wff");
 //		setType = (Cnst)logicalSystem.getSymTbl().get("set");
 //		classType = (Cnst)logicalSystem.getSymTbl().get("class");
 		
 		grammar = getGrammar();
 		initializeGrammar(messageHandler);
+	}
+	
+	private List<Cnst> parseTypesString(String input) {
+		List<Cnst> types = new ArrayList<Cnst>();
+		for(String typeName:input.split("\\$")) {
+			Cnst type = (Cnst)logicalSystem.getSymTbl().get(typeName);
+			if(type != null) types.add(type);
+			else System.err.println("Could not find type "+typeName);
+		}
+		return types;
+	}
+	
+	private Map<Cnst, RGB> parseTypeColorsString(String input, List<Cnst> types) {
+		Map<Cnst, RGB> typeColors = new Hashtable<Cnst, RGB>();
+		String[] colors = input.split("\\$");
+		for(int i=0;i<colors.length && i<types.size();i++) {
+			String[] rgb = colors[i].split(",");
+			RGB color = new RGB(Integer.parseInt(rgb[0]), Integer.parseInt(rgb[1]), Integer.parseInt(rgb[2]));
+			typeColors.put(types.get(i), color);
+		}
+		if(colors.length != types.size()) System.out.println("Project "+getProject()+": "+types.size()+" types ("+types+") but "+colors.length+" colors ("+colors+") defined!\n");
+		return typeColors;
+	}
+	
+	private Map<Cnst, Image> parseIconsString(String iconsProperty, List<Cnst> types) {
+		Hashtable<Cnst, Image> typeIcons = new Hashtable<Cnst, Image>();
+		String[] icons = iconsProperty.split("\\$");
+		for(int i=0;i<icons.length && i<types.size();i++) {
+			typeIcons.put(types.get(i), Activator.getImage("icons/"+icons[i]));
+			typeIconURLs.put(types.get(i), "icons/"+icons[i]);
+		}
+		if(icons.length != types.size()) System.out.println("Project "+getProject()+": "+types.size()+" types ("+types+") but "+icons.length+" icons ("+icons+") defined!\n");
+		return typeIcons;
+	}
+
+	private String toTypeString(List<Cnst> types) {
+		StringBuffer sb = new StringBuffer();
+		for(int i=0;i<types.size();i++) {
+			if(i!=0) sb.append("$");
+			sb.append(types.get(i).getId());
+		}
+		return sb.toString();
+	}
+	
+	private String toTypeColorString(Map<Cnst, RGB> typeColors) {
+		StringBuffer sb = new StringBuffer();
+		for(int i=0;i<typeColors.size();i++) {
+			if(i!=0) sb.append("$");
+			RGB color = typeColors.get(types.get(i));
+			sb.append(color.red+","+color.green+","+color.blue+",");
+		}
+		return sb.toString();
+	}
+	
+	public Map<Cnst, RGB> getDefaultTypeColors() {
+		// TODO there should be a way to guess which are the types, and assign them default colors.
+		List<Cnst> defaultTypes = parseTypesString(TYPES_DEFAULT_VALUE);
+		return parseTypeColorsString(COLORS_DEFAULT_VALUE, defaultTypes);
+	}
+
+	public void setTypeColors(Map<Cnst, RGB> typeColors) throws CoreException {
+		this.types = new ArrayList<Cnst>();
+		this.types.addAll(typeColors.keySet());
+		this.typeColors = typeColors;
+		getProject().setPersistentProperty(TYPES_PROPERTY, toTypeString(types));
+		getProject().setPersistentProperty(COLORS_PROPERTY, toTypeColorString(typeColors));
 	}
 	
 	public Map<Cnst, RGB> getTypeColors() {
@@ -758,6 +872,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 
 	public void setProvableType(Cnst provableType) throws CoreException {
 		this.provableType = provableType;
+		if(provableType == null) return;
 		getProject().setPersistentProperty(PROVABLE_TYPE_PROPERTY, provableType.getId());
 	}
 
@@ -800,11 +915,13 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 
 	public void setMainFile(final IResource mainFile) throws CoreException {
 		if(this.mainFile != null) this.mainFile.setPersistentProperty(ISMAINFILE_PROPERTY, null);
+		if(mainFile == null || !mainFile.exists()) return;
 		this.mainFile = mainFile;
-		if(this.mainFile == null) return; 
 		mainFile.setPersistentProperty(ISMAINFILE_PROPERTY, Boolean.toString(true));
 		getProject().setPersistentProperty(MAINFILE_PROPERTY, mainFile.getName());
-
+		dependencies.setMainFile(mainFile);
+		
+//System.out.println("Rebuilding metamath");
 		// perform an incremental build, starting from this new file
 		Job buildJob = new Job("Rebuild") {
 			@Override
@@ -813,13 +930,32 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 					monitor.setTaskName("Verifying proofs for "+mainFile.getName());
 					getProject().refreshLocal(IResource.DEPTH_ONE, null);
 					getProject().build(IncrementalProjectBuilder.FULL_BUILD, monitor);
+//System.out.println("Rebuilding metamath complete");
 					return new Status(Status.OK, "eMetamath", "Job finished"); 
 				} catch (CoreException e) {
 					return new Status(Status.ERROR, "eMetamath", "Error during rebuild", e); 
 				}
 			}};
-		buildJob.setSystem(true);
+		//buildJob.setSystem(true); // System jobs are typically not revealed to users in any UI presentation of jobs. 
 		buildJob.schedule();
+	}
+
+	public IResource getLastFlatExport() throws CoreException {
+		String lastFlatExportFileName = getProject().getPersistentProperty(LAST_FLAT_EXPORT_PROPERTY);
+		if(lastFlatExportFileName == null) return null;
+		return getProject().getFile(lastFlatExportFileName);
+	}
+
+	public void setLastFlatExport(final IResource lastFlatExport) throws CoreException {
+		getProject().setPersistentProperty(LAST_FLAT_EXPORT_PROPERTY, lastFlatExport.getName());
+	}
+
+	public boolean isAutoTransformationsEnabled() throws CoreException {
+		return Boolean.valueOf(getProject().getPersistentProperty(AUTO_TRANSFORMATIONS_ENABLED_PROPERTY));
+	}
+
+	public void setAutoTransformationsEnabled(boolean enabled) throws CoreException {
+		getProject().setPersistentProperty(AUTO_TRANSFORMATIONS_ENABLED_PROPERTY, Boolean.toString(enabled));
 	}
 
 	public String getWebExplorerURL() {
@@ -836,25 +972,27 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		getProject().setPersistentProperty(EXPLORER_BASE_URL_PROPERTY, baseURL);
 	}
 
+    /**
+     * Set the grammar parser by class name.
+     */
+    @SuppressWarnings("unchecked")
+    public void setParserType(String parserType) {
+        try {
+            parserPrototype = (Class<? extends GrammaticalParser>)Class
+                .forName(parserType);
+        } catch (final ClassNotFoundException e) {
+            //throw error(e, ERRMSG_RUNPARM_PARSER_BAD_CLASS, parserType);
+        }
+    }
+
 	@Override
-	public void addDependency(Object includerSourceId, Object includedSourceId) {
-		Set<IFile> dependentList = dependencies.get((IFile)includedSourceId);
-		if(dependentList == null) {
-			dependentList = new HashSet<IFile>();
-			dependencies.put((IFile)includedSourceId, dependentList);
-		}
-		dependentList.add((IFile)includerSourceId);
+	public void addDependency(Source includerSourceId, Source includedSourceId, long offset) {
+		dependencies.addDependency(
+			(IFile)((ResourceSource)includerSourceId).resource, 
+			(IFile)((ResourceSource)includedSourceId).resource,
+			offset);
 	}
 	
-	/**
-	 * Returns the set of files depending of the given file
-	 * @param fromSourceId
-	 * @return
-	 */
-	public Set<IFile> getDependencies(IFile fromFile) {
-		return dependencies.get((IFile)fromFile);
-	}
-
 	public static interface SystemLoadListener {
 		public void systemLoaded();
 	}
@@ -884,44 +1022,220 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		return null;
 	}
 	
-	public static class EclipseReaderProvider implements ReaderProvider {
-		IContainer rootContainer;
+	/**
+	 * A source implementation for Eclipse resources
+	 * @author Thierry
+	 */
+	public static class ResourceSource implements Source {
+		public final IContainer rootContainer;
+		public final IResource resource;
 		
-		public EclipseReaderProvider(IContainer rootContainer) {
+		public ResourceSource(IResource resource, IContainer rootContainer) {
 			this.rootContainer = rootContainer;
+			this.resource = resource;
 		}
 
 		@Override
-		public Reader createReader(String fileName)
-				throws FileNotFoundException {
+		public Reader createReader() throws FileNotFoundException {
+			if(!(resource instanceof IFile)) throw new FileNotFoundException("Not a file resource! "+resource);
+			IFile file = (IFile)resource;
 			try {
-				IFile file = rootContainer.getFile(new Path(fileName));
 				return new InputStreamReader(file.getContents());
 			}
 			catch(CoreException e) {
-				throw new FileNotFoundException("File not found : "+fileName);
+				throw new FileNotFoundException("File not found : "+file.getName());
 			}
 		}
 
 		@Override
-		public long getSize(String fileName) throws FileNotFoundException {
-			IFile file = rootContainer.getFile(new Path(fileName));
-			return file.getLocation().toFile().length();
+		public String getContents() throws IOException {
+			Reader reader = createReader();
+			int intValueOfChar;
+			String targetString = "";
+		    while ((intValueOfChar = reader.read()) != -1) {
+		        targetString += (char) intValueOfChar;
+		    }
+		    return targetString;
+		}
+		
+		@Override
+		public void replace(int offset, int length, String text) {
+			throw new UnsupportedOperationException("Replacing contents of resource source is not implemented - normally not used!");
+		}
+		
+		@Override
+		public int getSize() throws FileNotFoundException {
+			return (int)resource.getLocation().toFile().length();
 		}
 
 		@Override
-		public Object getSource(String fileName) {
-			return rootContainer.getFile(new Path(fileName));
+		public String toString() {
+			return resource.getProjectRelativePath().toString();
 		}
 
 		@Override
-		public String getFileName(Object sourceId) {
-			return ((IFile)sourceId).getProjectRelativePath().toString();
+		public String getUniqueId() throws IOException {
+			return resource.getLocation().makeAbsolute().toString();
+		}
+
+		@Override
+		public Source createSourceId(String fileName) {
+			return new ResourceSource(rootContainer.getFile(new Path(fileName)), rootContainer);
+		}
+
+		/**
+		 * 
+		 * @param defaultPosition
+		 * @param message
+		 * @param severity
+		 */
+		public void addMarker(SourcePosition position, String message, int severity) {
+			if(position == null) { System.out.println("Skipped marker for "+message); return; }
+			try {
+				IMarker marker = resource.createMarker(MARKER_TYPE);
+
+				position = position.refinePosition();
+				marker.setAttribute(IMarker.MESSAGE, message);
+				marker.setAttribute(IMarker.SEVERITY, severity);
+				int lineNbr = position.lineNbr;
+				if (lineNbr == -1) {
+					lineNbr = 1;
+				}
+				int charEndNbr = position.charEndNbr;
+				int charStartNbr = position.charStartNbr;
+				if (charStartNbr == -1) {
+					charStartNbr = position.getCharStartNbr();
+					charEndNbr += charStartNbr;
+				}
+				marker.setAttribute(IMarker.LINE_NUMBER, lineNbr);
+				marker.setAttribute(IMarker.CHAR_START, charStartNbr);
+				marker.setAttribute(IMarker.CHAR_END, charEndNbr);
+			} catch (CoreException e) {
+			}
+		}
+
+		public SourcePosition getEndPosition() throws FileNotFoundException {
+			return new SourcePosition(this, -1, -1, getSize(), getSize());
+		}
+	}
+	
+	/**
+	 * A source implementation for Eclipse JFace Text Documents
+	 */
+	public static class DocumentSource implements Source {
+		public final TextEditor editor;
+		public final IDocument document;
+		public final String name;
+		
+		public DocumentSource(IDocument document, TextEditor editor, String name) {
+			this.document = document;
+			this.editor = editor;
+			this.name = name;
+		}
+
+		@Override
+		public Reader createReader() throws FileNotFoundException {
+			return new Reader() {
+				int offset = 0;
+				
+				@Override
+				public int read(char[] cbuf, int off, int len) throws IOException {
+					if(!ready()) return -1;
+					len = Math.min(len, document.getLength() - offset);
+					for(int i = 0; i< len; i++)
+						try {
+							cbuf[off + i] = document.getChar(offset+i);
+						} catch (BadLocationException e) {
+							throw new IOException(e);
+						}
+					offset += len;
+					return len;
+				}
+				
+				@Override
+				public boolean ready() throws IOException {
+					return offset < document.getLength();
+				}
+				
+				@Override
+				public void close() throws IOException {
+				}
+			};
+		}
+
+		public void replace(int offset, int length, String text) throws IOException {
+			try {
+				document.replace(offset, length, text);
+			} catch (BadLocationException e) {
+				throw new IOException(e);
+			}
+		}
+		
+		@Override
+		public String getContents() throws IOException {
+			return document.get();
+		}
+		
+		@Override
+		public int getSize() throws FileNotFoundException {
+			return document.getLength();
+		}
+
+		@Override
+		public String toString() {
+			return name;
+		}
+
+		@Override
+		public String getUniqueId() throws IOException {
+			return name;
+		}
+
+		@Override
+		public Source createSourceId(String fileName) {
+			throw new UnsupportedOperationException("Cannot create source from a document source!");
+		}
+
+		/**
+		 * Creates an annotation at the given position.
+		 * 
+		 * @param position the position in the source where to display the annotation. Source shall match this object.
+		 * @param message the message to be displayed when hovering over the annotation
+		 * @param severity one of IMarker.SEVERITY_INFO, IMarker.SEVERITY_WARNING, IMarker.SEVERITY_ERROR. Defines the image and color displayed (info / warning / error)
+		 */
+		public void addAnnotation(SourcePosition position, String message, int severity) {
+			if(!editor.isDirty()) {
+				// if editor has been saved, revert to the marker...
+				IFile resource = ((FileEditorInput)editor.getEditorInput()).getFile();
+				new ResourceSource(resource, resource.getProject()).addMarker(position, message, severity);
+				return;
+			}
+			IAnnotationModel annotationModel = editor.getDocumentProvider().getAnnotationModel(editor.getEditorInput());
+			if(annotationModel == null) return;
+				
+		    String annotationType;
+			switch(severity) {
+			case IMarker.SEVERITY_INFO: annotationType = "org.eclipse.ui.workbench.texteditor.info"; break;
+			case IMarker.SEVERITY_WARNING: annotationType = "org.eclipse.ui.workbench.texteditor.warning"; break;
+			case IMarker.SEVERITY_ERROR: annotationType = "org.eclipse.ui.workbench.texteditor.error"; break;
+			default: annotationType = "org.eclipse.ui.workbench.texteditor.info"; break;
+		    }
+//			System.out.println("Adding annotation @ "+position.getCharStartNbr() + " len=" + position.getLength()+" : "+message);
+			Annotation annotation = new Annotation(annotationType, false, message);
+			annotationModel.addAnnotation(annotation, new Position(position.getCharStartNbr(), position.getLength()));
+
+//			@SuppressWarnings( "unchecked" )
+//			Iterator<Annotation> i = annotationModel.getAnnotationIterator();
+//			int count = 0;
+//			while(i.hasNext()) { System.out.println("  - "+i.next().getText()); count++; }
+//			System.out.println("Now "+count+" annotations in "+this);
 		}
 	}
 	
 	public static class MetamathMessageHandler implements MessageHandler {
-		protected IResource defaultResource;
+		protected SourcePosition defaultPosition;
+		protected ResourceSource defaultResource;
+		private boolean hasErrors;
 		
 		MetamathMessageHandler() {
 		}
@@ -929,43 +1243,83 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		MetamathMessageHandler(IResource defaultResource) {
 			setDefaultResource(defaultResource);
 		}
+		
+		public int codeSeverity(ErrorCode code) {
+			// return e.code.level.error ? IMarker.SEVERITY_ERROR : IMarker.SEVERITY_INFO;
+			int severity = 0;
+			switch(code.level) {
+			case Abort: severity = IMarker.SEVERITY_ERROR; break;
+			case Error: severity = IMarker.SEVERITY_ERROR; break;
+			case Warn: severity = IMarker.SEVERITY_WARNING; break;
+			case Info: severity = IMarker.SEVERITY_INFO; break;
+			case Debug: severity = IMarker.SEVERITY_INFO; break;
+			}
+			return severity;
+		}
 
 		public void setDefaultResource(IResource defaultResource) {
-			this.defaultResource = defaultResource;
+			this.defaultResource = new ResourceSource(defaultResource, null);
+			this.defaultPosition = new SourcePosition(this.defaultResource, 0, 0, 0, 0);
 		}
 		
-		private void addMarker(String message, int severity) {
-			MetamathProjectNature.addMarker(new SourcePosition(defaultResource, 0, 0, 0, 0), message, severity);
+		private void addMarker(SourcePosition position, String message, int severity) {
+			if(position == null) {
+				defaultResource.addMarker(defaultPosition, message, severity);
+			} else if(position.source instanceof DocumentSource) {
+				((DocumentSource)position.source).addAnnotation(position, message, severity);
+//				// Test - add dummy annotation
+//				((DocumentSource)position.source).addAnnotation(new SourcePosition(position.source, -1, -1, 400, 410), "This is a test annotation", IMarker.SEVERITY_ERROR);
+			} else if(position.source instanceof ResourceSource) {
+				((ResourceSource)position.source).addMarker(position, message, severity);
+			} else {
+				defaultResource.addMarker(defaultPosition, message, severity);
+			}
 		}
 
 		@Override
-		public boolean accumMMIOException(MMIOException e) {
-			MetamathProjectNature.addMarker(e.position, e.getMessage(), IMarker.SEVERITY_ERROR);
-			return false;
+		public boolean accumException(MMJException e) {
+	        if (e == null || !e.code.use()) return true;
+	        SourcePosition position = e.position;
+	        for(ErrorContext ctxt : e.ctxt)
+	        	if(ctxt instanceof SourcePositionContext)
+	        		position = ((SourcePositionContext)ctxt).getPosition();
+	        return accumMessage(position, e.getMessage(), codeSeverity(e.code));
 		}
 
 		@Override
-		public boolean accumErrorMessage(String errorMessage) {
-			addMarker(errorMessage, IMarker.SEVERITY_ERROR);
-			return false;
+		public boolean accumErrorMessage(String errorMessage, Object... args) {
+			return accumMessage(null, ErrorCode.format(errorMessage, args), IMarker.SEVERITY_ERROR);
 		}
 
 		@Override
-		public boolean accumErrorMessage(SourcePosition position, String errorMessage) {
-			MetamathProjectNature.addMarker(position, errorMessage, IMarker.SEVERITY_ERROR);
-			return false;
+		public boolean accumInfoMessage(SourcePosition position, String infoMessage, Object... args) {
+			return accumMessage(position, ErrorCode.format(infoMessage, args), IMarker.SEVERITY_INFO);
 		}
 
 		@Override
-		public boolean accumInfoMessage(String infoMessage) {
-			addMarker(infoMessage, IMarker.SEVERITY_INFO);
-			return false;
+		public boolean accumInfoMessage(String infoMessage, Object... args) {
+			return accumInfoMessage(null, args);
 		}
 
 		@Override
-		public boolean accumInfoMessage(SourcePosition position, String infoMessage) {
-			MetamathProjectNature.addMarker(position, infoMessage, IMarker.SEVERITY_INFO);
+		public boolean accumMessage(ErrorCode code, Object... args) {
+			return accumMessage(null, code, args);
+		}
+
+		@Override
+		public boolean accumMessage(SourcePosition position, ErrorCode code, Object... args) {
+			return accumMessage(position, code.message(args), codeSeverity(code));
+		}
+
+		public boolean accumMessage(SourcePosition position, String message, int severity) {
+			addMarker(position, message, severity);
+			hasErrors = severity == IMarker.SEVERITY_ERROR;
 			return false;
+		}
+		
+		@Override
+		public boolean hasErrors() {
+			return hasErrors;
 		}
 
 		@Override
@@ -977,45 +1331,17 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		public String getOutputMessageText() {
 			throw new RuntimeException("This implementation does not provide consolidated text output.");
 		}
+		
+		@Override
+		public String getOutputMessageTextAbbrev() {
+			throw new RuntimeException("This implementation does not provide consolidated text output.");
+		}
 
 		public void clearMessages(IResource resource) {
 			try {
 				resource.deleteMarkers(MetamathProjectNature.MARKER_TYPE, false, IResource.DEPTH_ZERO);
 			} catch (CoreException ce) {
 			}
-		}
-	}
-
-	protected static void addMarker(SourcePosition position, String message, int severity) {
-		if(position == null) { System.out.println("Skipped marker for "+message); return; }
-		try {
-			IResource res = (IResource)position.sourceId;
-			refinePosition(position);
-			IMarker marker = res.createMarker(MARKER_TYPE);
-			marker.setAttribute(IMarker.MESSAGE, message);
-			marker.setAttribute(IMarker.SEVERITY, severity);
-			if (position.lineNbr == -1) {
-				position.lineNbr = 1;
-			}
-			marker.setAttribute(IMarker.LINE_NUMBER, position.lineNbr);
-			marker.setAttribute(IMarker.CHAR_START, position.charStartNbr);
-			marker.setAttribute(IMarker.CHAR_END, position.charEndNbr);
-		} catch (CoreException e) {
-		}
-	}
-
-	/**
-	 * Some positions are given inside a formula, and the exact char numbers have not been stored.
-	 * The position therefore needs to be refined to find back the exact char numbers.
-	 * @param position
-	 */
-	protected static void refinePosition(SourcePosition position) {
-		if(position.symbolNbr == -1) return;
-		try {
-			IResource res = (IResource)position.sourceId;
-			MetamathProjectNature nature = (MetamathProjectNature) res.getProject().getNature(MetamathProjectNature.NATURE_ID);
-			position.refinePosition(nature.readerProvider);
-		} catch (CoreException e) {
 		}
 	}
 }

@@ -24,7 +24,7 @@ import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
 /**
  * Scanner for Metamath text
  * 
- * This is a 
+ * This provides the coloring / syntax highlighting
  * 
  * @author Thierry Arnoux
  */
@@ -68,11 +68,13 @@ public class MMScanner extends RuleBasedScanner {
 
 		final MMSymbolRule symbolRule = new MMSymbolRule(new MMTokenDetector(), nature, mmConstant, mmTypeConstant, new Hashtable<Cnst, IToken>());
 
-		nature.addSystemLoadListener(new SystemLoadListener() {
-			@Override
-			public void systemLoaded() {
-				symbolRule.setVariableTokens(createVariableTokens(nature, manager));
-			}});
+		if(nature != null) {
+			nature.addSystemLoadListener(new SystemLoadListener() {
+				@Override
+				public void systemLoaded() {
+					symbolRule.setVariableTokens(createVariableTokens(nature, manager));
+				}});
+		}
 		
 		IRule[] rules = new IRule[2];
 		//Add rule for processing instructions
@@ -178,7 +180,7 @@ public class MMScanner extends RuleBasedScanner {
 		}
 
 		private IToken getTokenFor(String tokenStr) {
-			if(!nature.isLogicalSystemLoaded()) return Token.UNDEFINED;
+			if(nature == null || !nature.isLogicalSystemLoaded()) return Token.UNDEFINED;
 			Sym sym = (Sym)nature.getLogicalSystem().getSymTbl().get(tokenStr);
 			if(sym == null) return Token.UNDEFINED;
 			if(sym instanceof Cnst) {

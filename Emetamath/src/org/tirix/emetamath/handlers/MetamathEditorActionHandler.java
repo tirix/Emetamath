@@ -1,18 +1,25 @@
 package org.tirix.emetamath.handlers;
 
-import java.util.Collection;
-
-import mmj.lang.MObj;
+import java.awt.Toolkit;
 
 import org.eclipse.core.commands.AbstractHandler;
+import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.expressions.IEvaluationContext;
-import org.eclipse.jface.text.TextSelection;
+import org.eclipse.jface.text.ITextSelection;
+import org.eclipse.jface.text.MarkSelection;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.part.WorkbenchPart;
+import org.eclipse.ui.texteditor.FindReplaceAction;
 import org.tirix.emetamath.editors.MetamathEditor;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 import org.tirix.emetamath.views.ProofBrowserView;
 import org.tirix.emetamath.views.StepSelectorView;
+
+import mmj.lang.MObj;
 
 public abstract class MetamathEditorActionHandler extends AbstractHandler {
 
@@ -44,26 +51,34 @@ public abstract class MetamathEditorActionHandler extends AbstractHandler {
 		WorkbenchPart part = (WorkbenchPart)context.getVariable("activePart");
 		return (MetamathProjectNature)part.getAdapter(MetamathProjectNature.class);
 	}
-
-	protected MObj getSelectedMObj(IEvaluationContext context) throws ExecutionException {
+	
+	protected MObj getSelectedMObj(ExecutionEvent event) throws ExecutionException {
+		IEvaluationContext context = (IEvaluationContext)event.getApplicationContext();
 		MetamathProjectNature nature = getNature(context);
 		if(nature == null) throw new ExecutionException("Cannot find metamath project nature");
 		if(!nature.isLogicalSystemLoaded()) throw new ExecutionException("Logical System not yet loaded");
-		
-		Collection<?> selectionCollection = (Collection<?>)context.getDefaultVariable();
-		if(selectionCollection.size() == 0) throw new ExecutionException("No object selected");
-		Object selection = selectionCollection.toArray()[0];
 
-		MObj mobj = null;
-		if(selection instanceof MObj) {
-			mobj = (MObj)selection;
+		ISelection selection = HandlerUtil.getCurrentSelection(event);
+		if(selection instanceof IStructuredSelection) {
+			Object selectedObject =((IStructuredSelection)selection).getFirstElement();
+			if(selectedObject instanceof MObj) return (MObj)selectedObject;
+			throw new ExecutionException("Selected object "+selectedObject+" of selection "+selection+" is not an MObj!");
+		} else if (selection instanceof ITextSelection) {
+			String selectedText = ((ITextSelection)selection).getText();
+			MObj mobj = nature.getMObj(selectedText);
+			if(mobj != null) return mobj;
+			// TODO here, instead of throwing an exception, we shall emit a "beep" to tell the user we can't handle the request
+			//throw new ExecutionException("Selected string "+selectedText+" does not resolve to an MObj!");
+			PlatformUI.getWorkbench().getDisplay().beep();
+			return null;
+		} else if (selection instanceof MarkSelection) {
+			//throw new ExecutionException("Don't know how to get MObj from MarkSelection "+selection);
+			PlatformUI.getWorkbench().getDisplay().beep();
+			return null;
+		} else {
+			//throw new ExecutionException("Don't know how to get MObj from "+selection);
+			PlatformUI.getWorkbench().getDisplay().beep();
+			return null;
 		}
-		if(selection instanceof TextSelection) {
-			String objectName = ((TextSelection)selection).getText();
-			mobj = nature.getMObj(objectName);
-		}
-		if(mobj != null) return mobj;
-
-		throw new ExecutionException("Declaration not found");
 	}
 }

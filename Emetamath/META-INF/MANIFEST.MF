@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Metamath
 Bundle-SymbolicName: org.tirix.emetamath;singleton:=true
-Bundle-Version: 0.1.0.v20110127
+Bundle-Version: 0.1.2.v20160710
 Bundle-Activator: org.tirix.emetamath.Activator
 Bundle-Vendor: Thierry Arnoux
 Require-Bundle: org.eclipse.ui,
@@ -13,8 +13,9 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.ui.ide,
  org.eclipse.ui.console,
  org.eclipse.search,
- org.eclipse.ui.navigator
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+ org.eclipse.ui.navigator,
+ org.eclipse.ui.views.properties.tabbed;bundle-version="3.6.100"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: org.eclipse.core.expressions,
  org.eclipse.search.ui.text,
  org.eclipse.ui.internal.browser

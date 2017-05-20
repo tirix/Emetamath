@@ -14,10 +14,11 @@ public class SearchReferencesHandler extends MetamathEditorActionHandler {
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IEvaluationContext context = (IEvaluationContext)event.getApplicationContext();
-		MObj obj = getSelectedMObj(context);
+		MObj obj = getSelectedMObj(event);
 		MetamathProjectNature nature = getNature(context);
 		
-		NewSearchUI.runQueryInBackground(new MetamathSearchQuery(nature, obj));
+		if(obj != null)
+			NewSearchUI.runQueryInBackground(new MetamathSearchQuery(nature, obj));
 		return null; // must return null...
 	}
 }

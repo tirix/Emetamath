@@ -93,6 +93,7 @@ public class MMContentProvider implements ITreeContentProvider, SystemLoadListen
 	}
 
 	public boolean hasChildren(Object element) {
+		if(sectionMObjArray == null) return false;
 		if(element instanceof Chapter) {
 			return !((Chapter)element).getSectionList().isEmpty();
 		}

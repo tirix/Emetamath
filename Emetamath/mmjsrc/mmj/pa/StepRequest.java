@@ -7,51 +7,55 @@
 //*4567890123456 (71-character line to adjust editor window) 23456789*/
 
 /*
- *  StepRequest.java  0.01 03/01/2008
+ * StepRequest.java  0.01 03/01/2008
  *
- *  Version 0.01:
- *  ==> New.
+ * Version 0.01:
+ * ==> New.
  */
 
 package mmj.pa;
 
 /**
- *  StepRequest contains the StepSelector search results
- *  and is passed to the ProofAssistantEditor for use in generating the
- *  StepSelectorDialog.
+ * StepRequest contains the StepSelector search results and is passed to the
+ * ProofAsstGUI for use in generating the StepSelectorDialog.
  */
 public class StepRequest {
-
-    /* friendly */ int            request;
-    /* friendly */ String         step;
-    /* friendly */ Object         param1;
+    public final StepRequestType type;
+    public String step;
+    public Object param1;
 
     /**
-     *  Constructor for StepRequest
+     * Constructor for StepRequest
      *
-     *  @param request code
-     *  @param step for which the Step Selector was run.
-     *  @param param1 parameter depending on code.
+     * @param type the kind of step request
      */
-    public StepRequest(int      request,
-                       String   step,
-                       Object   param1) {
-
-        this.request              = request;
-        this.step                 = step;
-        this.param1               = param1;
+    public StepRequest(final StepRequestType type) {
+        this.type = type;
     }
+
     /**
-     *  Constructor for StepRequest
+     * Constructor for StepRequest
      *
-     *  @param request code
+     * @param type the kind of step request
+     * @param step for which the Step Selector was run.
+     * @param param1 parameter depending on code.
      */
-    public StepRequest(int      request) {
-
-        this(request,
-             null,
-             null);
+    public StepRequest(final StepRequestType type, final String step,
+        final Object param1)
+    {
+        this(type);
+        this.step = step;
+        this.param1 = param1;
     }
 
+    public enum StepRequestType {
+        SelectorSearch(true), StepSearch(true), GeneralSearch(false),
+        SearchOptions(true), StepSearchChoice(false), SelectorChoice(false);
+
+        public final boolean simple;
+
+        StepRequestType(final boolean simple) {
+            this.simple = simple;
+        }
+    }
 }
-

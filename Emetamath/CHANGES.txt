@@ -1,4 +1,33 @@
-v0.1.0.v201101XX
+v0.1.5.v20170515
+* Added ability to add/remove types, and change their colors in the Project Property file
+* Fixed exception when changing Project main file
+
+v0.1.4.v201610XX
+* Added "Verify Proofs" menu to the Metamath menu. 
+* Fixed "MMT Folder not specified" issue.
+* Fixed position for some error messages
+* After unify action, reposition cursor at the previous location.
+* Added a "toggle comment" command in the proof editor.
+
+v0.1.3.v201607XX
+* Added autoTransformations and deriveAutocomplete to speed up proof assistant
+* Corrected issues when opening a metamath file outside of the metamath perspective
+* Fixed "Search References" action
+* Fixed positions for some messages
+* Added highlighting of the matching bracket, and corresponding preference on the preference page
+* Fixed the key bindings : Ctrl-U now launches the unification, like in MMJ2.
+
+v0.1.2.v20160710
+* Re-integrated with the latest MMJ2 (Source, MessageHandler, Progress, etc. )
+* Fixed hover tooltips sizes
+* Improved progress monitor during the loading / parsing of Metamath files
+* Warning: Locations of many errors are not available anymore, or not correct. These will have to be corrected later on.
+* Added a "Export Proof" action to re-export complete proofs to metamath files.
+* Added annotations to the Proof Assistant Editor (symbols in the margin + position highlighted).
+* Started a skeleton for incremental build (to only parse/verify the part of the metamath files which have changed)
+* It is not necessary anymore to "save" in the Proof Assistant before unification.
+
+v0.1.0.v20110127
 * Added a Project Properties page, including "Main File" and "Proof Explorer Web Base URL" properties
 * Added a tool bar to the Proof Browser View, with current theorem name, back and forward button. 
 * "Type" constants (wff, |-, set, class) are now colored in gray, like in Metamath web pages

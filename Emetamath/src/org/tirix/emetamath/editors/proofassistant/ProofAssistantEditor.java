@@ -83,18 +83,23 @@
 
 package org.tirix.emetamath.editors.proofassistant;
 
-import mmj.mmio.SourcePosition;
-import mmj.pa.ProofWorksheet;
-
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.source.ICharacterPairMatcher;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.texteditor.SourceViewerDecorationSupport;
 import org.tirix.emetamath.editors.ColorManager;
 import org.tirix.emetamath.editors.MetamathEditor;
+import org.tirix.emetamath.preferences.PreferenceConstants;
+
+import mmj.pa.ProofWorksheet;
 
 /**
  *  The <code>ProofAssistantEditor</code> class is the main user
@@ -119,18 +124,27 @@ import org.tirix.emetamath.editors.MetamathEditor;
  *  1/2 second.)
  */
 public class ProofAssistantEditor extends MetamathEditor {
-
 	public static final String EDITOR_ID = "org.tirix.emetamath.ProofAssistant";
 
 	protected Composite				fParent, fDefaultComposite, fProofAssistantBar;
 	protected Label					fTheoremLabel;
 	protected Text					fInsertAfterText;
 	
+	protected ICharacterPairMatcher fBracketMatcher;
+	
 	protected void initializeEditor() {
 		super.initializeEditor();
 		setSourceViewerConfiguration(new ProofViewerConfiguration(this, new ColorManager()));
 		setEditorContextMenuId(EDITOR_ID);
 		}
+
+	/**
+	 * Initializes the key binding scopes of this editor.
+	 */
+	@Override
+	protected void initializeKeyBindingScopes() {
+		setKeyBindingScopes(new String[] { "org.tirix.emetamath.ui.contexts.proofasst" });  //$NON-NLS-1$
+	}
 
 	/**
 	 * If the input is of type FileEditorInput, convert it to ProofEditorInput
@@ -161,7 +175,10 @@ public class ProofAssistantEditor extends MetamathEditor {
 //		}
 	
 	public ProofDocument getDocument() {
-		return (ProofDocument) getDocumentProvider().getDocument(getEditorInput());
+		if(getDocumentProvider() == null) return null;
+		IDocument document = getDocumentProvider().getDocument(getEditorInput());
+		if(!(document instanceof ProofDocument)) return null;
+		return (ProofDocument) document;
 	}
 
 	public void displayProofWorksheet(ProofWorksheet w) {
@@ -171,6 +188,30 @@ public class ProofAssistantEditor extends MetamathEditor {
 	@Override
 	public void doSave(IProgressMonitor progressMonitor) {
 		super.doSave(progressMonitor);
+	}
+
+	public StyledText getText() {
+		Control control = (Control)getAdapter(Control.class);
+		if(control instanceof StyledText) {
+			StyledText text = (StyledText)control;
+			return text;
+		}
+		throw new RuntimeException("Control shall be a styled text");
+	}
+	
+	public int getCursorPos() {
+		return getText().getCaretOffset();
+	}
+
+	public void setCursorPos(int cursorPos) {
+		getText().setCaretOffset(cursorPos);
+	}
+
+	public boolean isProofUnified() {
+		if(getDocument() == null) return false;
+		if(!getDocument().proofWorksheetInitialized) return false;
+		if(getDocument().proofWorksheet == null) return false;
+		return getDocument().proofWorksheet.generatedProofStmt != null;
 	}
 
 //	private Composite createProofAssistantBar(Composite parent) {

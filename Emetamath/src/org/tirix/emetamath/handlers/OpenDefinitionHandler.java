@@ -14,9 +14,9 @@ public class OpenDefinitionHandler extends MetamathEditorActionHandler {
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IEvaluationContext context = (IEvaluationContext)event.getApplicationContext();
-		MObj obj = getSelectedMObj(context);
+		MObj obj = getSelectedMObj(event);
 		if(!(obj instanceof Sym)) {
-			System.out.println("Selected object is not a symbol, it is "+obj.getClass());
+			System.out.println("Selected object is not a symbol, it is "+obj==null?null:obj.getClass());
 			return null;
 		}
 		MetamathProjectNature nature = getNature(context);

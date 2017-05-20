@@ -2,8 +2,6 @@ package org.tirix.emetamath.editors.proofassistant;
 
 import java.util.Hashtable;
 
-import mmj.lang.Cnst;
-
 import org.eclipse.jface.text.TextAttribute;
 import org.eclipse.jface.text.rules.ICharacterScanner;
 import org.eclipse.jface.text.rules.IRule;
@@ -11,20 +9,20 @@ import org.eclipse.jface.text.rules.IToken;
 import org.eclipse.jface.text.rules.IWordDetector;
 import org.eclipse.jface.text.rules.Token;
 import org.eclipse.jface.text.rules.WhitespaceRule;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
 import org.tirix.emetamath.editors.ColorManager;
 import org.tirix.emetamath.editors.IMMColorConstants;
 import org.tirix.emetamath.editors.MMScanner;
 import org.tirix.emetamath.editors.MMWhitespaceDetector;
-import org.tirix.emetamath.editors.MMScanner.MMSymbolRule;
-import org.tirix.emetamath.editors.MMScanner.MMTokenDetector;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
 
+import mmj.lang.Cnst;
+
 public class MMPScanner extends MMScanner {
-	private static final IToken TOKEN_ERROR = new Token( new TextAttribute( new Color(Display.getCurrent(), 255, 255, 0), new Color(Display.getCurrent(), 255, 0, 0), SWT.BOLD));
+	//private static final IToken TOKEN_ERROR = new Token( new TextAttribute( new Color(Display.getCurrent(), 255, 255, 0), new Color(Display.getCurrent(), 255, 0, 0), SWT.BOLD));
+	private static final IToken TOKEN_ERROR = new Token( new Color(Display.getCurrent(), 0, 0, 0) );
 	
 	public MMPScanner(final MetamathProjectNature nature, final ColorManager manager) {
 		IToken mmLabel = new Token( new TextAttribute( manager.getColor(IMMColorConstants.LABEL)));
@@ -49,59 +47,60 @@ public class MMPScanner extends MMScanner {
 
 		setRules(rules);
 
-		nature.addSystemLoadListener(new SystemLoadListener() {
+		if(nature != null) nature.addSystemLoadListener(new SystemLoadListener() {
 			@Override
 			public void systemLoaded() {
 				((MMSymbolRule)rules[2]).setVariableTokens(createVariableTokens(nature, manager));
 			}});
 	}
-		
+	
 	public static class MMPRule implements IRule {
-		final static int LABEL = 0, LABEL_SEPARATOR = 1, HYPOTHESIS = 2, HYPOTHESIS_SEPARATOR = 3, APPLIED_STATEMENT = 4, RESULTING_FORMULA = 5;
+		static enum Status { UNKNOWN, LABEL, LABEL_SEPARATOR, HYPOTHESIS, HYPOTHESIS_SEPARATOR, APPLIED_STATEMENT, RESULTING_FORMULA };
 		IWordDetector labelDetector;
 		IToken keywordToken;
 		IToken labelToken;
-		int currentStatus; 
+		Status currentStatus; 
 		
 		public MMPRule(IWordDetector labelDetector, IToken keywordToken, IToken labelToken) {
 			this.labelDetector = labelDetector;
 			this.keywordToken = keywordToken;
 			this.labelToken = labelToken;
-			currentStatus = 0;
+			currentStatus = Status.UNKNOWN;
 		}
 
 		public IToken evaluate(ICharacterScanner scanner) {
-			if(scanner.getColumn() == 0) currentStatus = LABEL;
+			if(scanner.getColumn() == 0) currentStatus = Status.LABEL;
 			int c = scanner.read();
 			if(c == EOF) return Token.EOF;
 			switch(currentStatus) {
 			case LABEL:
-				currentStatus = LABEL_SEPARATOR;
+				if(c == '!') return keywordToken;
+				currentStatus = Status.LABEL_SEPARATOR;
 				if(!labelDetector.isWordPart((char) c)) return TOKEN_ERROR;
 				while(labelDetector.isWordPart((char)c)) c = scanner.read();
 				scanner.unread();
 				return labelToken;
 
 			case LABEL_SEPARATOR:
-				currentStatus = HYPOTHESIS;
+				currentStatus = Status.HYPOTHESIS;
 				if(c == ':') return keywordToken;
 				return TOKEN_ERROR;
 
 			case HYPOTHESIS:
-				currentStatus = HYPOTHESIS_SEPARATOR;
+				currentStatus = Status.HYPOTHESIS_SEPARATOR;
 				if(c == '?') return labelToken;
 				while(labelDetector.isWordPart((char)c)) c = scanner.read();
 				scanner.unread();
 				return labelToken;
 			
 			case HYPOTHESIS_SEPARATOR:
-				if(c == ',') currentStatus = HYPOTHESIS;
-				else currentStatus = APPLIED_STATEMENT;
+				if(c == ',') currentStatus = Status.HYPOTHESIS;
+				else currentStatus = Status.APPLIED_STATEMENT;
 				if(c == ':' || c == ',') return keywordToken;
 				return TOKEN_ERROR;
 
 			case APPLIED_STATEMENT:
-				currentStatus = RESULTING_FORMULA;
+				currentStatus = Status.RESULTING_FORMULA;
 				while(labelDetector.isWordPart((char)c)) c = scanner.read();
 				scanner.unread();
 				return labelToken;

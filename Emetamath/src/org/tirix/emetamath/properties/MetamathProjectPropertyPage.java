@@ -1,5 +1,6 @@
 package org.tirix.emetamath.properties;
 
+import java.util.Hashtable;
 import java.util.Map;
 
 import mmj.lang.Cnst;
@@ -14,6 +15,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.QualifiedName;
+import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.preference.FileFieldEditor;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.swt.SWT;
@@ -51,16 +53,18 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 
 	private static final int TYPE_COLUMN = 0;
 	private static final int COLOR_COLUMN = 1;
-	private static final String PATH_TITLE = "Path:";
+//	private static final String PATH_TITLE = "Path:";
 	private static final String BASE_EXPLORER_URL_TITLE = "Web Explorer Base &URL:";
-	private static final String MAINFILE_TITLE = "Main File:";
+//	private static final String MAINFILE_TITLE = "Main File:";
+	private static final String AUTO_TRANSFORM_TITLE = "Enable Auto Transformations:";
 
-	private static final int TEXT_FIELD_WIDTH = 50;
+//	private static final int TEXT_FIELD_WIDTH = 50;
 
 	private Text baseExplorerUrlText;
 	private Table otherTypesTable;
 	private Text provableTypeText;
 	private Text mainFileText;
+	private Button autoTransformCheckbox;
 
 	/**
 	 * Constructor for SamplePropertyPage.
@@ -84,31 +88,31 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		data.grabExcessHorizontalSpace = true;
 		composite.setLayoutData(data);
 
-		addFirstSection(composite);
-		addSeparator(composite);
+//		addFirstSection(composite);
+//		addSeparator(composite);
 		addSecondSection(composite);
 		return composite;
 	}
 
-	private void addFirstSection(Composite parent) {
-		Composite composite = createDefaultComposite(parent);
-
-		//Label for path field
-		Label pathLabel = new Label(composite, SWT.NONE);
-		pathLabel.setText(PATH_TITLE);
-
-		// Path text field
-		Text pathValueText = new Text(composite, SWT.WRAP | SWT.READ_ONLY);
-		pathValueText.setText(((IResource) getElement()).getFullPath().toString());
-	}
-
-	private void addSeparator(Composite parent) {
-		Label separator = new Label(parent, SWT.SEPARATOR | SWT.HORIZONTAL);
-		GridData gridData = new GridData();
-		gridData.horizontalAlignment = GridData.FILL;
-		gridData.grabExcessHorizontalSpace = true;
-		separator.setLayoutData(gridData);
-	}
+//	private void addFirstSection(Composite parent) {
+//		Composite composite = createDefaultComposite(parent);
+//
+//		//Label for path field
+//		Label pathLabel = new Label(composite, SWT.NONE);
+//		pathLabel.setText(PATH_TITLE);
+//
+//		// Path text field
+//		Text pathValueText = new Text(composite, SWT.WRAP | SWT.READ_ONLY);
+//		pathValueText.setText(((IResource) getElement()).getFullPath().toString());
+//	}
+//
+//	private void addSeparator(Composite parent) {
+//		Label separator = new Label(parent, SWT.SEPARATOR | SWT.HORIZONTAL);
+//		GridData gridData = new GridData();
+//		gridData.horizontalAlignment = GridData.FILL;
+//		gridData.grabExcessHorizontalSpace = true;
+//		separator.setLayoutData(gridData);
+//	}
 
 	private void addSecondSection(Composite parent) {
 		//Composite composite = createDefaultComposite(parent);
@@ -158,11 +162,16 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		//////////////
 		// Other types and their colors
 		Label otherTypesLabel = new Label(composite, SWT.NONE);
+		GridData gridData2 = new GridData();
+		gridData2.verticalSpan = 2;
 		otherTypesLabel.setText("Other Types:");
+		otherTypesLabel.setLayoutData(gridData2);
+		GridData gridData = new GridData(GridData.FILL_BOTH);
+		gridData.verticalSpan = 2;
 		otherTypesTable = new Table(composite, SWT.SINGLE | SWT.BORDER);
 		otherTypesTable.setHeaderVisible(true);
 		otherTypesTable.setLinesVisible(true);
-		otherTypesTable.setLayoutData(new GridData(GridData.FILL_BOTH));
+		otherTypesTable.setLayoutData(gridData);
 	    TableColumn typeColumn = new TableColumn(otherTypesTable, SWT.CENTER);
 	    typeColumn.setText("Type");
 	    typeColumn.pack();
@@ -173,8 +182,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		addTableEditor(otherTypesTable);
 
 	    //otherTypesTable.setText(getNature().getProvableType());
-		// TODO spawn over 2 columns ?
-		new Label(composite, SWT.NONE).setEnabled(false);
+		createAddRemoveTypeButtons(composite);
 
 		//////////////
 		// Base explorer URL field
@@ -183,28 +191,45 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		baseExplorerUrlText = new Text(composite, SWT.SINGLE | SWT.BORDER);
 		baseExplorerUrlText.setLayoutData(gd);
 		baseExplorerUrlText.setText(getNature().getWebExplorerURL());
+		new Label(composite, SWT.NONE).setEnabled(false);
 
+		//////////////
+		// Auto Transformations
+		Label autoTransformLabel = new Label(composite, SWT.NONE);
+		autoTransformLabel.setText(AUTO_TRANSFORM_TITLE);
+		autoTransformCheckbox = new Button(composite, SWT.CHECK);
+		autoTransformCheckbox.setText("");
+		autoTransformCheckbox.setEnabled(true);
+		autoTransformCheckbox.setGrayed(false);
+		try {
+			autoTransformCheckbox.setSelection(getNature().isAutoTransformationsEnabled());
+		} catch (CoreException e) { }
+		
 	}
 
 	private void fillTypesTable(Table table, Map<Cnst, RGB> typeColors) {
 		table.setItemCount(typeColors.size()+1);
 		table.removeAll();
 		for(Cnst type:typeColors.keySet()) {
-			Color color = new Color(table.getDisplay(), typeColors.get(type));
-			TableItem item = new TableItem(table, SWT.NONE);
-			item.setText(TYPE_COLUMN, type.getId());
-//			Button button = new Button(table, SWT.PUSH);
-//			button.computeSize(SWT.DEFAULT, table.getItemHeight());
-//			button.setBackground(color);
-			item.setBackground(COLOR_COLUMN, color);
-//			TableEditor editor = new TableEditor(otherTypesTable);
-//			editor.grabHorizontal = true;
-//			editor.minimumHeight = button.getSize().y;
-//			editor.minimumWidth = button.getSize().x;
-//			editor.setEditor(button, item, 1);
+			createTypeTableItem(table, type.getId(), typeColors.get(type));
 		}
 	}
 
+	private void createTypeTableItem(Table table, String symbol, RGB rgb) {
+		Color color = new Color(table.getDisplay(), rgb);
+		TableItem item = new TableItem(otherTypesTable, SWT.NONE);
+		item.setText(TYPE_COLUMN, symbol);
+		//Button button = new Button(table, SWT.PUSH);
+		//button.computeSize(SWT.DEFAULT, table.getItemHeight());
+		//button.setBackground(color);
+		item.setBackground(COLOR_COLUMN, color);
+//		TableEditor editor = new TableEditor(otherTypesTable);
+//		editor.grabHorizontal = true;
+//		editor.minimumHeight = button.getSize().y;
+//		editor.minimumWidth = button.getSize().x;
+//		editor.setEditor(button, item, 1);
+	}
+	
 	private void addTableEditor(final Table table) {
 		// Create an editor object to use for text editing
 		final TableEditor editor = new TableEditor(table);
@@ -281,10 +306,6 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		});
 	}
 
-	private Map<Cnst, RGB> extractTypeColors() {
-		return null;
-	}
-	
 	/**
 	 * @param composite
 	 */
@@ -312,24 +333,76 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		});
 	}
 
-	private Composite createDefaultComposite(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NULL);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 2;
-		composite.setLayout(layout);
-
-		GridData data = new GridData();
-		data.verticalAlignment = GridData.FILL;
-		data.horizontalAlignment = GridData.FILL;
-		composite.setLayoutData(data);
-
-		return composite;
+	/**
+	 * @param composite
+	 */
+	private void createAddRemoveTypeButtons(Composite composite) {
+		Button addButton = new Button(composite, SWT.PUSH);
+		addButton.setText("Add...");
+		addButton.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				InputDialog dialog = new InputDialog(getShell(), "Add type", "Input new type symbol", "", null);
+				if (dialog.open() == ContainerSelectionDialog.OK) {
+					int itemCount = otherTypesTable.getItemCount();
+					String newTypeSymbol = dialog.getValue();
+					createTypeTableItem(otherTypesTable, newTypeSymbol, new RGB(0, 0, 0) );
+					otherTypesTable.setItemCount(itemCount+1);
+					otherTypesTable.pack(true);
+					otherTypesTable.getParent().layout(true);
+				}
+			}
+		});
+		Button removeButton = new Button(composite, SWT.PUSH);
+		removeButton.setText("Remove");
+		removeButton.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				if(otherTypesTable.getSelectionCount() > 0) otherTypesTable.remove(otherTypesTable.getSelectionIndex());
+				removeButton.setEnabled(false);
+			}
+		});
+		removeButton.setEnabled(false);
+		otherTypesTable.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				removeButton.setEnabled(otherTypesTable.getSelectionCount() > 0);
+			}
+		});
 	}
 
+
+//	private Composite createDefaultComposite(Composite parent) {
+//		Composite composite = new Composite(parent, SWT.NULL);
+//		GridLayout layout = new GridLayout();
+//		layout.numColumns = 2;
+//		composite.setLayout(layout);
+//
+//		GridData data = new GridData();
+//		data.verticalAlignment = GridData.FILL;
+//		data.horizontalAlignment = GridData.FILL;
+//		composite.setLayoutData(data);
+//
+//		return composite;
+//	}
+//
+	
+	private Map<Cnst,RGB> getTypeColors() {
+		Hashtable<Cnst, RGB> typeColors = new Hashtable<Cnst, RGB>();
+		for(int i=0;i<otherTypesTable.getItemCount();i++) {
+			TableItem item = otherTypesTable.getItem(i);
+			String typeSymbol = item.getText(TYPE_COLUMN);
+			Cnst type = (Cnst)getNature().getLogicalSystem().getSymTbl().get(typeSymbol);
+			RGB color = item.getBackground(COLOR_COLUMN).getRGB();
+			typeColors.put(type, color);
+		}
+		return typeColors;
+	}
+	
 	protected void performDefaults() {
 		// Populate the explorer URL text field with the default value
 		baseExplorerUrlText.setText(MetamathProjectNature.EXPLORER_BASE_URL_DEFAULT_VALUE);
 		provableTypeText.setText(MetamathProjectNature.PROVABLE_TYPE_DEFAULT_VALUE);
+		autoTransformCheckbox.setSelection(MetamathProjectNature.AUTO_TRANSFORMATIONS_ENABLED_DEFAULT_VALUE);
+		fillTypesTable(otherTypesTable, getNature().getDefaultTypeColors());
 	}
 
 	public boolean performOk() {
@@ -345,7 +418,9 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		try {
 			getNature().setWebExplorerURL(baseExplorerUrlText.getText());
 			getNature().setProvableType((Cnst)(getNature().getMObj(provableTypeText.getText())));
+			getNature().setTypeColors(getTypeColors());
 			getNature().setMainFile(newMainFile);
+			getNature().setAutoTransformationsEnabled(autoTransformCheckbox.getSelection());
 		} catch (CoreException e) {
 			// TODO display error message
 			return false;

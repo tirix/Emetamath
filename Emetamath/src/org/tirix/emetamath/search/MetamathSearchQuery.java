@@ -6,6 +6,7 @@ package org.tirix.emetamath.search;
 import java.util.Map;
 
 import mmj.lang.MObj;
+import mmj.lang.ParseTree.RPNStep;
 import mmj.lang.Stmt;
 import mmj.lang.Sym;
 import mmj.lang.Theorem;
@@ -100,8 +101,8 @@ public class MetamathSearchQuery implements ISearchQuery {
 			stmtLoop:
 			for(Stmt stmt:stmtTbl.values()) {
 				if(stmt instanceof Theorem) {
-					for(Stmt proofStep:((Theorem)stmt).getProof()) {
-						if(proofStep != null && proofStep.equals(obj)) {
+					for(RPNStep proofStep:((Theorem)stmt).getProof()) {
+						if(proofStep != null && obj.equals(proofStep.stmt)) {
 							result.addMatch(new MetamathMatch(stmt)); 
 							if(count++ == max) break stmtLoop;
 						}

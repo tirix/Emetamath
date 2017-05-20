@@ -5,7 +5,6 @@ import java.net.URL;
 import org.eclipse.jface.internal.text.html.HTMLPrinter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.FontData;
-import org.tirix.emetamath.Activator;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 
 import mmj.lang.Assrt;
@@ -14,9 +13,8 @@ import mmj.lang.LogHyp;
 import mmj.lang.MObj;
 import mmj.lang.Stmt;
 import mmj.lang.Sym;
-import mmj.lang.Theorem;
-import mmj.lang.VarHyp;
 
+@SuppressWarnings("restriction")
 public class MMHTMLPrinter {
 	public static String printMObj(MetamathProjectNature nature, MObj mobj) {
 		StringBuffer buffer = new StringBuffer();
@@ -39,7 +37,7 @@ public class MMHTMLPrinter {
 		}
 		if(mobj instanceof Stmt) {
 			// append formula
-			buffer.append(((Stmt)mobj).getTyp()+" ");
+			buffer.append(nature.getLabelProvider().getHTMLText(((Stmt)mobj).getTyp())+" ");
 			addFormula(buffer, nature, ((Stmt)mobj).getFormula());
 		}
 		buffer.append("</span><span style=\"font-size: 8 pt;\">");

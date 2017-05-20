@@ -2,10 +2,14 @@ package org.tirix.emetamath.editors.proofassistant;
 
 
 
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentPartitioner;
 import org.eclipse.jface.text.rules.FastPartitioner;
+import org.eclipse.jface.text.source.IAnnotationModel;
+import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.editors.text.FileDocumentProvider;
 import org.eclipse.ui.part.FileEditorInput;
 import org.tirix.emetamath.nature.MetamathProjectNature;
@@ -23,6 +27,7 @@ public class ProofFileDocumentProvider extends FileDocumentProvider {
 	 * @param element the blue-print element
 	 * @param document the document to set up
 	 */
+	@Override
 	protected void setupDocument(Object element, IDocument document) {
 		try {
 			if(element instanceof FileEditorInput) {
@@ -55,7 +60,22 @@ public class ProofFileDocumentProvider extends FileDocumentProvider {
 						});
 			partitioner.connect(document);
 			document.setDocumentPartitioner(partitioner);
+			
+			IResource resource = ((IFileEditorInput)element).getFile();
+			IMarker marker = resource.createMarker("org.tirix.emetamath.unusedStep.down");
+			marker.setAttribute(IMarker.LINE_NUMBER, 1);
 		}
 		return document;
 	}
+	
+//	@Override
+//	protected IAnnotationModel createAnnotationModel(Object element) throws CoreException {
+//		FileInfo info= (FileInfo) getElementInfo(element);
+//		if(info != null && element instanceof IFileEditorInput) {
+//			ProofDocument document = (ProofDocument)info.fDocument;
+//			IResource resource = ((IFileEditorInput)element).getFile();
+//			return new ProofAnnotationModel(resource, document);
+//		}
+//		return super.createAnnotationModel(element);
+//	}
 }

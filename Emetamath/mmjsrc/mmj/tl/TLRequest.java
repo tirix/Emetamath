@@ -7,49 +7,39 @@
 //*4567890123456 (71-character line to adjust editor window) 23456789*/
 
 /*
- *  TLRequest.java  0.01 08/01/2008
+ * TLRequest.java  0.01 08/01/2008
  *
- *  Version 0.01:
- *  ==> New.
+ * Version 0.01:
+ * ==> New.
  */
 
 package mmj.tl;
+
 import mmj.lang.LogicalSystem;
 import mmj.lang.MessageHandler;
-import mmj.lang.TheoremLoaderException;
+import mmj.lang.Messages;
 import mmj.pa.ProofAsst;
 import mmj.pa.ProofWorksheet;
 
 /**
- *  Implements a user request for a TheoremLoader operation
- *  on a ProofWorksheet.
- *  <p>
+ * Implements a user request for a TheoremLoader operation on a ProofWorksheet.
+ * <p>
  */
-public abstract class TLRequest {
+public interface TLRequest {
 
     /**
-     *  Constructor for TLRequest
+     * Implements a user request for a TheoremLoader operation on a
+     * ProofWorksheet.
+     *
+     * @param theoremLoader TheoremLoader object.
+     * @param proofWorksheet ProofWorksheet object.
+     * @param logicalSystem LogicalSystem object.
+     * @param messageHandler MessageHandler object.
+     * @param proofAsst ProofAsst object.
+     * @throws TheoremLoaderException if there are any data errors encountered
+     *             while performing the requested function.
      */
-    public TLRequest() {
-    }
-
-    /**
-     *  Implements a user request for a TheoremLoader operation
-     *  on a ProofWorksheet.
-     *  <p>
-     *  @param theoremLoader TheoremLoader object.
-     *  @param proofWorksheet ProofWorksheet object.
-     *  @param logicalSystem LogicalSystem object.
-     *  @param messageHandler MessageHandler object.
-     *  @param proofAsst ProofAsst object.
-     *  @throws TheoremLoaderException if there are any data errors
-     *         encountered while performing the requested function.
-     */
-    public abstract void doIt(TheoremLoader  theoremLoader,
-                              ProofWorksheet proofWorksheet,
-                              LogicalSystem  logicalSystem,
-                              MessageHandler messageHandler,
-                              ProofAsst      proofAsst)
-                                    throws TheoremLoaderException;
+    void doIt(TheoremLoader theoremLoader, ProofWorksheet proofWorksheet,
+        LogicalSystem logicalSystem, MessageHandler messageHandler, ProofAsst proofAsst)
+            throws TheoremLoaderException;
 }
-

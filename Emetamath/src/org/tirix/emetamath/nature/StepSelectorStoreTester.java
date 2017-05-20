@@ -11,7 +11,7 @@ public class StepSelectorStoreTester extends PropertyTester {
 			Object expectedValue) {
 		StepSelectorStore store = (StepSelectorStore)receiver;
 		if(store == null) return false;
-		if(property.equals("hasMoreItems")) return store.hasMore();
+		if(property.equals("hasMoreItems")) return store.isFull();
 		return false;
 	}
 }

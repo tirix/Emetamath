@@ -128,25 +128,30 @@ public class ProofWorksheetDocumentProvider extends StorageDocumentProvider {
 	}
 
 
-	/**
-	 * We provide a dummy annotation model...
-	 */
-	@Override
-	protected IAnnotationModel createAnnotationModel(Object element) {
-		return new AbstractMarkerAnnotationModel() {
-			@Override
-			protected void deleteMarkers(IMarker[] markers) throws CoreException { }
-
-			@Override
-			protected boolean isAcceptable(IMarker marker) { return false; }
-
-			@Override
-			protected void listenToMarkerChanges(boolean listen) { }
-
-			@Override
-			protected IMarker[] retrieveMarkers() throws CoreException { return null; }
-			};
-	}
+//	@Override
+//	protected IAnnotationModel createAnnotationModel(Object element) {
+//		StorageInfo info= (StorageInfo) getElementInfo(element);
+//		if(info != null) {
+//			ProofDocument document = (ProofDocument)info.fDocument;
+//			return new ProofAnnotationModel(null, document);
+//		}
+//		/**
+//		 * We provide a dummy annotation model...
+//		 */
+//		return new AbstractMarkerAnnotationModel() {
+//			@Override
+//			protected void deleteMarkers(IMarker[] markers) throws CoreException { }
+//
+//			@Override
+//			protected boolean isAcceptable(IMarker marker) { return false; }
+//
+//			@Override
+//			protected void listenToMarkerChanges(boolean listen) { }
+//
+//			@Override
+//			protected IMarker[] retrieveMarkers() throws CoreException { return null; }
+//			};
+//	}
 	
 	public static class ProofWorksheetInput implements IStorageEditorInput {
 	      private ProofWorksheetStorage storage;

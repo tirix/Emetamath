@@ -1,27 +1,12 @@
 package org.tirix.emetamath.nature;
 
-import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import mmj.lang.LogicalSystem;
-import mmj.lang.MessageHandler;
-import mmj.lang.ParseTree;
-import mmj.lang.Stmt;
-import mmj.lang.VerifyException;
-import mmj.mmio.IncludeFile;
-import mmj.mmio.MMIOException;
-import mmj.util.Progress;
-import mmj.util.UtilConstants;
-import mmj.verify.Grammar;
 
 import org.eclipse.core.resources.ICommand;
 import org.eclipse.core.resources.IFile;
@@ -33,7 +18,22 @@ import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.SubMonitor;
 import org.tirix.emetamath.nature.MetamathProjectNature.MetamathMessageHandler;
+import org.tirix.emetamath.nature.MetamathProjectNature.ResourceSource;
+
+import mmj.lang.LogicalSystem;
+import mmj.lang.MessageHandler;
+import mmj.lang.ParseTree;
+import mmj.lang.ParseTree.RPNStep;
+import mmj.lang.Stmt;
+import mmj.mmio.MMIOException;
+import mmj.mmio.Source;
+import mmj.util.Progress;
+import mmj.util.UtilConstants;
+import mmj.verify.Grammar;
+import mmj.verify.VerifyException;
+import mmj.verify.VerifyProofs;
 
 /**
  * Makes use of Mel'O Cat's MMJ library to load, parse and verify a metamath file. 
@@ -71,7 +71,7 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 		//Associate builder with project.
 		ICommand newCmd = description.newCommand();
 		newCmd.setBuilderName(BUILDER_ID);
-		List newCmds = new ArrayList();
+		List<ICommand> newCmds = new ArrayList<ICommand>();
 		newCmds.addAll(Arrays.asList(cmds));
 		newCmds.add(newCmd);
 		description.setBuildSpec(
@@ -115,7 +115,7 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 			return;
 		
 		//Remove builder with project.
-		List newCmds = new ArrayList();
+		List<ICommand> newCmds = new ArrayList<ICommand>();
 		newCmds.addAll(Arrays.asList(cmds));
 		newCmds.remove(index);
 		description.setBuildSpec(
@@ -133,7 +133,8 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 	 * @see org.eclipse.core.internal.events.InternalBuilder#build(int,
 	 *      java.util.Map, org.eclipse.core.runtime.IProgressMonitor)
 	 */
-	protected IProject[] build(int kind, Map args, IProgressMonitor monitor)
+	@Override
+	protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor)
 			throws CoreException {
 		
 		MetamathProjectNature nature = (MetamathProjectNature)getProject().getNature(MetamathProjectNature.NATURE_ID);
@@ -161,8 +162,8 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 		// delete all project markers
 		nature.getProject().deleteMarkers(MetamathProjectNature.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
 		// empty logical system, in order not to have duplicate symbols
-		nature.clearLogicalSystem(null, new MetamathMessageHandler(nature.getProject()));
-		buildMetamath(nature, nature.getMainFile(), monitor);
+		nature.clearLogicalSystem(nature.getMainFile(), 0, nature.getMessageHandler());
+		buildMetamath(nature, nature.getMainFile(), 0, monitor);
 	}
 
 	/**
@@ -173,6 +174,10 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 	 */
 	protected void incrementalBuild(IResourceDelta delta, final MetamathProjectNature nature, 
 			final IProgressMonitor monitor) throws CoreException {
+
+		// Start with an empty build list
+		nature.dependencies.clearBuildList();
+		
 		// the visitor does the work.
 		//delta.accept(new MmDeltaVisitor(nature, monitor));
 		delta.accept(new IResourceDeltaVisitor() {
@@ -184,17 +189,15 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 				// if a MMP file was changed, do nothing 
 				if(delta.getResource().getFileExtension().equals("mmp")) return true;
 				
-				// if a MM file was changed, do a full build and stop.
+				// if a MM file was changed, mark it for building, taking dependencies into account.
 				if(delta.getResource().getFileExtension().equals("mm")) { 
-					// TODO for now, always do full build...
-					System.out.println("Triggering full build because of "+delta+" "+delta.getKind());
-					fullBuild(nature, monitor); 
+					System.out.println("Register change: "+delta+" "+delta.getKind());
+					nature.dependencies.addChange(delta.getResource(), 0);
 					return false; 
 				}
 
 				// if an XML typesetting file was changed, parse it again.
 				if(delta.getResource().getName().equals("typesetting.xml")) { 
-					// TODO for now, always do full build...
 					System.out.println("Reloading Typesetting because of "+delta+" "+delta.getKind());
 					loadTypesetting(nature, (IFile)delta.getResource(), monitor);
 					return false; 
@@ -202,8 +205,34 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 				return false;
 			}
 		});
+
+		// do a partial build based on information accumulated in nature.dependencies 
+		partialBuild(nature, monitor);
 	}
 
+	/**
+	 * Perform a partial build of only the listed resources
+	 * @throws CoreException 
+	 */
+	protected void partialBuild(MetamathProjectNature nature, IProgressMonitor monitor) throws CoreException {
+		// delete all project markers
+		for(IResource r:nature.dependencies.getBuildList().keySet()) r.deleteMarkers(MetamathProjectNature.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
+		
+		IResource target = nature.dependencies.getTopBuildFile();
+		long offset = nature.dependencies.getTopBuildFileOffset();
+		if(target == null) {
+			System.out.println("Partial build: Nothing to be built!");
+			return;
+		}
+		System.out.println("Would do Partial build: start from "+target+" @ "+offset);
+		
+		// TODO here we do a full build anyway...
+		System.out.println("Full build");
+		
+		// empty logical system, in order not to have duplicate symbols
+		nature.clearLogicalSystem(target, offset, nature.getMessageHandler()); // here a new MessageHandler was created...
+		buildMetamath(nature, target, offset, monitor);
+	}
 
 	private void loadTypesetting(MetamathProjectNature nature, IFile typeSettingFile, IProgressMonitor monitor) {
 		try {
@@ -265,21 +294,35 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 //		}
 //	}
 
-	static void buildMetamath(MetamathProjectNature nature, IResource resource, IProgressMonitor monitor) {
+	static void buildMetamath(MetamathProjectNature nature, IResource resource, long offset, IProgressMonitor monitor) {
 		if (resource instanceof IFile && resource.getName().endsWith(".mm")) {
 			IFile file = (IFile) resource;
+			// TODO why don't we use the MessageHandler from the ProjectNature ?
 			MetamathMessageHandler messageHandler = new MetamathMessageHandler(file);
 			messageHandler.clearMessages(file);
 			try {
+				SubMonitor progress = SubMonitor.convert(monitor, 100);
+				ResourceSource source = new ResourceSource(file, nature.getProject());
 				// TODO get nature from file.getProject().getNature()?
-				doLoadFile(file, nature, messageHandler, monitor);
-				nature.initializeGrammar(messageHandler);
-				doParse(file, nature, messageHandler);
+				doLoadFile(source, nature, messageHandler, progress.newChild(30));
+				doInitGrammar(nature, messageHandler, progress.newChild(10));
+				doParse(source, nature, messageHandler, progress.newChild(30));
+				doVerifyProof(nature, messageHandler, progress.newChild(30));
 			} catch (Exception e) {
 				e.printStackTrace();
+			} finally {
+				monitor.done();
 			}
 		}
 	}
+
+	private static void doInitGrammar(MetamathProjectNature nature, MetamathMessageHandler messageHandler,
+				IProgressMonitor monitor) {
+		monitor.beginTask("Initializing Metamath Grammar", 100);
+		nature.initializeGrammar(messageHandler);
+		monitor.worked(100);
+		monitor.done();
+		}
 
 	/**
 	 *  Execute the LoadFile command:
@@ -300,33 +343,33 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 	 *  @param runParm RunParmFile line.
 	 * @param nature TODO
 	 */
-	public static void doLoadFile(IFile file, MetamathProjectNature nature, MessageHandler messageHandler, IProgressMonitor monitor)
+	public static void doLoadFile(ResourceSource source, MetamathProjectNature nature, MessageHandler messageHandler, IProgressMonitor monitor)
 	                    throws IllegalArgumentException,
 	                           MMIOException,
 	                           FileNotFoundException,
 	                           IOException {
 	
 		// selectively clear the logical system for this file
-		nature.clearLogicalSystem(file, messageHandler);
+		nature.clearLogicalSystem(source.resource, 0, messageHandler);
 
-	    LoadProgressMonitor loadProgress = new LoadProgressMonitor("Loading System", monitor);
-	    loadProgress.addTask(file.getLocation().toFile().length());
+	    MMProgressMonitor loadProgress = new MMProgressMonitor("Loading Metamath Project", monitor);
 	    
-	    nature.systemizer.setLimitLoadEndpointStmtNbr(
-	            nature.loadEndpointStmtNbrParm);
-	    nature.systemizer.setLimitLoadEndpointStmtLabel(
-	            nature.loadEndpointStmtLabelParm);
-	    nature.systemizer.setLoadComments(nature.loadComments);
-	    nature.systemizer.setLoadProofs(nature.loadProofs);
+	    nature.systemizer.init(
+	    		nature.messageHandler,
+	    		nature.logicalSystem,
+	    		nature.loadEndpointStmtNbrParm, 
+	    		nature.loadEndpointStmtLabelParm, 
+	    		nature.loadComments, 
+	    		nature.loadProofs);
 	    nature.systemizer.setLoadProgress(loadProgress);
 	    
-	    IncludeFile.setReaderProvider(nature.readerProvider);
-	    
 	    try {
-			nature.systemizer.load(new InputStreamReader(file.getContents()), file);
-		} catch (CoreException e) {
+			nature.systemizer.load(source);
+		} catch (MMIOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			monitor.done();
 		}
 	
 	    nature.setLogicalSystemLoaded();
@@ -338,20 +381,23 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
      *
      *  @param runParm RunParmFile line.
      */
-    public static void doParse(IFile file, MetamathProjectNature nature, MessageHandler messageHandler)
+    public static void doParse(Source source, MetamathProjectNature nature, MessageHandler messageHandler, IProgressMonitor monitor)
                         throws IllegalArgumentException,
                                IOException,
                                VerifyException {
 
         LogicalSystem logicalSystem = nature.getLogicalSystem();
 
+	    MMProgressMonitor parseProgress = new MMProgressMonitor("Parsing Metamath Project", monitor);
+        
         Grammar grammar = nature.getGrammar();
-
-        if (true) {
+        boolean parseAll = true;
+        if (parseAll) {
             grammar.parseAllFormulas(
                 messageHandler,
                 logicalSystem.getSymTbl(),
-                logicalSystem.getStmtTbl());
+                logicalSystem.getStmtTbl(),
+                parseProgress);
             nature.allStatementsParsedSuccessfully = true;
         }
         else {
@@ -362,46 +408,66 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
                                      logicalSystem.getStmtTbl(),
                                      stmt);
             if (parseTree != null) {
-                Stmt[] exprRPN    =
-                    parseTree.convertToRPN();
-                StringBuffer sb = new StringBuffer();
-                sb.append(
-                    UtilConstants.ERRMSG_PARSE_RPN_1);
-                sb.append(stmt.getLabel());
-                sb.append(
-                    UtilConstants.ERRMSG_PARSE_RPN_2);
-                for (int i = 0; i < exprRPN.length; i++) {
-                    sb.append(exprRPN[i].getLabel());
-                    sb.append(" ");
-                }
-                messageHandler.accumInfoMessage(stmt.getPosition(), sb.toString());
+                final RPNStep[] exprRPN = parseTree.convertToRPN();
+                final StringBuilder sb = new StringBuilder();
+                for (final RPNStep element : exprRPN)
+                    sb.append(element).append(" ");
+                messageHandler.accumMessage(UtilConstants.ERRMSG_PARSE_RPN, stmt, sb);
             }
         }
 
         logicalSystem.setSyntaxVerifier(grammar);
     }
 
-    protected static class LoadProgressMonitor implements Progress {
+    /**
+     * Executes the VerifyProof command, prints any messages, etc.
+     */
+    public static void doVerifyProof(MetamathProjectNature nature, MessageHandler messageHandler, IProgressMonitor monitor) {
+        final LogicalSystem logicalSystem = nature.getLogicalSystem();
+        final VerifyProofs verifyProofs = nature.getVerifyProofs();
+
+	    MMProgressMonitor verifyProgress = new MMProgressMonitor("Verifying Metamath Proofs", monitor);
+
+        verifyProofs.setVerifyProgress(verifyProgress);
+        verifyProofs.verifyAllProofs(messageHandler, logicalSystem.getStmtTbl());
+
+        logicalSystem.setProofVerifier(verifyProofs);
+    }
+
+    /**
+     * Executes the VerifyParse command, prints any messages, etc.
+     */
+    public static void doVerifyParse(MetamathProjectNature nature, MessageHandler messageHandler) {
+        final LogicalSystem logicalSystem = nature.getLogicalSystem();
+        final VerifyProofs verifyProofs = nature.getVerifyProofs();
+        
+        verifyProofs.verifyAllExprRPNAsProofs(messageHandler,
+            logicalSystem.getStmtTbl());
+        
+        logicalSystem.setProofVerifier(verifyProofs);
+    }
+
+    public static class MMProgressMonitor implements Progress {
 		long workDone = 0;
-		long workRemaining;
+		long workRemaining = 0;
 		private IProgressMonitor monitor;
 		private final int TOTAL_WORK = 1000;
 		
-		public LoadProgressMonitor(String taskName, IProgressMonitor monitor) {
+		public MMProgressMonitor(String taskName, IProgressMonitor monitor) {
 			this.monitor = monitor;
 			monitor.beginTask(taskName, TOTAL_WORK);
 		}
 
 		@Override
 		public void addTask(long work) {
-			workRemaining += work - workDone;
-			workDone = 0;
+			workRemaining += work;
 		}
 
 		@Override
 		public void worked(long work) {
 			workDone += work;
 			monitor.worked((int)(work * TOTAL_WORK / workRemaining));
+			if(monitor.isCanceled()) throw new RuntimeException(new InterruptedException("Cancelled by user"));
 		}
 	}
 }

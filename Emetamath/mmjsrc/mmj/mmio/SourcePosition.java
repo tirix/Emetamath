@@ -1,30 +1,22 @@
 package mmj.mmio;
 
 import java.io.IOException;
+import java.io.LineNumberReader;
 import java.io.Reader;
-
-import mmj.mmio.IncludeFile.ReaderProvider;
 
 /**
  * Used to store a position in the Metamath source files.
  */
 public class SourcePosition {
 
-    public Object sourceId		  = null;
-	public int lineNbr           = -1;
-    public int columnNbr         = -1;
-    public int charStartNbr      = -1;
-    public int charEndNbr        = -1;
+    final public Source source;
+    final public int lineNbr;
+    final public int columnNbr;
+    final public int charStartNbr;
+    final public int charEndNbr;
 
-    public int symbolNbr		 = -1;
+    public int symbolNbr = -1;
     
-    /**
-     * Default contructor
-     */
-    public SourcePosition() {
-    	
-    }
-
     /**
      * Contructor, <code>SourcePosition</code> with
      * file name, line number, column number.
@@ -35,12 +27,12 @@ public class SourcePosition {
      * @param   charStartNbr  character number of the first character
      * @param   charEndNbr    character number of the last character
      */
-    public SourcePosition(Object  sourceId,
+    public SourcePosition(Source sourceId,
     		long    lineNbr,
     		long    columnNbr,
     		long    charStartNbr,
     		long    charEndNbr) {
-        this.sourceId			  = sourceId;
+        this.source			  = sourceId;
         this.lineNbr              = (int)lineNbr;
         this.columnNbr            = (int)columnNbr;
         this.charStartNbr         = (int)charStartNbr;
@@ -49,9 +41,29 @@ public class SourcePosition {
     
     /**
      * Contructor, <code>SourcePosition</code> with
-     * previous SourcePosition and symbol number inside the formula.
+     * file name, line number, column number.
      *
      * @param   sourceId      String identifying source
+     * @param   lineNbr       line number assigned
+     * @param   columnNbr     column number assigned
+     * @param	length		  length of the position
+     */
+    public SourcePosition(final Source sourceId,
+    		long    lineNbr,
+    		long    columnNbr,
+    		long    length) {
+        this.source			  = sourceId;
+        this.lineNbr              = (int)lineNbr;
+        this.columnNbr            = (int)columnNbr;
+        this.charStartNbr         = -1;
+        this.charEndNbr           = (int)length;
+    }
+    
+    /**
+     * Contructor, <code>SourcePosition</code> with
+     * previous SourcePosition and symbol number inside the formula.
+     *
+     * @param   source      String identifying source
      * @param   lineNbr       line number assigned
      * @param   columnNbr     column number assigned
      * @param   charStartNbr  character number of the first character
@@ -60,7 +72,7 @@ public class SourcePosition {
     public SourcePosition(
     		SourcePosition position,
     		int symbolNbr) {
-        this.sourceId			  = position.sourceId;
+        this.source			  = position.source;
         this.lineNbr              = position.lineNbr;
         this.columnNbr            = position.columnNbr;
         this.charStartNbr         = position.charStartNbr;
@@ -69,15 +81,21 @@ public class SourcePosition {
     }
     
     public int getLength() {
+    	if(charStartNbr == -1) return charEndNbr;
     	return charEndNbr - charStartNbr;
     }
     
-    public void refinePosition(ReaderProvider provider) {
-    	if(symbolNbr == -1) return;
+	/**
+	 * Some positions are given inside a formula, and the exact char numbers have not been stored.
+	 * The position therefore needs to be refined to find back the exact char numbers.
+	 */
+    public SourcePosition refinePosition() {
+    	if(symbolNbr == -1) return this;
     	try {
-			Reader reader = provider.createReader((provider.getFileName(sourceId)));
-			Tokenizer tokenizer = new Tokenizer(reader, sourceId, charStartNbr);
-			StringBuffer strBuf = new StringBuffer();
+			Tokenizer tokenizer = new Tokenizer(source, charStartNbr);
+			StringBuilder strBuf = new StringBuilder();
+			int charStartNbr = this.charStartNbr;
+			int charEndNbr = this.charEndNbr;
 			
 			// skip the 2 first tokens (label and $a, $e or $p keyword), plus the given number of symbols
 			for(int i=0;i<2+symbolNbr;i++) {
@@ -86,9 +104,46 @@ public class SourcePosition {
 			}
 			charStartNbr = (int)tokenizer.getLastCharNbr();
 			charEndNbr = (int)tokenizer.getCurrentCharNbr();
-		} catch (IOException e) {
-			; // ignore
+			tokenizer.close();
+			return new SourcePosition(source, lineNbr, -1, charStartNbr, charEndNbr);
+    	} catch (IOException e) {
+			return this; // ignore
+		} catch (MMIOException e) {
+			return this; // ignore
 		}
-		symbolNbr = -1;
     }
+
+    /**
+     * Compute the charNbr position when it is not known
+     * Hook for Prooftexts, which are usually small enough
+     * @return
+     */
+	public int getCharStartNbr() {
+		if(charStartNbr != -1) return charStartNbr;
+		try {
+			if(source.getSize() > 100000) return 0; // This is not intended for big files like set.mm...
+			LineNumberReader r = new LineNumberReader(source.createReader());
+			int charNbr = 0;
+			while(r.ready() && r.getLineNumber() < lineNbr - 1) charNbr += r.readLine().length() + 1;
+			charNbr += columnNbr - 1;
+			//System.out.println("Line "+lineNbr+" col "+columnNbr+" => "+charNbr+" charEnd="+charEndNbr);
+			return charNbr;
+		} catch(IOException e) {
+			return 0;
+		}
+	}
+
+	/**
+	 * Returns the position immediately afterwards this one
+	 * 
+	 * @return a new position object
+	 */
+	public SourcePosition after() {
+		return new SourcePosition(source, -1, -1, charStartNbr + charEndNbr, 0);
+	}
+	
+	@Override
+	public String toString() {
+		return "Position : "+source+" @ "+charStartNbr+" ~ "+charEndNbr+" line="+lineNbr+" col="+columnNbr+" ";
+	}
 }

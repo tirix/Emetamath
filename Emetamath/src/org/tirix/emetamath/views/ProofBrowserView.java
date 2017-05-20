@@ -12,7 +12,9 @@ import mmj.lang.Theorem;
 import mmj.pa.DerivationStep;
 import mmj.pa.ProofAsst;
 import mmj.pa.ProofStep;
+import mmj.pa.ProofStepStmt;
 import mmj.pa.ProofWorksheet;
+import mmj.verify.HypsOrder;
 
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
@@ -127,8 +129,7 @@ public class ProofBrowserView extends ViewPart implements IShowInTarget {
         ToolItem go = new ToolItem(toolbar, SWT.NONE);
         go.setImage(ImageResource.getImage(ImageResource.IMG_ELCL_NAV_GO));
         go.setHotImage(ImageResource.getImage(ImageResource.IMG_CLCL_NAV_GO));
-        go.setDisabledImage(ImageResource
-                .getImage(ImageResource.IMG_DLCL_NAV_GO));
+        go.setDisabledImage(ImageResource.getImage(ImageResource.IMG_DLCL_NAV_GO));
         go.setToolTipText(Messages.actionWebBrowserGo);
         go.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent event) {
@@ -144,12 +145,9 @@ public class ProofBrowserView extends ViewPart implements IShowInTarget {
 		  
         // create back and forward actions
         back = new ToolItem(toolbar, SWT.NONE);
-        back.setImage(ImageResource
-                .getImage(ImageResource.IMG_ELCL_NAV_BACKWARD));
-        back.setHotImage(ImageResource
-                .getImage(ImageResource.IMG_CLCL_NAV_BACKWARD));
-        back.setDisabledImage(ImageResource
-                .getImage(ImageResource.IMG_DLCL_NAV_BACKWARD));
+        back.setImage(ImageResource.getImage(ImageResource.IMG_ELCL_NAV_BACKWARD));
+        back.setHotImage(ImageResource.getImage(ImageResource.IMG_CLCL_NAV_BACKWARD));
+        back.setDisabledImage(ImageResource.getImage(ImageResource.IMG_DLCL_NAV_BACKWARD));
         back.setToolTipText(Messages.actionWebBrowserBack);
         back.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent event) {
@@ -158,12 +156,9 @@ public class ProofBrowserView extends ViewPart implements IShowInTarget {
         });
 
         forward = new ToolItem(toolbar, SWT.NONE);
-        forward.setImage(ImageResource
-                .getImage(ImageResource.IMG_ELCL_NAV_FORWARD));
-        forward.setHotImage(ImageResource
-                .getImage(ImageResource.IMG_CLCL_NAV_FORWARD));
-        forward.setDisabledImage(ImageResource
-                .getImage(ImageResource.IMG_DLCL_NAV_FORWARD));
+        forward.setImage(ImageResource.getImage(ImageResource.IMG_ELCL_NAV_FORWARD));
+        forward.setHotImage(ImageResource.getImage(ImageResource.IMG_CLCL_NAV_FORWARD));
+        forward.setDisabledImage(ImageResource.getImage(ImageResource.IMG_DLCL_NAV_FORWARD));
         forward.setToolTipText(Messages.actionWebBrowserForward);
         forward.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent event) {
@@ -172,12 +167,9 @@ public class ProofBrowserView extends ViewPart implements IShowInTarget {
         });
 
         ToolItem refresh = new ToolItem(toolbar, SWT.NONE);
-        refresh.setImage(ImageResource
-                .getImage(ImageResource.IMG_ELCL_NAV_REFRESH));
-        refresh.setHotImage(ImageResource
-                .getImage(ImageResource.IMG_CLCL_NAV_REFRESH));
-        refresh.setDisabledImage(ImageResource
-                .getImage(ImageResource.IMG_DLCL_NAV_REFRESH));
+        refresh.setImage(ImageResource.getImage(ImageResource.IMG_ELCL_NAV_REFRESH));
+        refresh.setHotImage(ImageResource.getImage(ImageResource.IMG_CLCL_NAV_REFRESH));
+        refresh.setDisabledImage(ImageResource.getImage(ImageResource.IMG_DLCL_NAV_REFRESH));
         refresh.setToolTipText(Messages.actionWebBrowserRefresh);
         refresh.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent event) {
@@ -245,7 +237,7 @@ public class ProofBrowserView extends ViewPart implements IShowInTarget {
 				TableItem item = table.getItem(pt);
 				if (item == null)
 					return;
-				ProofStep step = (ProofStep)item.getData();
+				ProofStepStmt step = (ProofStepStmt)item.getData();
 				if(item.getBounds(COL_REF).contains(pt)) {
 					show(nature, step.getRef(), true);
 					};
@@ -339,7 +331,7 @@ public class ProofBrowserView extends ViewPart implements IShowInTarget {
 		ProofWorksheet w =
             proofAsst.getExistingProof(theorem,
                                    true,	//proofUnified
-                                   false);	//hypsRandomized
+                                   HypsOrder.Randomized);
 		viewer.setInput(w.getProofWorkStmtList());
     }
 
@@ -389,8 +381,8 @@ public class ProofBrowserView extends ViewPart implements IShowInTarget {
 
 		@Override
 		public Object[] getElements(Object input) {
-			ArrayList<ProofStep> list = new ArrayList<ProofStep>();
-			for(Object element:(List<?>)input) if(element instanceof ProofStep) list.add((ProofStep)element);
+			ArrayList<ProofStepStmt> list = new ArrayList<ProofStepStmt>();
+			for(Object element:(List<?>)input) if(element instanceof ProofStepStmt) list.add((ProofStepStmt)element);
 			return list.toArray();
 		}
 
@@ -415,13 +407,13 @@ public class ProofBrowserView extends ViewPart implements IShowInTarget {
 
 		@Override
 		public Image getColumnImage(Object element, int columnIndex) {
-			ProofStep step = (ProofStep)element;
+			ProofStepStmt step = (ProofStepStmt)element;
 			step.setRef((Stmt)nature.getMObj(step.getRefLabel()));
 			switch(columnIndex) {
 			case COL_STEP:
 				if("qed".equals(step.getStepName())) return nature.getLabelProvider().getStepLastImage();
-				if(step.isHypothesisStep()) return nature.getLabelProvider().getStepHypImage();
-				if(step.isDerivationStep()) return nature.getLabelProvider().getStepItemImage();
+				if(ProofStep.isHypothesisStep(step)) return nature.getLabelProvider().getStepHypImage();
+				if(ProofStep.isDerivationStep(step)) return nature.getLabelProvider().getStepItemImage();
 				return null; // should not happen anyway
 			case COL_REF:
 				return nature.getLabelProvider().getImage(step.getRef());
@@ -432,13 +424,13 @@ public class ProofBrowserView extends ViewPart implements IShowInTarget {
 
 		@Override
 		public String getColumnText(Object element, int columnIndex) {
-			ProofStep step = (ProofStep)element; 
+			ProofStepStmt step = (ProofStepStmt)element; 
 			switch(columnIndex) {
 			case COL_STEP: 
 				return step.getStepName();
 			
 			case COL_HYP: 
-				if(step.isDerivationStep()) {
+				if(ProofStep.isDerivationStep(step)) {
 					StringBuffer str = new StringBuffer();
 					boolean first = true;
 					for(String hypStep:step.getHypSteps()) { str.append((first?"":", ") + hypStep); first = false; }

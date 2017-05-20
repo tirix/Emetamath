@@ -4,6 +4,7 @@ import mmj.lang.MObj;
 import mmj.lang.Theorem;
 import mmj.pa.ProofAsst;
 import mmj.pa.ProofWorksheet;
+import mmj.verify.HypsOrder;
 
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -17,7 +18,7 @@ public class OpenInProofAsstHandler extends MetamathEditorActionHandler {
 		IEvaluationContext context = (IEvaluationContext)event.getApplicationContext();
 		MetamathProjectNature nature = getNature(context);
 		
-		MObj obj = getSelectedMObj(context);
+		MObj obj = getSelectedMObj(event);
 		if(!(obj instanceof Theorem)) return null;
 		
 		ProofAsst proofAsst = nature.getProofAsst();
@@ -26,7 +27,7 @@ public class OpenInProofAsstHandler extends MetamathEditorActionHandler {
 		ProofWorksheet w =
             proofAsst.getExistingProof((Theorem)obj,
                                    true,	//proofUnified
-                                   false);	//hypsRandomized
+                                   HypsOrder.Randomized);
 
 		MetamathUI.openInEditor(w, nature);
 		return null; // must return null...

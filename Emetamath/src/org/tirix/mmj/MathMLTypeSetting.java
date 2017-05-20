@@ -1,6 +1,7 @@
 package org.tirix.mmj;
 
 import java.io.StringReader;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ public class MathMLTypeSetting extends TypeSetting {
 			reader.parse(new InputSource(new StringReader(data)));
 		}
 		catch(Exception e) {
-			LangException ex = new LangException(e.getClass() + " : " + e.getMessage());
+			RuntimeException ex = new RuntimeException(e.getClass() + " : " + e.getMessage());
 			ex.setStackTrace(e.getStackTrace());
 			throw ex;
 		}
@@ -43,8 +44,7 @@ public class MathMLTypeSetting extends TypeSetting {
 	public class MathMLTypeSettingParser extends DefaultHandler {
 		@Override
 		public void startDocument() throws SAXException {
-			// TODO Auto-generated method stub
-			
+			typeSettings = new Hashtable<Axiom, List<MathMLTypeSettingNode>>();
 		}
 
 		@Override
@@ -54,14 +54,14 @@ public class MathMLTypeSetting extends TypeSetting {
 		}
 
 		@Override
-		public void startElement(String arg0, String arg1, String arg2,
-				Attributes arg3) throws SAXException {
+		public void startElement(String namespaceURI, String localName, String qualifiedName,
+				Attributes attr) throws SAXException {
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
-		public void endElement(String arg0, String arg1, String arg2)
+		public void endElement(String namespaceURI, String localName, String qualifiedName)
 				throws SAXException {
 			// TODO Auto-generated method stub
 			
@@ -71,4 +71,33 @@ public class MathMLTypeSetting extends TypeSetting {
 	public static class MathMLTypeSettingNode {
 		
 	}
+	
 }
+
+/*
+
+<typesetting>
+	<stmt name="wph"><mi>&phi;</mi></stmt>
+	<stmt name="cA"><mi>A</mi></stmt>
+	<stmt name="cB"><mi>B</mi></stmt>
+	<stmt name="cC"><mi>C</mi></stmt>
+	<stmt name="caddc"><mo>+</mo></stmt>
+
+	<stmt name="wi"><mrow>#ph# &rArr; #ps#</mrow></stmt>
+	<stmt name="weq"><mrow>#x#<mo>=</mo>#y#</mrow></stmt>
+	<stmt name="wbr"><mrow>#A# #R# #B#</mrow></stmt>
+	<stmt name="cdit">
+  		<mrow>
+	  		<munderover>
+	    			<mo>&int;</mo>
+			    <mn>#A#</mn>
+	    			<mn>#B#</mn>
+	    		</munderover>
+			#C#
+	    		<mi>d</mi>#x#
+    		</mrow>
+	</stmt>
+</typesetting>
+
+
+ */

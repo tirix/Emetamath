@@ -92,6 +92,13 @@ public class ProofExplorerView extends PageBookView implements ISelectionProvide
                 }
             };
 		}
+        if (key == MetamathProjectNature.class) {
+            int count = 0;
+        	for (StackTraceElement each: new Exception().getStackTrace()) {
+            	if(each.getClassName().equals("org.tirix.emetamath.views.ProofExplorerView") && each.getMethodName().equals("getAdapter")) count++;
+                if(count > 2) throw new RuntimeException("Recursive call trying to adapt to MMProjNature"); 
+            }
+        }
         return super.getAdapter(key);
     }
 

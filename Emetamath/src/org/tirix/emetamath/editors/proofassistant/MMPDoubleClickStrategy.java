@@ -10,6 +10,8 @@ import org.tirix.emetamath.editors.MMRegionProvider;
 //TODO too sad, we could have one strategy per contentType, and here we compute again the content type...
 public class MMPDoubleClickStrategy extends MMDoubleClickStrategy {
 	public void doubleClicked(ITextViewer part) {
+		// TODO check preference P_DOUBLE_CLICK_FOR_STEP_SELECTION
+		
 		int offset = part.getSelectedRange().x;
 		String contentType = null;
 		try {

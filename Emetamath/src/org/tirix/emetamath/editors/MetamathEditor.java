@@ -2,15 +2,11 @@ package org.tirix.emetamath.editors;
 
 import java.util.Map;
 
-import mmj.lang.Stmt;
-import mmj.lang.Sym;
-
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jface.text.ITextViewerExtension8.EnrichMode;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.text.TextViewer;
-import org.eclipse.jface.text.ITextViewerExtension8.EnrichMode;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -20,20 +16,31 @@ import org.eclipse.ui.internal.browser.WebBrowserView;
 import org.eclipse.ui.part.IShowInSource;
 import org.eclipse.ui.part.IShowInTargetList;
 import org.eclipse.ui.part.ShowInContext;
+import org.eclipse.ui.texteditor.SourceViewerDecorationSupport;
+import org.tirix.emetamath.Activator;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
-import org.tirix.emetamath.views.MathView;
+import org.tirix.emetamath.preferences.PreferenceConstants;
 import org.tirix.emetamath.views.ProofBrowserView;
 import org.tirix.emetamath.views.ProofExplorerView;
 
+import mmj.lang.Stmt;
+import mmj.lang.Sym;
+
+@SuppressWarnings("restriction")
 public class MetamathEditor extends TextEditor implements IShowInSource {
 	public static final String EDITOR_ID = "org.tirix.emetamath.MetamathEditor";
-//	protected MMContentOutlinePage fOutlinePage;
+	protected final static String[] BRACKETS= { "$(", "$)", "${", "$}", "$[", "$]", "$t", "$)", "$d", "$.", "$a", "$.", "$e", "$.", "$f", "$.", "$p", "$.", "{", "}", "(", ")", "[", "]", "<.", ">." };
+
+	//	protected MMContentOutlinePage fOutlinePage;
+	/** The editor's bracket matcher */
+	protected MetamathPairMatcher fBracketMatcher= new MetamathPairMatcher(BRACKETS);
 	
 	protected void initializeEditor() {
 		super.initializeEditor();
 		setSourceViewerConfiguration(new MMSourceViewerConfiguration(this, new ColorManager()));
 		setEditorContextMenuId(EDITOR_ID);
+		setPreferenceStore(Activator.getDefault().getPreferenceStore());
 		}
 
 	@Override
@@ -41,10 +48,37 @@ public class MetamathEditor extends TextEditor implements IShowInSource {
 		super.createPartControl(parent);
 		// TODO here, we are overriding the property PREFERENCE_HOVER_ENRICH_MODE - find a way to revert to default behavior, ex. by controlling the AbstractHoverInformationControlManager.setInformationControlReplacer()  
 		((TextViewer)getSourceViewer()).setHoverEnrichMode(EnrichMode.ON_CLICK);
+
+		//setTabWidthPreference();
+		//showMargin();
+	}
+
+	@Override
+	protected void configureSourceViewerDecorationSupport(SourceViewerDecorationSupport support) {
+		// TODO we shall move it to MetamathEditor ?
+		support.setCharacterPairMatcher(fBracketMatcher);
+		support.setMatchingCharacterPainterPreferenceKeys(PreferenceConstants.P_EDITOR_MATCHING_BRACKETS, PreferenceConstants.P_EDITOR_MATCHING_BRACKETS_COLOR, PreferenceConstants.P_EDITOR_HIGHLIGHT_BRACKET_AT_CARET_LOCATION, PreferenceConstants.P_EDITOR_ENCLOSING_BRACKETS);
+		support.setMarginPainterPreferenceKeys(PreferenceConstants.P_EDITOR_PRINT_MARGIN, PreferenceConstants.P_EDITOR_PRINT_MARGIN_COLOR, PreferenceConstants.P_EDITOR_PRINT_MARGIN_COLUMN);
+		super.configureSourceViewerDecorationSupport(support);
+	}
+
+	@Override
+	protected boolean isTabsToSpacesConversionEnabled() {
+		return getPreferenceStore() != null && getPreferenceStore().getBoolean(PreferenceConstants.P_EDITOR_SPACES_FOR_TABS);
 	}
 	
 	@Override
 	protected void doSetInput(final IEditorInput input) throws CoreException {
+//		ISourceViewer sourceViewer= getSourceViewer();
+//
+//		// un/reinstall & un/re-register preference store listener
+//		getSourceViewerDecorationSupport(sourceViewer).uninstall();
+//		if(sourceViewer != null) ((ISourceViewerExtension2)sourceViewer).unconfigure();
+//		setPreferenceStore(Activator.getDefault().getPreferenceStore());
+//		if(sourceViewer != null) sourceViewer.configure(getSourceViewerConfiguration());
+//		getSourceViewerDecorationSupport(sourceViewer).install(getPreferenceStore());
+
+		// invalidate highlighting on System Loaded
 		super.doSetInput(input);
 		MetamathProjectNature nature = MetamathProjectNature.getNature(input);
 		if(nature == null) return;
@@ -74,14 +108,14 @@ public class MetamathEditor extends TextEditor implements IShowInSource {
 	}
 
 	public void setFocus() {
-		getSourceViewer().invalidateTextPresentation();
+		//getSourceViewer().invalidateTextPresentation();  // This seems to lead to some endless loops
 		super.setFocus();
 	}
 	
 	public ISelection getContextSelection() {
 		TextSelection textSelection = (TextSelection)getSelectionProvider().getSelection();
 		MetamathProjectNature nature = MetamathProjectNature.getNature(getEditorInput());
-		if(!nature.isLogicalSystemLoaded()) return null;
+		if(nature == null || !nature.isLogicalSystemLoaded()) return null;
 
 		// first try with symbols
 		Map<String, Sym> symTbl = nature.getLogicalSystem().getSymTbl();
@@ -89,7 +123,7 @@ public class MetamathEditor extends TextEditor implements IShowInSource {
 		if(sym != null) 
 			return new StructuredSelection(sym);
 
-		// the try with statements
+		// then try with statements
 		Map<String, Stmt> stmtTbl = nature.getLogicalSystem().getStmtTbl();
 		Stmt stmt = stmtTbl.get(textSelection.getText());
 		if(stmt != null) 
@@ -101,7 +135,7 @@ public class MetamathEditor extends TextEditor implements IShowInSource {
 		ProofExplorerView.VIEW_ID, 
 		ProofBrowserView.VIEW_ID,
 		WebBrowserView.WEB_BROWSER_VIEW_ID,
-		MathView.VIEW_ID,
+		//MathView.VIEW_ID,
 		//IPageLayout.ID_OUTLINE 
 		};
 	public static final IShowInTargetList SHOW_IN_TARGET_LIST= new IShowInTargetList() {
@@ -110,7 +144,7 @@ public class MetamathEditor extends TextEditor implements IShowInSource {
 		}
 	};
 	
-	public Object getAdapter(Class required) {
+	public Object getAdapter(@SuppressWarnings("rawtypes") Class required) {
 //		if (IContentOutlinePage.class.equals(required)) {
 //			if (fOutlinePage == null) {
 //				fOutlinePage= new MMContentOutlinePage(getDocumentProvider(), this) {};
@@ -127,6 +161,31 @@ public class MetamathEditor extends TextEditor implements IShowInSource {
 		}
 		return super.getAdapter(required);
 	}
+	
+//	TODO Can be removed, preferences have been added
+//	public void setTabWidthPreference() {
+//		getSourceViewer().getTextWidget().setTabs(2);
+//		installTabsToSpacesConverter();
+//	}
+
+//	/**
+//	 * Shows the margin.
+//	 * See SourceViewerDecorationSupport.showMargin()
+//	 * TODO Can be removed, preferences have been added
+//	 */
+//	private void showMargin() {
+//		ISourceViewer sourceViewer = getSourceViewer();
+//		if (sourceViewer instanceof ITextViewerExtension2) {
+//			MarginPainter marginPainter= new MarginPainter(sourceViewer);
+//			marginPainter.setMarginRulerColor(getSharedColors().getColor(new RGB(192, 192, 192)));
+//			marginPainter.setMarginRulerColumn(87); // TODO this shall be 80!
+//			ITextViewerExtension2 extension= (ITextViewerExtension2) sourceViewer;
+//			extension.addPainter(marginPainter);
+//
+//			// fFontPropertyChangeListener= new FontPropertyChangeListener();
+//			// JFaceResources.getFontRegistry().addListener(fFontPropertyChangeListener);
+//		}
+//	}
 
 //	public static class MMContentOutlinePage extends ContentOutlinePage implements SystemLoadListener, IShowInTarget {
 //		MetamathEditor editor;

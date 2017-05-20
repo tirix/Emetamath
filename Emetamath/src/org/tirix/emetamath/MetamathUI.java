@@ -6,6 +6,7 @@ import mmj.pa.ProofWorksheet;
 import mmj.pa.StepSelectorStore;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.jface.viewers.ITreeSelection;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IStorageEditorInput;
@@ -18,6 +19,8 @@ import org.tirix.emetamath.editors.proofassistant.ProofAssistantEditor;
 import org.tirix.emetamath.editors.proofassistant.ProofWorksheetDocumentProvider.ProofWorksheetInput;
 import org.tirix.emetamath.editors.proofassistant.ProofWorksheetDocumentProvider.ProofWorksheetStorage;
 import org.tirix.emetamath.nature.MetamathProjectNature;
+import org.tirix.emetamath.nature.MetamathProjectNature.ResourceSource;
+import org.tirix.emetamath.preferences.PreferenceConstants;
 import org.tirix.emetamath.views.StepSelectorView;
 
 public class MetamathUI {
@@ -41,19 +44,22 @@ public class MetamathUI {
 		}
 	}
 
-	public static void selectAndReveal(SourcePosition position, boolean activate) {
-		if(position == null) return;
+	public static MetamathEditor selectAndReveal(SourcePosition position, boolean activate) {
+		if(position == null) return null;
 		IWorkbench workbench= Activator.getDefault().getWorkbench();
 		IWorkbenchPage page= workbench.getActiveWorkbenchWindow().getActivePage();
-		IEditorPart part;
+		MetamathEditor part;
 		try {
-			part = page.openEditor(new FileEditorInput((IFile)position.sourceId), MetamathEditor.EDITOR_ID);
-			((MetamathEditor)part).selectAndReveal(position.charStartNbr, position.charEndNbr - position.charStartNbr);
+			IFile file = (IFile)((ResourceSource)position.source).resource;
+			part = (MetamathEditor)page.openEditor(new FileEditorInput(file), MetamathEditor.EDITOR_ID);
+			part.selectAndReveal(position.charStartNbr, position.charEndNbr - position.charStartNbr);
 			if (part !=null) // part.getEditorSite().getPage() -> page 
 				if(activate) page.activate(part);
 				else page.bringToTop(part);
+			return part;
 		} catch (PartInitException e) {
 			e.printStackTrace();
+			return null;
 		}
 	}
 
@@ -76,5 +82,9 @@ public class MetamathUI {
 			page.showView(IPageLayout.ID_PROBLEM_VIEW);
 		} catch (PartInitException e) {
 		}
+	}
+	
+	public static boolean isDoubleClickForStepSelector() {
+		return Activator.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.P_DOUBLE_CLICK_FOR_STEP_SELECTION);
 	}
 }

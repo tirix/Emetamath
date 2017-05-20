@@ -69,9 +69,9 @@ public class MMPProofScanner extends MMScanner {
 				return keywordToken;
 			}
 
-			if(!labelDetector.isWordPart((char)c)) return TOKEN_ERROR;
+			if(!(labelDetector.isWordPart((char)c) || c == '(' || c == ')')) return TOKEN_ERROR;
 			
-			while(labelDetector.isWordPart((char)c)) c = scanner.read();
+			while(labelDetector.isWordPart((char)c) || c == '(' || c == ')') c = scanner.read();
 			scanner.unread();
 			return labelToken;
 		}

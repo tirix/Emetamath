@@ -195,7 +195,9 @@ public class StepSelectorView extends ViewPart {
 	public void clear() {
 		// clear all messages about this proof
 		MetamathProjectNature nature = getNature();
-		((MetamathMessageHandler)nature.getMessageHandler()).clearMessages(((FileEditorInput)proofAsstEditor.getEditorInput()).getFile());
+		FileEditorInput input = (FileEditorInput)proofAsstEditor.getEditorInput();
+		if(input != null)
+			((MetamathMessageHandler)nature.getMessageHandler()).clearMessages(input.getFile());
 
 		// clear step list
 		viewer.setInput(null);
@@ -235,7 +237,6 @@ public class StepSelectorView extends ViewPart {
 	 * A content provider to provide Assertions and steps
 	 */
 	class StepSelectorContentProvider implements ITreeContentProvider {
-
 		@Override
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		}
@@ -255,7 +256,7 @@ public class StepSelectorView extends ViewPart {
 				return ((StepSelectorStore)parentElement).getStoreItems();
 			}
 			if(parentElement instanceof StepSelectorItem) {
-				String[] selection = ((StepSelectorItem)parentElement).selection;
+				String[] selection = ((StepSelectorItem)parentElement).getSelection();
 				StepSelectorLine[] items = new StepSelectorLine[selection.length];
 				items[0] = new StepSelectorLine(selection[0], PaConstants.STEP_SELECTOR_FORMULA_LABEL_SEPARATOR);
 				for(int i=1;i<selection.length-1;i++) { items[i] = new StepSelectorLine(selection[i], PaConstants.STEP_SELECTOR_FORMULA_LOG_HYP_SEPARATOR); }

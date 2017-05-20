@@ -12,63 +12,34 @@
 
 package mmj.pa;
 
-import mmj.mmio.SourcePosition;
-
 /**
- *  Custom exception for ProofAsst.
+ * Custom exception for ProofAsst.
  */
-public class ProofAsstException extends Exception {
-
-    public SourcePosition position;
-
-    /**
-     * Default Constructor.
-     */
-    public ProofAsstException() {
-        super();
-    }
+public class ProofAsstException extends MMJException {
+    public static final String NS = "PA";
 
     /**
-     * Contructor with error message.
+     * Constructor, {@code ProofAsstException} with error message.
      *
-     * @param   errorMessage  error message.
+     * @param code error message.
+     * @param args formatting arguments.
      */
-    public ProofAsstException(String errorMessage) {
-        super(errorMessage);
+    public ProofAsstException(final ErrorCode code, final Object... args) {
+        super(code, args);
+        checkNS(NS);
     }
 
     /**
-     *  Contructor, <code>ProofAsstException</code> with
-     *  line number, column number and error message.
-     *  <p>
-     *  Appends input stream line and column number to
-     *  input message.
+     * Constructor, {@code ProofAsstException} with error message and cause.
      *
-     *  @param   lineNbr       line number assigned to the error
-     *  @param   columnNbr     column number assigned to the error
-     *  @param   charNbr       character number of the error
-     *  @param   errorMessage  error message.
+     * @param cause The source exception, for stack tracing
+     * @param code error message.
+     * @param args formatting arguments.
      */
-    public ProofAsstException(SourcePosition position, String  errorMessage) {
-        super(errorMessage
-              + PaConstants.ERRMSG_TXT_LINE
-              + position.lineNbr
-              + PaConstants.ERRMSG_TXT_COLUMN
-              + position.columnNbr);
-        this.position              = position;
+    public ProofAsstException(final Throwable cause, final ErrorCode code,
+        final Object... args)
+    {
+        super(cause, code, args);
+        checkNS(NS);
     }
-
-    /**
-     * Contructor, <code>ProofAsstException</code> with
-     * character number (offset + 1) and error message.
-     *
-     * @param   charNbr       character number of the error
-     * @param   errorMessage  error message.
-     */
-    public ProofAsstException(long    charNbr,
-                              String  errorMessage) {
-        super(errorMessage);
-        this.position = new SourcePosition(null, -1, -1, charNbr-1, charNbr);
-    }
-
 }

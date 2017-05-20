@@ -46,9 +46,6 @@ public class Activator extends AbstractUIPlugin {
 	 * The constructor
 	 */
 	public Activator() {
-		// shouldn't we do this in start() ?
-		addToSearchMenu();
-		registerAdapters();
 		}
 
 	/**
@@ -73,6 +70,11 @@ public class Activator extends AbstractUIPlugin {
 	 */
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
+
+		// previously in constructor with the note "shouldn't we do this in start() ?"
+		addToSearchMenu();
+		registerAdapters();
+
 		plugin = this;
 	}
 

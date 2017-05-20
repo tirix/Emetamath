@@ -80,7 +80,7 @@ public class MetamathPerspective implements IPerspectiveFactory {
 		bottom.addPlaceholder(ProofBrowserView.VIEW_ID);
 		bottom.addPlaceholder(IConsoleConstants.ID_CONSOLE_VIEW);
 		bottom.addPlaceholder(WebBrowserView.WEB_BROWSER_VIEW_ID);
-		bottom.addPlaceholder(MathView.VIEW_ID);
+		//bottom.addPlaceholder(MathView.VIEW_ID);
 		bottom.addPlaceholder(NewSearchUI.SEARCH_VIEW_ID);
 		
 		IFolderLayout topLeft =
@@ -115,7 +115,7 @@ public class MetamathPerspective implements IPerspectiveFactory {
 		factory.addShowViewShortcut("org.eclipse.ui.navigator.ProjectExplorer");
 		factory.addShowViewShortcut(IConsoleConstants.ID_CONSOLE_VIEW);
 		factory.addShowViewShortcut(IPageLayout.ID_RES_NAV);
-		factory.addShowViewShortcut(MathView.VIEW_ID);
+		//factory.addShowViewShortcut(MathView.VIEW_ID);
 		factory.addShowViewShortcut(IPageLayout.ID_PROBLEM_VIEW);
 		//factory.addShowViewShortcut(IPageLayout.ID_OUTLINE);
 	}
@@ -124,7 +124,7 @@ public class MetamathPerspective implements IPerspectiveFactory {
 		factory.addShowViewShortcut(ProofExplorerView.VIEW_ID);
 		factory.addShowViewShortcut(ProofBrowserView.VIEW_ID);
 		factory.addShowViewShortcut(WebBrowserView.WEB_BROWSER_VIEW_ID);
-		factory.addShowViewShortcut(MathView.VIEW_ID);
+		//factory.addShowViewShortcut(MathView.VIEW_ID);
 		//factory.addShowInPart(IPageLayout.ID_OUTLINE);
 	}
 }

@@ -2,6 +2,7 @@ package org.tirix.emetamath.handlers;
 
 import mmj.pa.PaConstants;
 import mmj.pa.StepRequest;
+import mmj.pa.StepRequest.StepRequestType;
 
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -14,14 +15,15 @@ public class SearchStepSelectionHandler extends UnifyHandler {
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IEvaluationContext context = (IEvaluationContext)event.getApplicationContext();
 		StepRequest stepRequest = new StepRequest(
-                PaConstants.
-                STEP_REQUEST_SELECTOR_SEARCH);
+                StepRequestType.SelectorSearch);
 		unify(context,
 				(ProofAssistantEditor)getEditor(context),
 				false,	// no renum
+	            false,  // no convertion of working variables
 	            null,	// no preprocess request
 	            stepRequest, //  step selector request
-	            null	// no TheoremLoader request
+	            null,	// no TheoremLoader request
+	            false	// don't print Ok messages
 		);
 
 		return null; // must return null...

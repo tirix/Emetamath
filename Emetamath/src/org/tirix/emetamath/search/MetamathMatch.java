@@ -11,7 +11,7 @@ public class MetamathMatch extends Match {
 	Stmt stmt;
 	
 	public MetamathMatch(Stmt stmt) {
-		super(stmt.getPosition().sourceId, stmt.getPosition().charStartNbr, stmt.getPosition().getLength());
+		super(stmt.getPosition().source, stmt.getPosition().charStartNbr, stmt.getPosition().getLength());
 		this.stmt = stmt;
 	}
 	

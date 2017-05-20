@@ -20,6 +20,10 @@ public class ProofDocument extends Document implements SystemLoadListener {
 		proofWorksheetInitialized = false;
 	}
 	
+	public ProofWorksheet getWorksheet() {
+		return proofWorksheet;
+	}
+	
 	public void setup(ProofWorksheet proofWorksheet, MetamathProjectNature nature) {
 		this.newTheoremLabel = proofWorksheet.getTheoremLabel();
 		this.nature = nature;

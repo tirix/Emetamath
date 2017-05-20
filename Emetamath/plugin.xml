@@ -41,6 +41,13 @@
             properties="hasMoreItems"
             type="mmj.pa.StepSelectorStore">
       </propertyTester>
+      <propertyTester
+            class="org.tirix.emetamath.nature.ProofUnificationTester"
+            id="org.tirix.emetamath.proofUnificationTester"
+            namespace="org.tirix.emetamath"
+            properties="isProofUnified"
+            type="org.tirix.emetamath.editors.proofassistant.ProofAssistantEditor">
+      </propertyTester>
    </extension>
    <extension point="org.eclipse.ui.ide.projectNatureImages">
 	  <image 
@@ -95,7 +102,7 @@
             type="org.eclipse.core.resources.problemmarker">
       </super>
       <persistent
-            value="true">
+            value="false">
       </persistent>
    </extension>
    <extension
@@ -204,6 +211,11 @@
 	    description="Search for all references of the selected Metamath element">
     </command>
       <command
+            name="Verify Proofs"
+            categoryId="org.tirix.emetamath.commandCategory"
+            id="org.tirix.emetamath.verifyCommand">
+      </command>
+      <command
             name="Unify"
             categoryId="org.tirix.emetamath.commandCategory"
             id="org.tirix.emetamath.unifyCommand">
@@ -218,6 +230,12 @@
             description="Search for unification steps and open the step selector view"
             id="org.tirix.emetamath.searchStepSelectionCommand"
             name="Step Selector">
+      </command>
+      <command
+            categoryId="org.tirix.emetamath.commandCategory"
+            description="Export proof to metamath file"
+            id="org.tirix.emetamath.exportProofCommand"
+            name="Export Proof">
       </command>
       <command
             categoryId="org.tirix.emetamath.commandCategory"
@@ -260,6 +278,12 @@
             description="Remove a comment around the current selection"
             id="org.tirix.emetamath.removeBlockComment"
             name="Remove Block Comment">
+      </command>
+      <command
+            categoryId="org.tirix.emetamath.commandCategory"
+            description="Toggle comments around the current selection"
+            id="org.tirix.emetamath.toggleMMPComment"
+            name="Toggle Proof Comment">
       </command>
    </extension>
    <extension
@@ -325,6 +349,23 @@
          </enabledWhen>
       </handler>
       <handler
+            class="org.tirix.emetamath.handlers.VerifyHandler"
+            commandId="org.tirix.emetamath.verifyCommand">
+         <enabledWhen>
+            <with variable="activePart">
+               <instanceof
+                     value="org.tirix.emetamath.editors.MetamathEditor">
+               </instanceof>
+               <adapt
+                     type="org.tirix.emetamath.nature.MetamathProjectNature">
+                  <test
+                        property="org.tirix.emetamath.isLogicalSystemLoaded">
+                  </test>
+               </adapt>
+            </with>
+         </enabledWhen>
+      </handler>
+      <handler
             class="org.tirix.emetamath.handlers.UnifyHandler"
             commandId="org.tirix.emetamath.unifyCommand">
          <enabledWhen>
@@ -357,6 +398,21 @@
                         property="org.tirix.emetamath.isLogicalSystemLoaded">
                   </test>
                </adapt>
+            </with>
+         </enabledWhen>
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.ExportProofHandler"
+            commandId="org.tirix.emetamath.exportProofCommand">
+         <enabledWhen>
+            <with
+                  variable="activePart">
+               <instanceof
+                     value="org.tirix.emetamath.editors.proofassistant.ProofAssistantEditor">
+               </instanceof>
+              <test
+                    property="org.tirix.emetamath.isProofUnified">
+              </test>
             </with>
          </enabledWhen>
       </handler>
@@ -446,32 +502,45 @@
             class="org.tirix.emetamath.handlers.RemoveBlockComment"
             commandId="org.tirix.emetamath.removeBlockComment">
       </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.ToggleMMPComment"
+            commandId="org.tirix.emetamath.toggleMMPComment">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.contexts">
+      <context
+            description="Editing Metamath Proof"
+            id="org.tirix.emetamath.ui.contexts.proofasst"
+            name="Editing Metamath Proof"
+            parentId="org.eclipse.ui.textEditorScope">
+      </context>
    </extension>
    <extension
          point="org.eclipse.ui.bindings">
-      <scheme
-            description="Overrides the Ctrl+U and Ctrl+M keys to provide dedicated metamath shortcuts"
-            id="org.tirix.emetamath.keybindingScheme"
-            name="Metamath"
-            parentId="org.eclipse.ui.defaultAcceleratorConfiguration">
-      </scheme>
       <key
             commandId="org.tirix.emetamath.openDeclarationCommand"
             contextId="org.eclipse.ui.contexts.window"
             sequence="F3"
-            schemeId="org.tirix.emetamath.keybindingScheme">
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
       </key>
       <key
             commandId="org.tirix.emetamath.SearchReferencesCommand"
             contextId="org.eclipse.ui.contexts.window"
             sequence="M1+M2+G"
-            schemeId="org.tirix.emetamath.keybindingScheme">
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
       </key>
       <key
             commandId="org.tirix.emetamath.unifyCommand"
-            contextId="org.eclipse.ui.contexts.window"
+            contextId="org.tirix.emetamath.ui.contexts.proofasst"
             sequence="M1+U"
-            schemeId="org.tirix.emetamath.keybindingScheme">
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
+      </key>
+      <key
+            commandId="org.tirix.emetamath.searchStepSelectionCommand"
+            contextId="org.tirix.emetamath.ui.contexts.proofasst"
+            sequence="M1+T"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
       </key>
    </extension>
 <extension point="org.eclipse.ui.menus">
@@ -563,10 +632,12 @@
      </command>
   </menuContribution>
   <menuContribution
-        locationURI="popup:org.tirix.emetamath.ProofAssistant?after=group.edit">
+        locationURI="popup:org.tirix.emetamath.ProofAssistant?before=additions">
+	 <separator name="metamath" visible="true" />
      <command
            commandId="org.tirix.emetamath.unifyCommand"
            icon="icons/mmUnify.gif"
+           mnemonic="M1+U"
            style="push">
      </command>
      <command
@@ -579,6 +650,18 @@
            icon="icons/mmStep.gif"
            style="push">
      </command>
+     <command
+           commandId="org.tirix.emetamath.exportProofCommand"
+           icon="icons/mmProofExport.gif"
+           style="push">
+     </command>
+  </menuContribution>
+  <menuContribution locationURI="popup:org.tirix.emetamath.ProofAssistant?after=group.edit">
+        <command
+              commandId="org.tirix.emetamath.toggleMMPComment"
+              id="toggleMMPComment"
+              style="push">
+        </command>
   </menuContribution>
   <menuContribution
         locationURI="popup:org.tirix.emetamath.views.ProofExplorerView?after=open">
@@ -632,6 +715,12 @@
                label="Metamath"
                mnemonic="M">
             <command
+                  commandId="org.tirix.emetamath.verifyCommand"
+                  icon="icons/spellcheck.gif"
+                  id="org.tirix.emetamath.verifyMenu"
+                  mnemonic="V">
+            </command>
+            <command
                   commandId="org.tirix.emetamath.unifyCommand"
                   icon="icons/mmUnify.gif"
                   id="org.tirix.emetamath.unifyMenu"
@@ -649,6 +738,12 @@
                   icon="icons/mmStep.gif"
                   id="org.tirix.emetamath.stepSelectorMenu"
                   mnemonic="S">
+            </command>
+            <command
+                  commandId="org.tirix.emetamath.exportProofCommand"
+                  icon="icons/mmProofExport.gif"
+                  id="org.tirix.emetamath.exportProofMenu"
+                  mnemonic="E">
             </command>
             <visibleWhen
                   checkEnabled="false">
@@ -682,6 +777,12 @@
                   icon="icons/mmStep.gif"
                   tooltip="Show Step Selector"
                   id="org.tirix.emetamath.toolbar.searchStepSelectionCommand">
+            </command>
+            <command
+                  commandId="org.tirix.emetamath.exportProofCommand"
+                  icon="icons/mmProofExport.gif"
+                  tooltip="Export Proof"
+                  id="org.tirix.emetamath.toolbar.exportProofCommand">
             </command>
             <visibleWhen
                   checkEnabled="false">
@@ -846,8 +947,27 @@
       </category>
       <wizard
             category="org.tirix.emetamath.exportWizards.metamathCategory"
+            class="org.tirix.emetamath.exportWizards.ExportFlatMMWizard"
+            id="org.tirix.emetamath.exportWizards.ExportFlatMMWizard"
+            icon="icons/mmExportFile.gif"
+            name="as flat Metamath File">
+         <description>
+            Export project as a single flat Metamath file.
+         </description>
+         <selection class="org.eclipse.core.resources.IProject"/> 
+      </wizard>
+   </extension>
+   <extension
+         point="org.eclipse.ui.exportWizards">
+      <category
+            id="org.tirix.emetamath.exportWizards.metamathCategory"
+            name="Metamath">
+      </category>
+      <wizard
+            category="org.tirix.emetamath.exportWizards.metamathCategory"
             class="org.tirix.emetamath.exportWizards.ExportMathMLWizard"
             id="org.tirix.emetamath.exportWizards.ExportMathMLWizard"
+            icon="icons/mmlExport.gif"
             name="as MathML File">
          <description>
             Export selection as an HTML file containing MathML.
@@ -866,9 +986,15 @@
    <extension
          point="org.eclipse.ui.preferencePages">
       <page
-            name="Metamath Preferences"
+            name="Metamath"
             class="org.tirix.emetamath.preferences.MetamathPreferencePage"
             id="org.tirix.emetamath.preferences.MetamathPreferencePage">
+      </page>
+      <page
+            name="TMFF"
+            class="org.tirix.emetamath.preferences.MetamathTMFFPreferencePage"
+            id="org.tirix.emetamath.preferences.MetamathTMFFPreferencePage"
+            category="org.tirix.emetamath.preferences.MetamathPreferencePage">
       </page>
    </extension>
    <extension
@@ -1020,4 +1146,128 @@
           showScopeSection="false">
     </page>
  </extension>
+<!-- extension
+   point="org.eclipse.core.filebuffers.annotationModelCreation">
+   <factory
+        extensions="mmp"
+        class="org.tirix.emetamath.editors.proofassistant.ProofAnnotationModel.ProofAnnotationModelFactory">
+  </factory>
+</extension>
+</plugin -->
+<extension
+	point="org.eclipse.core.resources.markers" 
+	id="unusedstepmarker"
+	name="%stepName">
+	  <super type="org.eclipse.core.resources.marker"/>
+	  <attribute name="step"/>
+	  <attribute name="direction"/>
+</extension>
+<extension
+      point="org.eclipse.ui.editors.markerAnnotationSpecification">
+	<specification
+            annotationType="org.tirix.emetamath.editors.proofassistant.unusedStepUp"
+            textPreferenceKey="stepIndication"
+            presentationLayer="2"
+            highlightPreferenceValue="false"
+            showInNextPrevDropdownToolbarAction="true"
+            textPreferenceValue="false"
+            isGoToPreviousNavigationTargetKey="isStepGoToPreviousNavigationTarget"
+            label="Metamath Steps with no precedents"
+            colorPreferenceKey="stepIndicationColor"
+            showInNextPrevDropdownToolbarActionKey="showTaskInNextPrevDropdownToolbarAction"
+            icon="icons/up2.gif"
+            isGoToNextNavigationTargetKey="isStepGoToNextNavigationTarget"
+            isGoToNextNavigationTarget="false"
+            overviewRulerPreferenceKey="stepIndicationInOverviewRuler"
+            verticalRulerPreferenceValue="true"
+            highlightPreferenceKey="stepIndicationHighlighting"
+            isGoToPreviousNavigationTarget="false"
+            verticalRulerPreferenceKey="stepIndicationInVerticalRuler"
+            contributesToHeader="false"
+            colorPreferenceValue="0,128,255"
+            overviewRulerPreferenceValue="true">
+      </specification>
+	<specification
+            annotationType="org.tirix.emetamath.editors.proofassistant.unusedStepDown"
+            textPreferenceKey="stepIndication"
+            presentationLayer="2"
+            highlightPreferenceValue="false"
+            showInNextPrevDropdownToolbarAction="true"
+            textPreferenceValue="false"
+            isGoToPreviousNavigationTargetKey="isStepGoToPreviousNavigationTarget"
+            label="Metamath Steps with no descendants"
+            colorPreferenceKey="stepIndicationColor"
+            showInNextPrevDropdownToolbarActionKey="showTaskInNextPrevDropdownToolbarAction"
+            icon="icons/down2.gif"
+            isGoToNextNavigationTargetKey="isStepGoToNextNavigationTarget"
+            isGoToNextNavigationTarget="false"
+            overviewRulerPreferenceKey="stepIndicationInOverviewRuler"
+            verticalRulerPreferenceValue="true"
+            highlightPreferenceKey="stepIndicationHighlighting"
+            isGoToPreviousNavigationTarget="false"
+            verticalRulerPreferenceKey="stepIndicationInVerticalRuler"
+            contributesToHeader="false"
+            colorPreferenceValue="0,128,255"
+            overviewRulerPreferenceValue="true">
+      </specification>
+	<specification
+            annotationType="org.tirix.emetamath.editors.proofassistant.unusedStepUpDown"
+            textPreferenceKey="stepIndication"
+            presentationLayer="2"
+            highlightPreferenceValue="false"
+            showInNextPrevDropdownToolbarAction="true"
+            textPreferenceValue="false"
+            isGoToPreviousNavigationTargetKey="isStepGoToPreviousNavigationTarget"
+            label="Metamath Steps with neither precedents nor descendants"
+            colorPreferenceKey="stepIndicationColor"
+            showInNextPrevDropdownToolbarActionKey="showTaskInNextPrevDropdownToolbarAction"
+            icon="icons/up_down2.gif"
+            isGoToNextNavigationTargetKey="isStepGoToNextNavigationTarget"
+            isGoToNextNavigationTarget="false"
+            overviewRulerPreferenceKey="stepIndicationInOverviewRuler"
+            verticalRulerPreferenceValue="true"
+            highlightPreferenceKey="stepIndicationHighlighting"
+            isGoToPreviousNavigationTarget="false"
+            verticalRulerPreferenceKey="stepIndicationInVerticalRuler"
+            contributesToHeader="false"
+            colorPreferenceValue="0,128,255"
+            overviewRulerPreferenceValue="true">
+      </specification>
+</extension>
+<extension
+      point="org.eclipse.ui.editors.annotationTypes">
+      <type
+         name="org.tirix.emetamath.editors.proofassistant.unusedStepDown"
+         markerType="org.tirix.emetamath.unusedStep.down">
+      </type>
+      <type
+         name="org.tirix.emetamath.editors.proofassistant.unusedStepUp"
+         markerType="org.tirix.emetamath.unusedStep.up">
+      </type>
+      <type
+         name="org.tirix.emetamath.editors.proofassistant.unusedStepUpDown"
+         markerType="org.tirix.emetamath.unusedStep.upDown">
+      </type>
+</extension>
+<extension
+         id="org.tirix.emetamath.unusedStep.down"
+         name="Metamath unused Proof Step"
+         point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.textmarker"/> 
+      <persistent value="false"/>
+</extension>
+<extension
+         id="org.tirix.emetamath.unusedStep.up"
+         name="Metamath unused Proof Step"
+         point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.textmarker"/> 
+      <persistent value="false"/>
+</extension>
+<extension
+         id="org.tirix.emetamath.unusedStep.upDown"
+         name="Metamath unused Proof Step"
+         point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.textmarker"/> 
+      <persistent value="false"/>
+</extension>
 </plugin>

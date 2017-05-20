@@ -1,19 +1,1076 @@
-//********************************************************************/
-//* Copyright (C) 2005, 2006, 2007, 2008                             */
-//* MEL O'CAT  mmj2 (via) planetmath (dot) org                       */
-//* License terms: GNU General Public License Version 2              */
-//*                or any later version                              */
-//********************************************************************/
-//*4567890123456 (71-character line to adjust editor window) 23456789*/
+//*****************************************************************************/
+//* Copyright (C) 2005-2013                                                   */
+//* MEL O'CAT  X178G243 (at) yahoo (dot) com                                  */
+//* License terms: GNU General Public License Version 2                       */
+//*                or any later version                                       */
+//*****************************************************************************/
+//*456789012345678 (80-character line to adjust editor window) 456789012345678*/
+
+
+================================================================================
+27-June-2016:
+
+	CHANGES:
+	
+	* The code was adapted to fit into the Eclipse plug-in "eMetamath".
+	  This should be transparent to the user but involves adding several hooks:
+	  - SourceId : a generic interface for providing source content 
+	  		for .MM files and proof text. This is necessary because Eclipse uses
+	  		different classes for resource management.
+	  - SourcePosition : a generic class for holding the position of a statement
+	  		within a file. This is stored for statements, and allows jumping to
+	  		their definitions in the .MM files. 
+	  - MessageHandler : a generic class for gathering messages to be shown to 
+	  		the user. 
+	  		SourcePosition is added whenever possible.
+	  - ProofWorksheetText : used for capturing back the contents of compressed 
+	  		proof statements.
+
+================================================================================
+26-Jan-2016:
+
+    CHANGES:
+
+      This long-overdue update includes many many features worked on over a long
+      period, so I may be forgetting some features in the list.
+
+    * Line spacing can be adjusted with the ProofAsstLineSpacing RunParm.
+
+    * Batch Commands are now handled uniformly, with automatic documentation
+      populating the Help > Batch command documentation list.
+
+    * A new more powerful form of Derive is introduced, called Autocomplete
+      steps. This will be used in the future as a general "perform advanced
+      simplifications" tactic. Control of the feature is provided by the
+      'ProofAsstAutocompleteEnabled,Yes' step (enabled by default). It is
+      recommended that 'ProofAsstDeriveAutocomplete,Yes' be enabled to get the
+      full advantage of autocomplete steps, as this will automatically enable
+      autocomplete on newly created steps (causing a cascade effect of
+      derivations of multi-step proofs).
+
+    * A definitional soundness checker has been added for set.mm. It can be run
+      via
+
+        SetMMDefinitionsCheckWithExclusions,ax-*,df-bi,df-clab,df-cleq,df-clel
+          (deprecated)
+
+      or
+
+        RunMacro,definitionCheck,ax-*,df-bi,df-clab,df-cleq,df-clel
+
+      It will check the listed axioms against a simple test for conservativity.
+
+    * Local refs can now be empty; a step '1:2,3:# |- formula' will search for
+      previous steps deriving '|- formula' and merge the steps if one is found.
+
+    * The autocomplete step framework is extended with Auto-transformations,
+      which will detect commutative and associative operations and automatically
+      derive equivalence proofs from a proven step to an autocomplete goal step.
+      The behavior is enabled by the RunParm:
+
+        ProofAsstUseAutotransformations,yes,no,yes
+
+    * A macro system has been added, for writing extra functionality outside
+      mmj2 in Javascript. Macros are stored in the mmj2jar/macros folder, and
+      the current set of macros is designed for use with set.mm. Future
+      set.mm-specific functionality (such as the definition checker above)
+      should be added as macros, keeping the mmj2 source agnostic to any
+      particular .mm framework.
+
+      Macros are enabled by default, via 'MacrosEnabled,yes'. The macro folder
+      can be set with MacroFolder, and the language can even be changed via
+      MacroLanguage (this is not recommended, since all the pre-written macros
+      are in Javascript and JRE 8 does not ship with any other script engines
+      by default). Macros can be run either via RunParm using RunMacro, or by
+      typing a $m statement into the proof text area such as
+
+        $m echo Hello!
+
+      Many macros also operate by hooking into any of several callbacks for
+      various points during the read/unify/print loop. See macros/readme.js for
+      more info.
+
+    * A new parser, LRParser, has been implemented as an alternative to the
+      standard EarleyParser. It can be selected with:
+      
+        SetParser,mmj.verify.LRParser
+
+      It takes much longer to generate the initial parse table, but subsequent
+      parsing is much faster under most conditions. The parse table problem
+      is alleviated by saving and loading the parse table to a file (see the
+      next point).
+
+    * Saving and loading of settings has been implemented. The file store.json
+      is a JSON file that contains many of the settings used by mmj2, and it is
+      read just before RunProofAsstGUI and saved just before exit (if the
+      program is exited correctly). This allows font settings, window
+      positioning, etc. to persist between runs of the program, as well as
+      caching expensive-to-compute data such as the LR parse tables. It is also
+      designed to be at least somewhat human-readable; see store.json.
+
+    * The entire codebase has been converted to use Java 8. This does not affect
+      most users, but it will likely require that users upgrade to Java 8 if
+      they have not already.
+
+    * Steps can now refer to later steps, provided that no dependency cycles
+      ensue. They will be automatically reordered on unification.
+
+    * A new system for "reverse transformations" extends the auto-transformation
+      system (with no change to the RunParm). This enables the loading of
+      automatic reduction rules when the hypotheses are simpler than the
+      conclusion, with no new variables. This is sufficient to support most
+      kinds of closure proofs and equality proofs.
+
+    * The transformations.js macro adds set.mm-specific transformation rules
+      to the transformation system, which includes:
+      
+      - A long list of invalid reduction rules (so that the reverse
+        transformation system does not apply undesirable reductions);
+
+      - The arithmetic prover detailed in http://arxiv.org/abs/1503.02349;
+
+      - Automatic structure detection for theorems that use structures from
+        abstract algebra. For example, if the theorem hypothesis includes
+        "|- .+ = ( +g ` G )", then any group theorem that has a similar
+        hypothesis will match ".+" and "G" to the definitions at the top of the
+        worksheet, and any other structure slots will be discharged via 'eqid'.
+      
+
+================================================================================
+4-Feb-2014:
+
+    CHANGES:
+
+    * This update introduces the exiting new feature of syntax highlighting for
+      mmp files. The tokenizer and token types are hardcoded, but you can
+      customize the coloring and styling of the types using the new
+      'ProofAsstHighlightingStyle' RunParm. You can also disable syntax
+      highlighting altogether using 'ProofAsstHighlightingEnabled,no' if it is
+      too much of a performance hit.
+
+================================================================================
+2-Jan-2014:
+
+    CHANGES:
+
+    * The compression format has been updated to match the new compression
+      default of the metamath.exe program.
+
+    * Parse tree compression is now more efficient, which means that loading
+      completed proof worksheets and unifying a completed proof is faster.
+
+    * Bug fix for 17-Aug change, where steps with no variables or hypotheses
+      (such as the example below) would not be collapsed into a single step.
+
+================================================================================
+17-Aug-2013:
+
+    CHANGES:
+
+    * New proofs loaded via 'New-Next Proof' and related functions now have a
+      step layout that mirrors the compressed format instead of the uncompressed
+      RPN. This means that if a given step is referred to twice in a proof, the
+      step will only be assigned one step number, rather than making copies of
+      the statement for each use. (Depending on the proof, this can mean a
+      drastic decrease in the length of proofs as seen in the main text area of
+      ProofAsstGUI. The length of compressed and uncompressed proofs themselves
+      remains unaffected.) For example:
+      Before:                             After:
+        1::tru          |- T.               1::tru          |- T.
+        2::tru          |- T.               qed:1,1:pm3.2i |- ( T. /\ T. )
+        qed:1,2:pm3.2i |- ( T. /\ T. )
+
+    * New menu items "Unify+Don't Convert WorkVars" and "Unify+Erase+Don't
+      Convert" have been added to the Unify menu. When activated, they perform
+      the regular unification process, but if the process completes successfully
+      except that work variables (i.e. &C1, &S2, etc.) are in use in the
+      derivation steps, it will abort the unification process and move the
+      cursor to the first step containing a work variable, so that you can name
+      it properly. (The default option "Unify" will instead replace these
+      variables with dummy variables that have been taken from the pool of
+      unused variables defined in the .mm file.)
+
+    * The "Reformat" options no longer require you to save the file.
+
+================================================================================
+13-Aug-2013:
+
+    CHANGES:
+
+    * New proofs are now output by default in "compressed" format. This behavior
+      can be modified by the TL > Set Proof Compression option in ProofAsstGUI
+      or by setting the ProofAsstProofFormat RunParm (to Compressed, Packed, or
+      Normal).
+
+    * The code base target has been upgraded to 1.5 compatibility, and features
+      of Java 1.5 (primarily generics and enhanced for loops) have been utilized
+      throughout the program.
+
+    * Mel O'Cat's original search enhancements have been added to the project,
+      although since the source was decompiled from the release jar file,
+      comments and local variable names are missing. Primary documentation can
+      be found at
+
+        mmj2/doc/Release20121225/MMJ2_Release_20121225_Proposals.html
+
+      although that source is a proposal of new features, which includes a few
+      that were never implemented.
+
+    * Step names are no longer required to be ints, and are now allowed to be
+      arbitrary strings, with a few limitations.
+
+      - Since step names are matched case-insensitively, capital letters are
+        allowed, but will be normalized to lowercase upon the next unify.
+      - The space character and , and : are not allowed, for obvious reasons.
+      - There are two 'keywords' for step names: if the name is
+        (case-insensitively) equal to 'qed', it is identified as the final step,
+        and if the name begins with 'h', it is a hypothesis step.
+
+    * The default renumber settings have been changed, so that the numbering on
+      load and on renumber go up by tens, while the steps generated by Derive go
+      up by ones, but have a 'd' prefix, i.e. 'd1', 'd2', etc.
+
+    * The 'Step Search' / 'General Search' and 'Step Selector Search' dialogs
+      now use multiline list entries, so that selecting one assertion selects
+      all the lines of that assertion.
+
+    * The 'Request Messages' dialog has been deprecated, as the exact same
+      content is available in the lower pane of ProofAsstGUI. The compile-time
+      constant PaConstants.REQUEST_MESSAGES_GUI_ENABLED controls this new
+      behavior.
+
+    * A new RunParm 'ProofAsstLookAndFeel' now controls the Swing L&F for the
+      whole application. The default option (and whatwe used before this update)
+      is 'Metal', and a list of options (which are OS-dependent) is presented if
+      you type an incorrect option. (I recommend 'Nimbus', if available.)
+
+    * A new RunParm 'ProofAsstMaximized' now allows ProofAsstGUI to start in
+      fullscreen mode.
+
+    * Added support for compound edits for undo handling. This way, undo and
+      redo apply to entire blocks of text, rather than individual characters as
+      before. Furthermore (and most importantly), the full-buffer replacements
+      performed by Unify now count as a single edit, so you only have to Ctrl-Z
+      once to undo/redo unification.
+
+    * Fixed a bug wherein the cursor is positioned at steps with LocalRefs (say
+      because the user just typed the LocalRef), but since the step is deleted
+      during processing, the cursor loses its anchor and ends up at the top of
+      the file. (Very annoying!) Now, the cursor is never positioned at LocalRef
+      steps and instead goes to the first non-LocalRef step after the cursor.
+
+    * Malformed steps with only one colon are now interpreted as step:ref
+      instead of step:hyp if the second field starts with # (i.e. a LocalRef) or
+      it is a theorem or hypothesis in the database (no unification checks are
+      done; it is just a heuristic).
+
+    * Steps with no ref and no formula are no longer fatal unification errors.
+      Instead, they simply fail to unify, and give errors just like steps with
+      formulas, which is to say that step:: alone on a line gives error
+
+          E-PA-0411: Unification failure in derivation proof step.
+
+      and step:?: on a line gives no error at all.
+
+    * All the supplementary dialogs like Step Selector Search, Search Options,
+      and the Search Results window now close on ESC (they used to close on
+      ALT-F4, but it is easy to make a mistake and close something you don't
+      want to close using that key combo). 
+
+================================================================================
+1-Nov-2011:
+
+    CHANGES:
+
+    This release includes small but excellent enhancements and a minor
+    but important bug fix.
+
+    -----------------------------------------------------------------
+    1. Quick Start (see also mmj2\QuickStart.html)
+    -----------------------------------------------------------------
+
+       Quick Start!!!:
+
+       Windows:  Double-click mmj2\mmj2jar\mmj2.bat in Windows Explorer
+
+       Mac OS-X: Double-click mmj2\mmj2jar\MacMMJ2.command in Finder
+
+
+       BUT...WAIT!...before running mmj2, edit, if needed:
+
+       EDIT-->Windows    mmj2\mmj2jar\RunParms.txt
+              using      mmj2\mmj2jar\mmj2.bat
+              Notepad:   mmj2\mmj2jar\mmj2PATutorial.bat
+
+           -->Mac OS-X   mmj2\mmj2jar\RunParms.txt
+              using      mmj2\mmj2jar\MacRunParmsPATutorial.txt
+              TextEdit:  mmj2\mmj2jar\MacMMJ2.command
+                         mmj2\mmj2jar\MacMMJ2PATutorial.command
+
+       (Double-click works well now because the new "mmj2 Fail Popup
+       Window" *not only* provides start-up and "fail" error
+       messages, but it also forces the Windows Command Prompt (Mac
+       OS-X utilities\terminal.app) window to stay open, which makes
+       it possible to see all of the mmj2 output about the error.)
+
+    -----------------------------------------------------------------
+    2. RunParms.txt and The mmj2.jar Command Line Arguments Revamped.
+    -----------------------------------------------------------------
+
+       The new release contains a serious revamp of both RunParms.txt
+       and the command line arguments for mmj2.jar. It has several
+       features of interest to the mmj2 user!
+
+       Unless you have been using your own modified version of mmj2.bat
+       and/or RunParms.txt you don't need to do anything special to
+       take advantage of these new features. Just use the new release
+       versions of mmj2.bat and RunParms.txt. (If you have your own
+       copies of these files they will -- most likely -- require minor
+       adjustments.)
+
+       In brief:
+
+           - New command line arguments specify data Paths for mmj2,
+             Metamath and the mmj2 Service feature. These make mmj2
+             easier to use in Windows, Mac OS-X and Linux environments
+             as well as making it easier to customize your mmj2
+             installation.
+
+           - MMJ2 Fail Popup Window which is displayed when startup or
+             premature termination errors in mmj2 are encountered.
+             Specify 'N' on the command line to disable this feature.
+
+           - The Command Line "Argument Option" report is extremely
+             useful during installation, customization and testing of
+             mmj2! It is output to Sysout at startup and provides an
+             audit trail of the program version and input command line
+             arguments. In the event of errors in the command line
+             arguments, the program tries to print as much as possible
+             of the Argument Option report, up to the point where a
+             command line argument error is detected -- and the last
+             line of the report printed will correspond to the invalid
+             argument!
+
+           - RunParms.txt is now maximally concise. This represents a
+             philosophical change. Previously, RunParms.txt contained
+             every possible RunParm command with the hard-coded default
+             specified (or asterisked-out). This was confusing and
+             unhelpful in two ways: 1) there are so many commands that
+             it was hard to see the important RunParms; and 2) at
+             startup mmj2 "echoes" each RunParm as it is executed and
+             this resulted in a bewildering barrage of output to
+             Sysout. The old version of RunParms.txt is now maintained
+             for reference purposes as RunParmsComplete.txt.
+
+           - All of the batch unit/volume regression tests have been
+             modified to take advantage of the Paths Enhancement.
+             Hardcoding of "C:\" exists only in the top level .bat
+             files -- and in a few cases "C:\" is coded for testing
+             purposes. These tests are now much more portable (to non-
+             Windows environments such as OS-X and Unix/Linux.)
+
+
+       Additional documentation at:
+
+           mmj2\doc\mmj2CommandLineArguments.html
+
+
+    ------------------------------------------------------------
+    3. New! GMFF (Graphics Mode Formula Formatting) Enhancement.
+    ------------------------------------------------------------
+
+       What is great about this feature is that it helps users see
+       right away what the Metamath ASCII formulas look like when
+       rendered in html (or Latex, etc.) Simply press Ctrl-1 (One) on
+       the Proof Assistant GUI screen to generate export file(s) via
+       GMFF -- use Alt-Tab to switch back and forth between the Proof
+       Assistant GUI and your browser window.
+
+           - NOTE: default setting for GMFF Export of a Proof Worksheet
+                   or theorem is to create both .html and .althtml
+                   versions (.gif and Unicode), and to write these
+                   to fileS named "general.html":
+
+                       - mmj2jar\gmff\html\general.html
+
+                       and
+
+                       - mmj2jar\gmff\althtml\general.html
+
+                   IF you prefer to use export file names composed of
+                   the Theorem Label + ".html" and/or to disable
+                   either the html or the althtml versions,
+                   THEN copy the "GMFFExportParms" RunParm lines from
+                   mmj2jar\RunParmsComplete.txt to your version
+                   of RunParms.txt.
+
+                       *GMFFExportParms,althtml,ON,althtmldef,GMFF\althtml,.html,GMFF\models\althtml,A,ISO-8859-1,general
+                       *GMFFExportParms,html,ON,htmldef,GMFF\html,.html,GMFF\models\html,A,ISO-8859-1,general
+
+                   Then un-asterisk the commands, change "ON" to "OFF"
+                   and/or erase "general" (leaving the option blank
+                   allows the default to be used, which is to use Theorem
+                   Label in the export file name):
+
+                       GMFFExportParms,althtml,OFF,althtmldef,GMFF\althtml,.html,GMFF\models\althtml,A,ISO-8859-1,general
+                       GMFFExportParms,html,ON,htmldef,GMFF\html,.html,GMFF\models\html,A,ISO-8859-1,
+
+
+       GMFF uses the typesetting information embedded in Metamath files
+       such as set.mm -- see Metamath Comment statement containing "$t"
+       -- to export files in other formats, such as as html and Latex.
+       At this time only html files have been generated but the GMFF
+       enhancement uses "Model" files in the mmj2 release to generate
+       its output and the types of files output are not restricted as
+       long as:
+
+       a) the output formula text is based on text strings, not parse
+          trees (as would be the case, for example, with MathML
+          output). And...
+
+       b) the structure of an individual export file can be made to fit
+          the structure of the available Model files. At this point
+          only Model "A" is available, but considerable effort was made
+          in programming to build in flexibility in the way a Model
+          file is used.
+
+       Modification of mmj2 code will be necessary if new Models are
+       required. Modification to use parse trees instead of formula
+       strings is doable but will require non-trivial changes. '
+
+       Refer to mmj2\doc\GMFFDoc\* for details.
+
+
+    ----------------------------------------------
+    4. Incomplete Step Cursor Positioning Bug Fix.
+    ----------------------------------------------
+
+       After Unification (Ctrl-U) the cursor was being moved in spite
+       of RunParm "ProofAsstIncompleteStepCursor,AsIs". And worse, the
+       ViewPort output lines were being scrolled so that the first line
+       on the screen matched the cursor location every time. Now, with
+       "AsIs" the cursor is repositioned only when there are proof
+       errors, or when unification is successful and a Metamath RPN
+       proof is generated.
+
+       See: mmj2/doc/IncompleteStepCursorPositioning.html
+
+       and  mmj2/doc/ProofAsstGUICursorHandling.html
+
+       NOTE: The RunParm "ProofAsstIncompleteStepCursor" default
+             setting is now "AsIs" instead of "Last". If you prefer the
+             old setting you can customize RunParms.txt by adding:
+
+                 ProofAsstIncompleteStepCursor,Last
+
+             just before the "RunProofAsstGUI" RunParm (the other
+             option is "First").
+
+
+Documentation:
+
+    New:
+
+        mmj2\QuickStart.html
+
+        mmj2\doc\GMFFDoc\
+        mmj2\doc\GMFFDoc\GMFFFolders.txt
+        mmj2\doc\GMFFDoc\GMFFModels.txt
+        mmj2\doc\GMFFDoc\GMFFRunParms.txt
+        mmj2\doc\GMFFDoc\README.html
+        mmj2\doc\GMFFDoc\SampleRunParms.txt
+        mmj2\doc\GMFFDoc\GMFF.jpg
+
+        mmj2\doc\ReleaseNotes20111101.html
+
+        mmj2\mmj2jar\PATutorial\Page413.mmp
+
+
+    Changed:
+
+        mmj2\CHGLOG.TXT
+        mmj2\doc\BottomUpProving-ByNormMegill.html
+        mmj2\doc\FinalizeReleaseTodos.txt
+        mmj2\doc\mmj2CommandLineArguments.html
+        mmj2\doc\RegressionTestResults.txt
+        mmj2\doc\RunningTheMMJ2TestSuite.html
+
+        mmj2\INSTALL.html
+        mmj2\LicenseEnclosure.java
+        mmj2\mmj2.html
+        mmj2\README.html
+
+        mmj2\mmj2jar\PATutorial\Page101.mmp
+        mmj2\mmj2jar\PATutorial\Page102.mmp
+        mmj2\mmj2jar\PATutorial\Page103.mmp
+        mmj2\mmj2jar\PATutorial\Page201.mmp
+        mmj2\mmj2jar\PATutorial\Page202.mmp
+        mmj2\mmj2jar\PATutorial\Page203.mmp
+        mmj2\mmj2jar\PATutorial\Page204.mmp
+        mmj2\mmj2jar\PATutorial\Page301.mmp
+        mmj2\mmj2jar\PATutorial\Page302.mmp
+        mmj2\mmj2jar\PATutorial\Page303.mmp
+        mmj2\mmj2jar\PATutorial\Page304.mmp
+        mmj2\mmj2jar\PATutorial\Page401.mmp
+        mmj2\mmj2jar\PATutorial\Page402.mmp
+        mmj2\mmj2jar\PATutorial\Page403.mmp
+        mmj2\mmj2jar\PATutorial\Page404.mmp
+        mmj2\mmj2jar\PATutorial\Page405.mmp
+        mmj2\mmj2jar\PATutorial\Page406.mmp
+        mmj2\mmj2jar\PATutorial\Page407.mmp
+        mmj2\mmj2jar\PATutorial\Page408.mmp
+        mmj2\mmj2jar\PATutorial\Page409.mmp
+        mmj2\mmj2jar\PATutorial\Page410.mmp
+        mmj2\mmj2jar\PATutorial\Page411.mmp
+        mmj2\mmj2jar\PATutorial\Page412.mmp (all new content!!!)
+
+
+    Deleted:
+
+        mmj2\MacOSXIssues.txt
+        mmj2\mmj2jar\LICENSE.TXT
+        mmj2\mmj2jar\LicenseEnclosure.java
+        mmj2\mmj2jar\SunJavaTutorialLicense.html
+
+
+Source Code:
+
+    New:
+
+        mmj2\src\mmj\gmff\GMFFUserTextEscapes.java
+        mmj2\src\mmj\gmff\MinCommentStmt.java
+        mmj2\src\mmj\gmff\GMFFException.java
+        mmj2\src\mmj\gmff\MinDerivationStep.java
+        mmj2\src\mmj\gmff\GMFFExportFile.java
+        mmj2\src\mmj\gmff\GMFFExporterTypesetDefs.java
+        mmj2\src\mmj\gmff\GMFFExportParms.java
+        mmj2\src\mmj\gmff\GMFFFileNotFoundException.java
+        mmj2\src\mmj\gmff\GMFFInputFile.java
+        mmj2\src\mmj\gmff\GMFFExporter.java
+        mmj2\src\mmj\gmff\GMFFMandatoryModelNotFoundException.java
+        mmj2\src\mmj\gmff\GMFFFolder.java
+        mmj2\src\mmj\gmff\GMFFFileFilter.java
+        mmj2\src\mmj\gmff\GMFFManager.java
+        mmj2\src\mmj\gmff\GMFFUserExportChoice.java
+        mmj2\src\mmj\gmff\ProofWorksheetCache.java
+        mmj2\src\mmj\gmff\GMFFConstants.java
+        mmj2\src\mmj\gmff\TypesetDefCommentParser.java
+        mmj2\src\mmj\gmff\EscapePair.java
+        mmj2\src\mmj\gmff\MinDistinctVariablesStmt.java
+        mmj2\src\mmj\gmff\MinHeaderStmt.java
+        mmj2\src\mmj\gmff\MinFooterStmt.java
+        mmj2\src\mmj\gmff\MinGeneratedProofStmt.java
+        mmj2\src\mmj\gmff\MinProofStepStmt.java
+        mmj2\src\mmj\gmff\MinProofWorkStmt.java
+        mmj2\src\mmj\gmff\MinProofWorksheet.java
+        mmj2\src\mmj\gmff\MinHypothesisStep.java
+        mmj2\src\mmj\gmff\ModelAExporter.java
+
+        mmj2\src\mmj\util\GMFFBoss.java
+        mmj2\src\mmj\util\MMJ2FailPopupWindow.java
+        mmj2\src\mmj\util\CommandLineArguments.java
+        mmj2\src\mmj\util\Paths.java
+
+
+    Changed:
+
+        mmj2\src\mmj\lang\Axiom.java
+        mmj2\src\mmj\lang\LangConstants.java
+        mmj2\src\mmj\lang\LogHyp.java
+        mmj2\src\mmj\lang\LogicalSystem.java
+        mmj2\src\mmj\lang\SystemLoader.java
+        mmj2\src\mmj\lang\Theorem.java
+
+        mmj2\src\mmj\mmio\IncludeFile.java
+        mmj2\src\mmj\mmio\MMIOConstants.java
+        mmj2\src\mmj\mmio\Statementizer.java
+        mmj2\src\mmj\mmio\Systemizer.java
+
+        mmj2\src\mmj\pa\AuxFrameGUI.java
+        mmj2\src\mmj\pa\PaConstants.java
+        mmj2\src\mmj\pa\ProofAsst.java
+        mmj2\src\mmj\pa\ProofAsstCursor.java
+        mmj2\src\mmj\pa\ProofAsstGUI.java
+        mmj2\src\mmj\pa\ProofWorksheet.java
+
+        mmj2\src\mmj\tl\MMTFolder.java
+        mmj2\src\mmj\tl\TlConstants.java
+        mmj2\src\mmj\tl\TlPreferences.java
+
+        mmj2\src\mmj\tmff\TMFFConstants.java
+        mmj2\src\mmj\tmff\TMFFPreferences.java
+
+        mmj2\src\mmj\util\BatchFramework.java
+        mmj2\src\mmj\util\BatchMMJ2.java
+        mmj2\src\mmj\util\Boss.java
+        mmj2\src\mmj\util\Dump.java
+        mmj2\src\mmj\util\LogicalSystemBoss.java
+        mmj2\src\mmj\util\OutputBoss.java
+        mmj2\src\mmj\util\ProofAsstBoss.java
+        mmj2\src\mmj\util\RunParmFile.java
+        mmj2\src\mmj\util\SvcBoss.java
+        mmj2\src\mmj\util\TheoremLoaderBoss.java
+        mmj2\src\mmj\util\UtilConstants.java
+
+        mmj2\src\mmj\verify\GrammarConstants.java
+        mmj2\src\mmj\verify\ProofConstants.java
+        mmj2\src\mmj\verify\VerifyProofs.java
+
+Data:
+
+    New:
+
+        mmj2\data\gmfftest\
+        mmj2\data\gmfftest\19.21adv.mmp
+        mmj2\data\gmfftest\a2i.mmp
+        mmj2\data\gmfftest\pm2.38.mmp
+        mmj2\data\gmfftest\syllogism.mmp
+        mmj2\data\gmfftest\a1i.mmt
+
+        mmj2\data\gmfftest\models\althtml\AM-file0.txt
+        mmj2\data\gmfftest\models\althtml\AM-file2.txt
+        mmj2\data\gmfftest\models\althtml\AM-step0.txt
+        mmj2\data\gmfftest\models\althtml\AM-step1X.txt
+        mmj2\data\gmfftest\models\althtml\AM-step2.txt
+        mmj2\data\gmfftest\models\althtml\AM-step3X.txt
+        mmj2\data\gmfftest\models\althtml\AM-step4.txt
+        mmj2\data\gmfftest\models\althtml\AO-comment0.txt
+        mmj2\data\gmfftest\models\althtml\AO-comment1X.txt
+        mmj2\data\gmfftest\models\althtml\AO-comment2.txt
+        mmj2\data\gmfftest\models\althtml\AO-distinctvar0.txt
+        mmj2\data\gmfftest\models\althtml\AO-distinctvar1X.txt
+        mmj2\data\gmfftest\models\althtml\AO-distinctvar2.txt
+        mmj2\data\gmfftest\models\althtml\AO-distinctvar3X.txt
+        mmj2\data\gmfftest\models\althtml\AO-distinctvar4.txt
+        mmj2\data\gmfftest\models\althtml\AO-footer0.txt
+        mmj2\data\gmfftest\models\althtml\AO-genproof0.txt
+        mmj2\data\gmfftest\models\althtml\AO-genproof1X.txt
+        mmj2\data\gmfftest\models\althtml\AO-genproof2.txt
+        mmj2\data\gmfftest\models\althtml\AO-header0.txt
+        mmj2\data\gmfftest\models\althtml\AO-header1X.txt
+        mmj2\data\gmfftest\models\althtml\AO-header2.txt
+        mmj2\data\gmfftest\models\althtml\AO-header3X.txt
+        mmj2\data\gmfftest\models\althtml\AO-header4.txt
+        mmj2\data\gmfftest\models\althtml\AO-header5X.txt
+        mmj2\data\gmfftest\models\althtml\AO-header6.txt
+        mmj2\data\gmfftest\models\althtml\AO-header7.txt
+
+        mmj2\data\gmfftest\models\html\AM-file0.txt
+        mmj2\data\gmfftest\models\html\AM-file2.txt
+        mmj2\data\gmfftest\models\html\AM-step0.txt
+        mmj2\data\gmfftest\models\html\AM-step1X.txt
+        mmj2\data\gmfftest\models\html\AM-step2.txt
+        mmj2\data\gmfftest\models\html\AM-step3X.txt
+        mmj2\data\gmfftest\models\html\AM-step4.txt
+        mmj2\data\gmfftest\models\html\AO-comment0.txt
+        mmj2\data\gmfftest\models\html\AO-comment1X.txt
+        mmj2\data\gmfftest\models\html\AO-comment2.txt
+        mmj2\data\gmfftest\models\html\AO-distinctvar0.txt
+        mmj2\data\gmfftest\models\html\AO-distinctvar1X.txt
+        mmj2\data\gmfftest\models\html\AO-distinctvar2.txt
+        mmj2\data\gmfftest\models\html\AO-distinctvar3X.txt
+        mmj2\data\gmfftest\models\html\AO-distinctvar4.txt
+        mmj2\data\gmfftest\models\html\AO-footer0.txt
+        mmj2\data\gmfftest\models\html\AO-genproof0.txt
+        mmj2\data\gmfftest\models\html\AO-genproof1X.txt
+        mmj2\data\gmfftest\models\html\AO-genproof2.txt
+        mmj2\data\gmfftest\models\html\AO-header0.txt
+        mmj2\data\gmfftest\models\html\AO-header1X.txt
+        mmj2\data\gmfftest\models\html\AO-header2.txt
+        mmj2\data\gmfftest\models\html\AO-header3X.txt
+        mmj2\data\gmfftest\models\html\AO-header4.txt
+        mmj2\data\gmfftest\models\html\AO-header5X.txt
+        mmj2\data\gmfftest\models\html\AO-header6.txt
+        mmj2\data\gmfftest\models\html\AO-header7.txt
+
+        mmj2\data\gmfftest\myproofs\a2i.mmp
+
+        mmj2\data\mm\DollarT099.mm
+        mmj2\data\mm\DollarT046.mm
+        mmj2\data\mm\DollarT033.mm
+        mmj2\data\mm\big-unifier.mm
+        mmj2\data\mm\DollarT045.mm
+        mmj2\data\mm\DollarT032.mm
+        mmj2\data\mm\DollarT022.mm
+        mmj2\data\mm\DollarTPreface.mm
+        mmj2\data\mm\DollarTFirst100.mm
+        mmj2\data\mm\DollarT026.mm
+        mmj2\data\mm\DollarT025.mm
+        mmj2\data\mm\DollarT024.mm
+        mmj2\data\mm\DollarT023.mm
+        mmj2\data\mm\DollarT011.mm
+        mmj2\data\mm\DollarT098.mm
+        mmj2\data\mm\DollarT012.mm
+        mmj2\data\mm\DollarT021.mm
+        mmj2\data\mm\DollarT019.mm
+        mmj2\data\mm\DollarT020.mm
+        mmj2\data\mm\DollarT017.mm
+        mmj2\data\mm\DollarT015.mm
+        mmj2\data\mm\DollarT016.mm
+        mmj2\data\mm\DollarT018.mm
+        mmj2\data\mm\DollarT013.mm
+        mmj2\data\mm\DollarT014.mm
+        mmj2\data\mm\DollarT002.mm
+        mmj2\data\mm\DollarT010.mm
+        mmj2\data\mm\DollarT001.mm
+        mmj2\data\mm\DollarT008.mm
+        mmj2\data\mm\DollarT007.mm
+        mmj2\data\mm\DollarT009.mm
+        mmj2\data\mm\DollarT006.mm
+        mmj2\data\mm\DollarT005.mm
+        mmj2\data\mm\DollarT003.mm
+        mmj2\data\mm\DollarT004.mm
+        mmj2\data\mmp\tests\esnnei.mmp
+
+        mmj2\data\runparm\windows\VT2aPA002.txt
+        mmj2\data\runparm\windows\UT11GMFF01.txt
+        mmj2\data\runparm\windows\UT11GMFF02.txt
+        mmj2\data\runparm\windows\UT11GMFF03.txt
+        mmj2\data\runparm\windows\UT11GMFF04.txt
+        mmj2\data\runparm\windows\UT11GMFF05.txt
+        mmj2\data\runparm\windows\UT11GMFF06.txt
+        mmj2\data\runparm\windows\UT11GMFF07.txt
+        mmj2\data\runparm\windows\UT11GMFF08.txt
+
+        mmj2\mmj2jar\gmff\
+
+        mmj2\mmj2jar\gmff\althtml\general.html
+        mmj2\mmj2jar\gmff\althtml\langle.gif (from Metamath Symbols.zip)
+        mmj2\mmj2jar\gmff\althtml\rangle.gif (from Metamath Symbols.zip)
+
+        mmj2\mmj2jar\gmff\html\general.html
+        mmj2\mmj2jar\gmff\html\*.gif         (from Metamath Symbols.zip)
+
+        mmj2\mmj2jar\gmff\models\althtml\AM-file0.txt
+        mmj2\mmj2jar\gmff\models\althtml\AM-file2.txt
+        mmj2\mmj2jar\gmff\models\althtml\AM-step0.txt
+        mmj2\mmj2jar\gmff\models\althtml\AM-step1X.txt
+        mmj2\mmj2jar\gmff\models\althtml\AM-step2.txt
+        mmj2\mmj2jar\gmff\models\althtml\AM-step3X.txt
+        mmj2\mmj2jar\gmff\models\althtml\AM-step4.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-comment0.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-comment1X.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-comment2.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-distinctvar0.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-distinctvar1X.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-distinctvar2.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-distinctvar3X.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-distinctvar4.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-footer0.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-genproof0.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-genproof1X.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-genproof2.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-header0.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-header1X.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-header2.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-header3X.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-header4.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-header5X.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-header6.txt
+        mmj2\mmj2jar\gmff\models\althtml\AO-header7.txt
+
+        mmj2\mmj2jar\gmff\models\html\AM-file0.txt
+        mmj2\mmj2jar\gmff\models\html\AM-file2.txt
+        mmj2\mmj2jar\gmff\models\html\AM-step0.txt
+        mmj2\mmj2jar\gmff\models\html\AM-step1X.txt
+        mmj2\mmj2jar\gmff\models\html\AM-step2.txt
+        mmj2\mmj2jar\gmff\models\html\AM-step3X.txt
+        mmj2\mmj2jar\gmff\models\html\AM-step4.txt
+        mmj2\mmj2jar\gmff\models\html\AO-comment0.txt
+        mmj2\mmj2jar\gmff\models\html\AO-comment1X.txt
+        mmj2\mmj2jar\gmff\models\html\AO-comment2.txt
+        mmj2\mmj2jar\gmff\models\html\AO-distinctvar0.txt
+        mmj2\mmj2jar\gmff\models\html\AO-distinctvar1X.txt
+        mmj2\mmj2jar\gmff\models\html\AO-distinctvar2.txt
+        mmj2\mmj2jar\gmff\models\html\AO-distinctvar3X.txt
+        mmj2\mmj2jar\gmff\models\html\AO-distinctvar4.txt
+        mmj2\mmj2jar\gmff\models\html\AO-footer0.txt
+        mmj2\mmj2jar\gmff\models\html\AO-genproof0.txt
+        mmj2\mmj2jar\gmff\models\html\AO-genproof1X.txt
+        mmj2\mmj2jar\gmff\models\html\AO-genproof2.txt
+        mmj2\mmj2jar\gmff\models\html\AO-header0.txt
+        mmj2\mmj2jar\gmff\models\html\AO-header1X.txt
+        mmj2\mmj2jar\gmff\models\html\AO-header2.txt
+        mmj2\mmj2jar\gmff\models\html\AO-header3X.txt
+        mmj2\mmj2jar\gmff\models\html\AO-header4.txt
+        mmj2\mmj2jar\gmff\models\html\AO-header5X.txt
+        mmj2\mmj2jar\gmff\models\html\AO-header6.txt
+        mmj2\mmj2jar\gmff\models\html\AO-header7.txt
+
+        mmj2\mmj2jar\MacRunParmsPATutorial.txt
+        mmj2\mmj2jar\RunParmsQL.txt
+        mmj2\mmj2jar\RunParmsComplete.txt
+
+    Changed:
+
+        mmj2\data\runparm\windows\PTAPGc7s1p146.txt
+        mmj2\data\runparm\windows\PTAPGc7s1p148.txt
+        mmj2\data\runparm\windows\PTAPGc7s2p160.txt
+        mmj2\data\runparm\windows\Sample001.txt
+        mmj2\data\runparm\windows\Sample002.txt
+        mmj2\data\runparm\windows\Sample003.txt
+        mmj2\data\runparm\windows\UT2PA001.txt
+        mmj2\data\runparm\windows\UT3LA001.txt
+        mmj2\data\runparm\windows\UT10001.txt
+        mmj2\data\runparm\windows\UT4001.txt
+        mmj2\data\runparm\windows\UT5001.txt
+        mmj2\data\runparm\windows\UT6001.txt
+        mmj2\data\runparm\windows\UT7001.txt
+        mmj2\data\runparm\windows\UT9001.txt
+        mmj2\data\runparm\windows\UT9002.txt
+        mmj2\data\runparm\windows\UT9003.txt
+        mmj2\data\runparm\windows\UT10002.txt
+        mmj2\data\runparm\windows\UT10003.txt
+        mmj2\data\runparm\windows\UT10021.txt
+        mmj2\data\runparm\windows\UT10022.txt
+        mmj2\data\runparm\windows\UT10023.txt
+        mmj2\data\runparm\windows\UT10031.txt
+        mmj2\data\runparm\windows\UT10032.txt
+        mmj2\data\runparm\windows\UT10033.txt
+        mmj2\data\runparm\windows\UT10041.txt
+        mmj2\data\runparm\windows\UT10042.txt
+        mmj2\data\runparm\windows\UT10043.txt
+        mmj2\data\runparm\windows\UT10051.txt
+        mmj2\data\runparm\windows\UT10052.txt
+        mmj2\data\runparm\windows\UT10053.txt
+        mmj2\data\runparm\windows\UT19100.txt
+        mmj2\data\runparm\windows\UTGR1c01.txt
+        mmj2\data\runparm\windows\UTGR1c02.txt
+        mmj2\data\runparm\windows\UTGR1c03.txt
+        mmj2\data\runparm\windows\UTGR1c04.txt
+        mmj2\data\runparm\windows\UTGR1c05.txt
+        mmj2\data\runparm\windows\UTGR1c05.txt
+        mmj2\data\runparm\windows\UTGR1c06.txt
+        mmj2\data\runparm\windows\UTIO1c01.txt
+        mmj2\data\runparm\windows\UTIO1c02.txt
+        mmj2\data\runparm\windows\UTIO1c03.txt
+        mmj2\data\runparm\windows\UTIO1c04.txt
+        mmj2\data\runparm\windows\UTIO1c05.txt
+        mmj2\data\runparm\windows\UTIO1c06.txt
+        mmj2\data\runparm\windows\UTIO1c07.txt
+        mmj2\data\runparm\windows\UTIO1c08.txt
+        mmj2\data\runparm\windows\UTLA1c01.txt
+        mmj2\data\runparm\windows\UTLA1c02.txt
+        mmj2\data\runparm\windows\UTPR1c01.txt
+        mmj2\data\runparm\windows\VT2bPA002.txt
+        mmj2\data\runparm\windows\VT2cPA002.txt
+        mmj2\data\runparm\windows\VT2dPA002.txt
+        mmj2\data\runparm\windows\VT2ePA002.txt
+
+        mmj2\doc\mmj2Service\TSvcCallbackCalleeRunParms.txt
+        mmj2\doc\mmj2Service\TSvcCallbackCallerRunParms.txt
+
+        mmj2\mmj2jar\AnnotatedRunParms.txt
+        mmj2\mmj2jar\RunParms.txt
+        mmj2\mmj2jar\RunParmsPATutorial.txt
+        mmj2\mmj2jar\RunParmsPeanoInfix.txt
+
+        mmj2\mmj2jar\setFirst100.mm
+
+    Deleted:
+
+        mmj2\data\runparm\windows\VT2PA002.txt
+
+Object Code:
+
+    Changed:
+
+        mmj2jar\mmj2.jar
+
+Other:
+
+    New:
+
+        mmj2\compile\mmj\gmff\gmffClasses.txt
+        mmj2\mmj2jar\CopySymbols.bat
+        mmj2\mmj2jar\MacMMJ2.command
+        mmj2\mmj2jar\MacMMJ2PATutorial.command
+        mmj2\mmj2jar\mmj2QL.bat
+
+    Changed:
+
+        mmj2\compile\mmj\util\utilClasses.txt
+        mmj2\compile\windows\CompMMJ.bat
+        mmj2\compile\windows\EraseMMJObjCode.bat
+        mmj2\compile\windows\mkjarargs.txt
+
+        mmj2\doc\mmj2Service\TjavacTCompilePaths.txt
+        mmj2\doc\mmj2Service\TSvcCallbackCallee.bat
+        mmj2\doc\mmj2Service\TSvcCallbackCaller.bat
+
+        mmj2\doc\windows\DocPackages.txt
+
+        mmj2\mmj2jar\mmj2.bat
+        mmj2\mmj2jar\mmj2PATutorial.bat
+        mmj2\mmj2jar\mmj2PeanoInfix.bat
+
+        mmj2\test\windows\RunBatchTest.bat
+        mmj2\test\windows\RunSample001.bat
+        mmj2\test\windows\RunSample002.bat
+        mmj2\test\windows\RunSample003.bat
+        mmj2\test\windows\RunUnitTest1.bat
+        mmj2\test\windows\RunUnitTest2.bat
+        mmj2\test\windows\RunUnitTest3.bat
+        mmj2\test\windows\RunUnitTest4.bat
+        mmj2\test\windows\RunUnitTest5.bat
+        mmj2\test\windows\RunUnitTest6.bat
+        mmj2\test\windows\RunUnitTest10.bat
+        mmj2\test\windows\RunUnitTest11.bat
+        mmj2\test\windows\RunUnitTest7.bat
+        mmj2\test\windows\RunUnitTest8.bat
+        mmj2\test\windows\RunUnitTest9.bat
+        mmj2\test\windows\RunUT1.bat
+        mmj2\test\windows\RunUT2.bat
+        mmj2\test\windows\RunUT3.bat
+        mmj2\test\windows\RunUT4.bat
+        mmj2\test\windows\RunUT5.bat
+        mmj2\test\windows\RunUT6.bat
+        mmj2\test\windows\RunUT7.bat
+        mmj2\test\windows\RunUT8.bat
+        mmj2\test\windows\RunUT10.bat
+        mmj2\test\windows\RunUT11.bat
+        mmj2\test\windows\RunUT9.bat
+        mmj2\test\windows\RunVolumeTest2a.bat
+        mmj2\test\windows\RunVolumeTest2b.bat
+        mmj2\test\windows\RunVolumeTest2c.bat
+        mmj2\test\windows\RunVolumeTest2d.bat
+        mmj2\test\windows\RunVolumeTest2e.bat
+        mmj2\test\windows\RunVT2a.bat
+        mmj2\test\windows\RunVT2b.bat
+        mmj2\test\windows\RunVT2c.bat
+        mmj2\test\windows\RunVT2d.bat
+        mmj2\test\windows\RunVT2e.bat
+        mmj2\test\windows\Sample001.bat
+        mmj2\test\windows\Sample002.bat
+        mmj2\test\windows\Sample003.bat
+
+    Deleted:
+
+        mmj2\test\windows\BatchMMJ2Sample001.bat
+        mmj2\test\windows\BatchMMJ2Sample002.bat
+        mmj2\test\windows\BatchMMJ2Sample003.bat
+        mmj2\test\windows\RunBatchFramework.bat
+        mmj2\test\windows\RunPAGUI.bat
+        mmj2\test\windows\RunUnitTest.bat
+        mmj2\test\windows\RunVolumeTest2.bat
+        mmj2\test\windows\RunVT2.bat
+
+
 
 ==================================================================
-1-Aug-2008: 
+1-Jul-2011:
 
-    CHANGES: 
+    CHANGES:
+
+    This is a bug fix release.
+
+    1. Miscellaneous Bug Fixes:
+
+        a) Fixed a bug in the parser which prevented construction
+           of a parse tree for formulas consisting of just one
+           constant symbol (in addition to the type code constant.)
+           A "pre-parse" optimization handles "Named-Typed
+           Constants" which appear in only one syntax axiom. In
+           the special case where this was the only parsing action
+           required, EarleyParser.java sent the affected formulas
+           into the regular parsing algorithm following the pre-parse
+           optimization. Unfortunately. the regular algoritm didn't
+           "see" any parsing left to do and did not construct a
+           parse tree. An example formula is "trutru". The relevant
+           (defective) unit test .mm file has been updated.
+
+    2. Added mmj2\data\mm\RegressionTest1set.mm -- which is the
+       Feb. 25, 2008 version of set.mm. This archived copy of
+       set.mm is now used for running the MMJ2 Test Suite.
+
+       Due to label and symbol changes over time the mmj2 Test
+       Suite suffers entropic decay! So, a fixed copy of set.mm
+       will be used for regression testing (excluding the volume
+       tests).
+
+    3. Adjusted RunParm data and code defaults for the increased
+       sizes of SymTbl and StmtTbl (1500 and 45000 respectively.)
+
+       Also increased memory allocations in C:\mmj2\mmj2jar\mmj2.bat
+       as follows: Total Memory   = 128M (was 64M),
+                   Maximum Memory = 256M (was 128M).
+
+    4. Added mmj2\doc\RegressionTestResults.txt and
+             mmj2\doc\RegressionTestResultsForm.txt
+
+       Documents differences between the new and old software output
+       when run using mmj2\data\mm\RegressionTest1set.mm.
+
+
+Documentation:
+
+    New:
+
+        mmj2\doc\RegressionTestResults.txt
+        mmj2\doc\RegressionTestResultsForm.txt
+
+    Changed:
+
+        CHGLOG.TXT
+        doc\FinalizeReleaseTodos.txt
+        INSTALL.html
+        mmj2.html
+        README.html
+        doc\RunningTheMMJ2TestSuite.html
+
+
+Source Code:
+
+    New:
+
+        N/A
+
+    Changed:
+
+        src\mmj\lang\LangConstants.java
+        src\mmj\pa\PaConstants.java
+        src\mmj\verify\EarleyParser.java
+
+Data:
+
+    New:
+
+        mmj2\data\mm\RegressionTest1set.mm
+
+    Changed:
+
+        mmj2\data\mm\UTGR1c02.mm
+        mmj2\mmj2jar\AnnotatedRunParms.txt
+        mmj2\mmj2jar\RunParms.txt
+        mmj2\mmj2jar\RunParmsPATutorial.txt
+        mmj2\mmj2jar\RunParmsPeanoInfix.txt
+
+Object Code:
+
+    Changed:
+
+        mmj2jar\mmj2.jar
+
+Other:
+
+    New:
+
+        N/A
+
+    Changed:
+
+        mmj2\mmj2jar\mmj2.bat
+
+
+
+==================================================================
+1-Aug-2008:
+
+    CHANGES:
 
     This is a significant release.
 
-    1. The "mmj2 Service" feature adds a new "svc" package to 
+    1. The "mmj2 Service" feature adds a new "svc" package to
        mmj2 and provides a foundation for other, non-mmj2
        code to access Metamath data and mmj2 facilities. The
        primary use envisioned is extracting Metamath data,
@@ -30,29 +1087,29 @@
        a class which implements the SvcCallback interface -- just
        as "caller" programs do -- but instead of directly calling
        BatchMMJ2, the user specifies the name of their SvcCallback-
-       implementing class via a "SvcCallback" RunParm. 
+       implementing class via a "SvcCallback" RunParm.
 
        Whether accessing mmj2 as a "caller" or "callee", complete
        access to mmj2's main facilities is provided in the
-       SvcCallback.go interface method. The "go()" method is passed 
-       references to the biggie mmj2 objects, including 
-       ProofAsst, Grammar, VerifyProofs, etc. 
+       SvcCallback.go interface method. The "go()" method is passed
+       references to the biggie mmj2 objects, including
+       ProofAsst, Grammar, VerifyProofs, etc.
 
        Within the SvcCallback.go() method the user-code can
        execute calls to mmj2 methods but must single-thread
        the accesses as mmj2 is not, in general, written for
        total multi-threaded access throughout (some code
-       could be multi-threaded but not all.) 
+       could be multi-threaded but not all.)
 
        When finished accessing the mmj2 Services, the user-code
        simply needs to execute a "return" from the
-       SvcCallback.go() method. 
+       SvcCallback.go() method.
 
        New RunParms added to mmj2 for use with BatchMMJ2
        (see mmj.util.SvcBoss) are SvcFolder, SvcCallbackClass,
        SvcArg, and SvcCall. The SrvArg RunParm provides a
        way for the user-code to obtain Key-Value parameter
-       pairs via the input RunParms file; they are loaded by 
+       pairs via the input RunParms file; they are loaded by
        BatchMMJ2 (with minimal validation) into a HashMap
        and passed via the SvcCallback.go() method. More
        information about these new RunParms is provided in
@@ -84,13 +1141,13 @@
 
 
     4. Added BookManager.java, Chapter.java and Section.java
-       to mmj.lang. These classes provide a way to group 
+       to mmj.lang. These classes provide a way to group
        Metamath statements and to store descriptive titles
-       with their associated Metamath objects (MObj's). 
-       
+       with their associated Metamath objects (MObj's).
+
        Each input MObj is assigned to a Section and is given
        a "sectionMObjNbr" ranging for 1 thru 'm' within the
-       Section. 
+       Section.
 
        Sections are assigned Section Numbers ranging from 1 thru 'n'
        across the entire input Metamath .mm file. Each Section
@@ -98,7 +1155,7 @@
 
        Chapters are assigned Chapter Numbers ranging from 1 thru 'p'
        across the entire input Metamath .mm file.
- 
+
        A new optional RunParm, "BookManagerEnabled" ("yes" or "no")
        was added. The default is "no" because BookManager
        provides no benefit at this time for mmj2 Proof Assistant
@@ -111,9 +1168,9 @@
        reference(s), a resequencing of the objects within the
        Section(s) is required -- which would be a wasteful use
        of resources for mmj2 Proof Assistant users who have no
-       interest in BookManager data. BookManager does use a small 
-       amount of RAM and CPU time and it can be enabled if the user 
-       desires. (data extracts via the mmj2 Service feature will 
+       interest in BookManager data. BookManager does use a small
+       amount of RAM and CPU time and it can be enabled if the user
+       desires. (data extracts via the mmj2 Service feature will
        likely be the main users of BookManager data.)
 
        Considerable additional information about BookManager,
@@ -126,10 +1183,10 @@
        in the mmj2 Logical System. Sequence numbers are assigned
        sequentially and provide the basis for the mechanism
        which ensures that cyclic or forward references by
-       Metamath objects are rejected (as invalid).  
+       Metamath objects are rejected (as invalid).
 
-       The motivation for this new feature is assignment of sequence 
-       numbers for theorems inserted by the new Theorem Loader 
+       The motivation for this new feature is assignment of sequence
+       numbers for theorems inserted by the new Theorem Loader
        enhancement. Previously all Metamath objects were appended
        to the "end" of the Logical System and sequence numbers
        were assigned from 10 by 10 up to the maximum of 2**31 - 1.
@@ -137,7 +1194,7 @@
        The Theorem Loader aims to "insert" theorems and logical
        hypotheses into the sequence number "gaps" left over from
        the initial Metamath .mm file load(s) (RunParm "LoadFile").
-       The Theorem Loader determines the Metamath object 
+       The Theorem Loader determines the Metamath object
        dependencies of objects to be inserted and instructs
        SeqAssigner to assign in the gap after the referenced
        object with the highest sequence number. The SeqAssigner
@@ -151,7 +1208,7 @@
        to detection of the error.)
 
        Associated with SeqAssigner.java is a new RunParm,
-       
+
             SeqAssignerIntervalSize,9999
 
        The default sequence number interval is 1000, thus
@@ -167,7 +1224,7 @@
     6. Added "Theorem Loader". The main function of Theorem
        Loader is to enable a user of the mmj2 Proof Assistant GUI
        to store a newly completed proof or theorem into the
-       Logical System in memory. 
+       Logical System in memory.
 
        Theorem Loader does not update the input Metamath .mm
        file(s). However, it stores new proofs and theorems
@@ -190,7 +1247,7 @@
        by inserting a "*LoadTheoremsFromMMTFolder,*" RunParm
        in the start-up RunParms.txt file used by the mmj2.bat
        job. Thus, the MMT Folder provides a "sandbox"ing
-       capability and may be used as a repository for 
+       capability and may be used as a repository for
        theorems and proofs developed over many mmj2 sessions.
 
        All of the Theorem Loader RunParms are available as
@@ -198,19 +1255,19 @@
        Thus, it is not necessary to always load the entire
        contents of the MMT Folder(s) at start-up -- this
        can be requested from the GUI, if desired (for this
-       reason "Verify All Proofs" was added to the TL menu.)        
+       reason "Verify All Proofs" was added to the TL menu.)
 
        Additional documentation about the Theorem Loader is
-       contained in 
+       contained in
 
             doc\TheoremLoaderOverview.html
 
        and
 
-            mmj2jar\AnnotatedRunParms.txt 
+            mmj2jar\AnnotatedRunParms.txt
 
        as well as the Proof Assistant GUI "Help" screen.
-       
+
        Examples of all new RunParms, with their default settings
        are provided in the start-up RunParms file,
 
@@ -232,23 +1289,23 @@
            search in mmj.pa.StepSelectorSearch.java by changing
 
                 mid = (low + high) / 2;
-           to 
+           to
                 mid = low + ((high - low) / 2);
- 
-        c) Fixed a bug in the Proof Assistant  which allowed a 
-           defined but "inactive" variable to be used in a new 
-           $d statement on the Proof Assistant GUI screen. To 
-           verify this, enter the GUI. It pops up a hypothetical 
-           new theorem, "syllogism" with a blank "LOC_AFTER" 
-           meaning that the theorem is logically located at the 
-           end of the Logical System. Add a line, "$d et ph" and 
-           press Ctrl-U. No error message is registered, but 
-           adding a proof step such as "99:? |- ( ph ? et )" does 
+
+        c) Fixed a bug in the Proof Assistant  which allowed a
+           defined but "inactive" variable to be used in a new
+           $d statement on the Proof Assistant GUI screen. To
+           verify this, enter the GUI. It pops up a hypothetical
+           new theorem, "syllogism" with a blank "LOC_AFTER"
+           meaning that the theorem is logically located at the
+           end of the Logical System. Add a line, "$d et ph" and
+           press Ctrl-U. No error message is registered, but
+           adding a proof step such as "99:? |- ( ph ? et )" does
            trigger an error message.
- 
+
         d) To prevent future problems, most RunParm options which
            typically follow the "LoadFile" RunParm are reset (nulled)
-           when the LoadFile is executed. This is because the 
+           when the LoadFile is executed. This is because the
            subsequent processing facilities have numerous
            interdependencies, some of which involve the data which
            is loaded by LoadFile. In effect, LoadFile is treated
@@ -261,9 +1318,9 @@
 
         e) eliminated stmtHasError() from ProofWorksheet statement
            classes.
-           
 
- 
+
+
 Documentation:
 
     New:
@@ -286,7 +1343,7 @@ Documentation:
 
     Changed:
 
-        CHGLOG.TXT 
+        CHGLOG.TXT
         doc\FinalizeReleaseTodos.txt
         INSTALL.html
         doc\MMJ2DirectoryStructure.txt
@@ -297,7 +1354,7 @@ Documentation:
         doc\RunningTheMMJ2TestSuite.html
 
 
-Source Code: 
+Source Code:
 
     New:
 
@@ -322,7 +1379,7 @@ Source Code:
         src\mmj\tl\TheoremStmtGroup.java
         src\mmj\tl\TlConstants.java
         src\mmj\tl\TlPreferences.java
- 
+
         src\mmj\util\MergeSortedArrayLists.java
         src\mmj\util\SvcBoss.java
         src\mmj\util\TheoremLoaderBoss.java
@@ -432,14 +1489,14 @@ Data:
         mmj2jar\RunParms.txt
         mmj2jar\RunParmsPATutorial.txt
 
-        
-Object Code: 
+
+Object Code:
 
     Changed:
 
         mmj2jar\mmj2.jar
 
-Other: 
+Other:
 
     New:
 
@@ -452,7 +1509,7 @@ Other:
         test\windows\RunUnitTest10.bat
         test\windows\RunUT10.bat
 
-    Changed:  
+    Changed:
 
         compile\mmj\lang\langClasses.txt
         compile\mmj\util\utilClasses.txt
@@ -463,13 +1520,13 @@ Other:
 
 
 ==================================================================
-1-Mar-2008: 
+1-Mar-2008:
 
-    CHANGES: 
+    CHANGES:
 
     This is a minor release but with super enhancements!
 
-    1. Add "Step Selector Search" feature to replace 
+    1. Add "Step Selector Search" feature to replace
        "Unify + Get Hints" and "alternate unification" messages.
 
        The Step Selector Search is another step-specific function
@@ -500,18 +1557,18 @@ Other:
        displayed on multiple lines on the Step Selector Dialog;
        selecting any of the lines associated with an assertion
        is sufficient to select the assertion itself (they assertion
-       conclusion and hypothesis formulas are broken out into 
-       multiple lines for readability but point to the same 
-       Assertion.) 
-       
+       conclusion and hypothesis formulas are broken out into
+       multiple lines for readability but point to the same
+       Assertion.)
+
        When an item is selected on the Step Selector Dialog the
        associated assertion's label is "pasted" into the Ref field
        of the Derivation Step for which the Step Selector Search
-       was run -- then Unification is performed in the usual 
-       manner. If the selected item proves to be unsuitable -- 
+       was run -- then Unification is performed in the usual
+       manner. If the selected item proves to be unsuitable --
        perhaps because of a Distinct Variables error (not checked
        in Step Selector Search), press Ctrl-Z (Edit Undo) twice
-       to restore the Proof Worksheet to the pre-selection 
+       to restore the Proof Worksheet to the pre-selection
        condition.
 
 
@@ -527,7 +1584,7 @@ Other:
        Unification is performed, which automatically re-derives
        the missing formulas. As usual, if the results are
        unsatisfactory, press Ctrl-Z (Edit-Undo) twice to restore
-       the Proof Worksheet to its prior state. 
+       the Proof Worksheet to its prior state.
 
 
     3. Several data items involved in unification are pre-computed
@@ -546,9 +1603,9 @@ Other:
        really fast :-)
 
 
-    4. The loop algorithm in the main unification search process was 
+    4. The loop algorithm in the main unification search process was
        tweaked to be less inefficient.
- 
+
 Documentation:
 
     New:
@@ -563,7 +1620,7 @@ x       mmj2jar\PATutorial\Page412.mmp
 
     Changed:
 
-x       CHGLOG.TXT 
+x       CHGLOG.TXT
 x       doc\FinalizeReleaseTodos.txt
 x       doc\ProofAssistantGUIDeriveFeature.html
 x       doc\ProofAssistantGUIDetailedInfo.html
@@ -578,7 +1635,7 @@ x       INSTALL.html
 x       README.html
 
 
-Source Code: 
+Source Code:
 
     New:
 
@@ -596,7 +1653,7 @@ Source Code:
         src\mmj\lang\Assrt.java
         src\mmj\lang\ParseNode.java
         src\mmj\lang\ParseTree.java
- 
+
         src\mmj\pa\DerivationStep.java
         src\mmj\pa\PaConstants.java
         src\mmj\pa\ProofAsst.java
@@ -606,10 +1663,10 @@ Source Code:
         src\mmj\pa\ProofWorksheet.java
         src\mmj\pa\ProofWorksheetParser.java
         src\mmj\pa\StepUnifier.java
- 
+
         src\mmj\util\ProofAsstBoss.java
         src\mmj\util\UtilConstants.java
- 
+
         src\mmj\verify\Grammar.java
 
 
@@ -630,35 +1687,35 @@ Data:
 ?       mmj2jar\RunParms.txt
 ?       mmj2jar\RunParmsPATutorial.txt
 
-        
-Object Code: 
+
+Object Code:
 
     Changed:
 
 ?       mmj2jar\mmj2.jar
 
-Other: 
+Other:
 
     New:
 
         test\windows\RunUT7.bat
         test\windows\RunUnitTest7.bat
 
-    Changed: 
+    Changed:
 
 
 ==================================================================
 
-1-Feb-2008: 
+1-Feb-2008:
 
-    CHANGES: 
+    CHANGES:
 
     This is a minor upgrade to mmj2 to satisfy user requests that
     didn't quite make it into Release20071101.
 
     1. Provide "First", "Last" or "AsIs" positioning of the
        cursor when there are no errors. Release20071101 provided
-       "Last" positioning, which puts the cursor at the /last/ 
+       "Last" positioning, which puts the cursor at the /last/
        incomplete proof step's Ref field if there are no errors,
        (and the 'qed' step's Ref if there are no incomplete
        proof steps.) "First" positions to the first incomplete
@@ -669,45 +1726,45 @@ Other:
        This feature is controlled by a RunParm:
 
            ProofAsstIncompleteStepCursor,Last
-    
+
        (See AnnotatedRunParms.txt for more details.)
-       
+
        An Edit Menu option, "Set Incomplete Step Cursor" is
        also provided.
 
 
     2. Enable user to disable automatic (TMFF) reformatting of
-       formulas containing work variables which are resolved 
-       during Unification (this is, in fact, the only time 
-       automatic reformatting of formulas is performed by mmj2 
-       in an "in progress" proof -- the program /respects/ the 
-       user's formatting in all other instances unless 
+       formulas containing work variables which are resolved
+       during Unification (this is, in fact, the only time
+       automatic reformatting of formulas is performed by mmj2
+       in an "in progress" proof -- the program /respects/ the
+       user's formatting in all other instances unless
        reformatting is specifically requested.)
 
        This feature is controlled by a RunParm:
 
            ProofAsstAutoReformat,no
-    
+
        (See AnnotatedRunParms.txt for more details.)
 
-       
+
     3. Provide single proof step reformatting via two new
        (alt) right-mouse button "pop-up" menu options:
 
            ReformatStep
-          
+
            ReformatStep:Swap Alt
 
        These operate identically to the regular Edit Menu
        options, "Reformat Proof" and "Reformat Proof:Swap Alt".
-       
+
        To make these new step-level reformatting options work
-       in an acceptable manner, the functioning of Edit Menu 
+       in an acceptable manner, the functioning of Edit Menu
        options "Set Format Nbr" and "Set Indent" were modified
        to /not/ automatically reformat the entire proof after
        a change in parameter setting. This may result in
        some perplexities when the new step reformatting options
-       are used, so a discussion is now required... 
+       are used, so a discussion is now required...
 
        The Proof Assistant has one set of memory registers
        to keep track of the Current Format Number, the
@@ -722,7 +1779,7 @@ Other:
        The /least/ confusing method for using "Reformat Step:Swap Alt"
        is to use it (toggle it) twice on a single proof step,
        thus switching the format options to the /alternate/
-       settings, and then back again. 
+       settings, and then back again.
 
        Note also: in my environment, at least, it is necessary
                   to first left-mouse click a proof step to
@@ -737,7 +1794,7 @@ Other:
        size changes. "Ctrl+" increases font size and "Ctrl-"
        decreases font size. For "technical reasons" these
        are shown as "Ctrl-Equals" and "Ctrl-Minus" on the
-       Edit Menu. 
+       Edit Menu.
 
        Note: This change is compatible with the way the Mozilla
        browser works, and that works just fine...
@@ -745,7 +1802,7 @@ Other:
 
     5. Error messages are now displayed before "Info" messages
        on the Proof Assistant GUI screen. Previously info
-       messages appeared first, which resulted in some 
+       messages appeared first, which resulted in some
        amount of dissatisfaction -- which need not be discussed
        here, but....the goal is that if there are errors in a Proof
        Worksheet, the (output) cursor is positioned to the
@@ -765,21 +1822,21 @@ Other:
 
        (See AnnotatedRunParms.txt for more details.)
 
- 
 
-    DEFERRED CHANGES: 
-     
-    1. Technical (transparent to users): Use Java "Generics" 
+
+    DEFERRED CHANGES:
+
+    1. Technical (transparent to users): Use Java "Generics"
        language feature. Contribution from Dan Getz. This is
-       a Java JDK 1.5 (AKA "5.0") language feature. 
+       a Java JDK 1.5 (AKA "5.0") language feature.
 
        a) Use <typed> Collections
-       b) Eliminate as many (newly) redundant typecasts as 
+       b) Eliminate as many (newly) redundant typecasts as
           possible
        c) Note: don't automatically change all "for loop" statements
-                to take advantage of the newly "generified" 
+                to take advantage of the newly "generified"
                 code when iterating over "Iterable" objects.
-    
+
 
 Documentation:
 
@@ -787,7 +1844,7 @@ Documentation:
 
     Changed:
 
-        CHGLOG.TXT 
+        CHGLOG.TXT
         doc\FinalizeReleaseTodos.txt
         doc\PAUserGuide\cmdwindow.html
         doc\PAUserGuide\Start.html
@@ -800,11 +1857,11 @@ Documentation:
         README.html
 
     Deleted:
-        
+
         doc\OldProofUnifierComments.java
         doc\READMEPATCH20060725.TXT
 
-Source Code: 
+Source Code:
 
     Changed:
 
@@ -851,14 +1908,14 @@ Data:
         mmj2jar\RunParms.txt
         mmj2jar\RunParmsPATutorial.txt
 
-        
-Object Code: 
+
+Object Code:
 
     Changed:
 
         mmj2jar\mmj2.jar
 
-Other: 
+Other:
 
     New:
 
@@ -867,110 +1924,110 @@ Other:
         test\windows\RunVT2e.bat
         test\windows\RunVolumeTest2e.bat
 
-    Changed: 
+    Changed:
 
         test\windows\RunUnitTest4.bat
 
 ==================================================================
-1-Nov-2007: 
+1-Nov-2007:
 
     CHANGES: (note: #1 -> #5 apply to the ProofAsstGUI)
-     
+
     1. If no errors position cursor to *last* incomplete proof step,
        and instead of always positioning cursor to column 1 of the
-       incomplete step, position it to the start of the Ref subfield. 
-    
+       incomplete step, position it to the start of the Ref subfield.
+
     2. Support indenting of proof levels as follows:
-   
+
        a) Add new RunParms "TMFFUseIndent" and
           new Edit Menu item, "Set Indent Amount".
           The default is 0, meaning zero number of columns
           indentation for each level down in the proof tree.
-   
+
        b) Add new RunParm "TMFFAltFormat" and "TMFFAltIndent"
           providing the preferred "alternate" Format Number
           and Level Indent Amount. The defaults are "7" and
-          "1", respectively meaning "Flat" format and indent 
+          "1", respectively meaning "Flat" format and indent
           one column per level.
-   
+
           And add new Edit Menu item, "Reformat Proof: Alt Swap" --
-          with special "Alt" and "Ctrl" key binding to the 
-          letter "o", so that Alt-E-O and Ctrl-O will switch 
+          with special "Alt" and "Ctrl" key binding to the
+          letter "o", so that Alt-E-O and Ctrl-O will switch
           to the input RunParm TMFFAltFormat and TMFFAltIndent
-          parameters and then back again to the previous 
+          parameters and then back again to the previous
           settings if requested a second time.
-   
-       NOTE: These features generalize upon the request for a 
-             single "Flat/Indented" formatting option. The "Flat" 
-             format displays each proof step on one line, and 
+
+       NOTE: These features generalize upon the request for a
+             single "Flat/Indented" formatting option. The "Flat"
+             format displays each proof step on one line, and
              indentation by proof level is expected to be very
              useful with the "Flat" Format (perhaps not so much
              with the other formats.)
-   
+
        NOTE: There will be no Edit Menu option(s) corresponding
              to the new "TMFFAltFormat" and "TMFFAltIndent" RunParms.
              The default value of "7,1" is expected to be satisfactory
              and the need for a GUI setting is ... not so much...
-   
+
        NOTE: The 'qed' step is considered Level 0, and will
              have zero indentation -- as will "island" proof
              steps that are not connected as hypotheses to
              any other proof steps. If a proof step is used
-             as an hypothesis more than once, the first 
+             as an hypothesis more than once, the first
              instance of its usage -- counting from the 'qed'
              step upwards in the proof -- is treated as *the*
              indicative level. Thus a step used as an hypothesis
              by the 'qed' step has Level 1 and indented by
              1 times the Indent Amount, and a step used by
              it as an hypothesis is at Level 2, and so on.
-   
+
     3. Add new "Local Ref" escape character, "#". May be used
        as the prefix to a Derivation Step Ref field which contains
-       either a Step Number or the .mm label of one of the 
+       either a Step Number or the .mm label of one of the
        Logical (aka "Essential") hypotheses of the theorem being
        proved. When Unification (Ctrl-U, etc.) is performed, during
        the "finale" of the initial LoadWorksheet processing (before
        unification search, Derive processing, etc.), all Hyp
        references pointing to the step containing the "#" are
        changed to point to the Local Ref step.
-   
+
        Here is an example with a detailed explanation:
-   
+
             -----
-   
+
             For example, after entering the first ax-mp then Ctrl-U
             for syl, we see:
-   
+
                h1::syl.1          |- ( ph -> ps )
                h2::syl.2          |- ( ps -> ch )
                1002:?:            |- &W1
                2002:?:            |- ( &W1 -> ( ph -> ch ) )
                qed:1002,2002:ax-mp     |- ( ph -> ch )
-   
+
             Then, the user recognizes that 1002 is really #1, he
             types "#1" or "#syl.1" after the "1002:?:" as
             follows, and presses Ctrl-U:
-   
+
                1002:?:#syl.1      |- &W1
-   
-            or 
-   
+
+            or
+
                1002:?:#1          |- &W1
-   
-   
+
+
             The program performs the requested Local Ref *text editing*
             operation during the "finale" of the LoadWorksheet
             validation process (prior to unification). If there
             are no errors with the request so far, it makes the
             *text editing* updates, so that after pressing Ctrl-U,
             we see:
-   
+
                h1::syl.1          |- ( ph -> ps )
                h2::syl.2          |- ( ps -> ch )
                2002:?:            |- ( ( ph -> ps ) -> ( ph -> ch ) )
                qed:1,2002:ax-mp     |- ( ph -> ch )
-   
-   
+
+
             NOTE 1: In the event of the Local Ref was input
             incorrectly, or if there is a subsequent error, say
             during Unification, the user then has the option of
@@ -990,72 +2047,72 @@ Other:
              mmj2jar directory. Then in the Proof Assistant GUI,
              use the File/Open Proof File menu item to open
              file "mmj2\mmj2jar\PATutorial\PageLocalRef.mmp".
-    
-   
+
+
     4. Add error messages area to main proof window frame.
-   
+
        This change involves creating a "JSplitPane" in the
        ProofAsstGUI main window frame. The Proof Text area
        can be at the top, with the error messages area at
        the bottom, or vice-versa, as specified by this new
        RunParm (default value is "Y"):
-   
-            ProofAsstTextAtTop,yes   
-   
+
+            ProofAsstTextAtTop,yes
+
        In addition, the number of text rows for both the Proof
-       Text area and the error messages text area can be 
+       Text area and the error messages text area can be
        specified via RunParm. These merely provide information
        to the system about how big to make the windows -- they
        do not limit the amount of output (and scroll bars
        appear as needed anyway.) The default settings are shown
        below:
-   
+
             ProofAsstTextRows,21
             ProofAsstErrorMessageRows,4
             ProofAsstErrorMessageColumns,80
-   
+
        Finally, please note that the existing Request Messages
        Window still exists and is populated with all of the
        messages displayed in the new error message text area
        on the ProofAsstGUI window. However, it is displayed
        *behind* the ProofAsstGUI window and is reachable at
-       any time by hitting Alt-Tab (press Alt-Tab again to 
+       any time by hitting Alt-Tab (press Alt-Tab again to
        return to the ProofAsstGUI window.) While this may seem
-       redundant, and unorthodox, at best, the idea is that 
+       redundant, and unorthodox, at best, the idea is that
        in some cases multiple messages of significant size may
        be produced, and in those situations it will be easier
        to view them in their entirety, in full screen mode (also
        it is much easier to add code than to remove code :-)
-   
-   
-    5. Eliminate the "dummy" derivation step containing   
+
+
+    5. Eliminate the "dummy" derivation step containing
        a "?" formula when File/New Proof or File/New Next Proof
        is requested for a theorem that already exists in
-       the input .mm file. Instead, just output the 
+       the input .mm file. Instead, just output the
        theorem's hypotheses and 'qed' step, and position
-       the cursor to the 'qed' step's Ref field.    
-   
-    6. Generates "info" message 
+       the cursor to the 'qed' step's Ref field.
+
+    6. Generates "info" message
        "I-PA-0119 Theorem xyz RPN-format Metamath proof generated!"
        when Ctrl-U (unification) is successful and the RPN-format
        proof is generated. Previously, no message was output. Also,
        positions to the last remaining (if any) incomplete proof
        step -- or the 'qed' step if there are no incomplete proof
-       steps and the cursor has not already been set. 
+       steps and the cursor has not already been set.
 
        This modification allows a user to use a "dummy" 'qed'
-       step and incrementally build a proof, with cursor 
+       step and incrementally build a proof, with cursor
        positioning somewhere reasonable (a "dummy" incomplete
        proof step could be manually input for this purpose.)
        The new info message is intended to provide confirmation
        of the success of unification -- which was previously
        provided by positioning the cursor at the end of the
-       generated RPN-format proof.  
+       generated RPN-format proof.
 
     7. Miscellany:
 
         doc\ProofAssistantGUIDeriveFeature.html
-            - In the dfuz example, "eqri" was recently name-changed 
+            - In the dfuz example, "eqri" was recently name-changed
               in set.mm to become "eqriv".
             - Also, the &W1 is now named &S1 by mmj2.
 
@@ -1065,7 +2122,7 @@ Other:
         mmj2jar\AnnotatedRunParms.txt
             - Added documentation for new RunParms:
               * TMFFUseIndent
-              * TMFFAltFormat 
+              * TMFFAltFormat
               * TMFFAltIndent
 
         mmj2jar\PATutorial\Page303.mmp
@@ -1080,15 +2137,15 @@ Other:
         mmj2jar\RunParms.txt
             - Added new RunParms:
               * TMFFUseIndent
-              * TMFFAltFormat 
+              * TMFFAltFormat
               * TMFFAltIndent
 
         mmj2jar\RunParmsPATutorial.txt
             - Added new RunParms:
               * TMFFUseIndent
-              * TMFFAltFormat 
+              * TMFFAltFormat
               * TMFFAltIndent
-   
+
 
 Documentation:
 
@@ -1100,7 +2157,7 @@ Documentation:
 
     Changed:
 
-        CHGLOG.TXT 
+        CHGLOG.TXT
         doc\FinalizeReleaseTodos.txt
         doc\PAUserGuide\mmMetamathFile.html
         doc\ProofAssistantGUIDeriveFeature.html
@@ -1113,7 +2170,7 @@ Documentation:
         mmj2jar\AnnotatedRunParms.txt
         mmj2jar\PATutorial\Page102.mmp
         mmj2jar\PATutorial\Page204.mmp
-        mmj2jar\PATutorial\Page303.mmp 
+        mmj2jar\PATutorial\Page303.mmp
         mmj2jar\PATutorial\Page401.mmp
         mmj2jar\PATutorial\Page402.mmp
         mmj2jar\PATutorial\Page403.mmp
@@ -1126,7 +2183,7 @@ Documentation:
         doc\ProofAssistantHelp.html
 
 
-Source Code: 
+Source Code:
 
     New:
 
@@ -1179,11 +2236,11 @@ Data:
         mmj2jar\RunParms.txt
         mmj2jar\RunParmsPATutorial.txt
 
-Other: 
+Other:
 
     New:
 
-    Changed: 
+    Changed:
 
 
 
@@ -1203,7 +2260,7 @@ New/Changed Features -- Proof Assistant and general mmj2:
       are named &C1, &C2, ...; and "set" Work Variables are
       named &S1, &S2, ... A great deal of documentation about
       Work Variables is available in mmj2\doc\WorkVariables.html.
-    
+
     * A new unification algorithm is used in the Proof Assistant
       for proof steps involving Work Variables in the step
       formula (conclusion) or hypotheses -- and for proof
@@ -1214,7 +2271,7 @@ New/Changed Features -- Proof Assistant and general mmj2:
       DeriveHypotheses are invoked, Work Variables are
       output instead of "dummy variables", and these can take
       part in unification across all steps in the proof
-      (e.g. if &W1 is used in multiple formulas, simply 
+      (e.g. if &W1 is used in multiple formulas, simply
       update one of them and unification will resolve
       them all automatically -- in fact, you may not even
       need to manually input an update to &W1 if you specify
@@ -1222,12 +2279,12 @@ New/Changed Features -- Proof Assistant and general mmj2:
 
     * Option "AsciiRetest" ("NoAsciiRetest") added to
       RunParm "ProofAsstBatchTest". Ascii Retest reprocesses
-      a completed Proof Worksheet using the output text 
+      a completed Proof Worksheet using the output text
       as input. The primary motivation for adding it was
       to eliminate batch testing error messages involving
       "soft" $d errors and dummy variables when the Soft Dj
       Vars Edit option is set to "GenerateReplacements" or
-      "GenerateNew". 
+      "GenerateNew".
 
 
     Changed Features:
@@ -1238,24 +2295,24 @@ New/Changed Features -- Proof Assistant and general mmj2:
       to resize and reposition the Proof Assistant GUI and
       Request Messages GUI windows so that both are visible
       on the desktop at the same time (assuming the user doesn't
-      close one of them :-) The motivation for this change is 
+      close one of them :-) The motivation for this change is
       to eliminate the annoyance to the user of having to Alt-Tab
       back and forth between the two. Experimentation reveals
       that perhaps the best arrangement is to put the Request
-      Messages window at the bottom of the screen and to 
+      Messages window at the bottom of the screen and to
       reduce its height so that 3 lines of message text are
-      visible within it -- the height of Proof Assistant GUI 
-      is then shrunk by about 7 rows, but the loss is 
-      acceptable. Users with large screens can especially 
+      visible within it -- the height of Proof Assistant GUI
+      is then shrunk by about 7 rows, but the loss is
+      acceptable. Users with large screens can especially
       benefit from this enhancement (and note that the RunParm
       "ProofAsstFontSize" can be set to 10 or 12 instead of the
       default, 14, to squeeze more proof lines onto the screen.)
- 
+
     * The default for the "ProofAsstDjVarsSoftErrors" RunParm
-      was changed to "GenerateReplacements" from "Report". 
+      was changed to "GenerateReplacements" from "Report".
       Option "GenerateReplacements" automatically creates $d
-      statements for a completed Proof Worksheet instead of 
-      error messages if "soft" Dj Var errors are found. This 
+      statements for a completed Proof Worksheet instead of
+      error messages if "soft" Dj Var errors are found. This
       option is especially helpful when a proof uses
       dummy/optional variables because the process by which
       mmj2 converts leftover Work Variables into dummy/optional
@@ -1263,14 +2320,14 @@ New/Changed Features -- Proof Assistant and general mmj2:
       use dummy variables that match the $d statements on the
       theorem being proved. Note: changing $d statements on
       a theorem is not problematic in this situation because
-      $d's for dummy/optional variables are not inherited by 
+      $d's for dummy/optional variables are not inherited by
       subsequent theorems.
 
     * RunParm "ProofAsstDummyVarPrefix" is ignored (because
       new Work Variable RunParms are used instead.) Remove
       any ProofAsstDummyVarPrefix RunParms in your RunParms.txt
       files -- at your convenience, as the RunParm is being
-      deprecated. 
+      deprecated.
 
 
 
@@ -1285,20 +2342,20 @@ Documentation:
 
 
     Changed:
- 
-        CHGLOG.TXT 
+
+        CHGLOG.TXT
         INSTALL.html
-        README.html 
+        README.html
         doc\FinalizeReleaseTodos.txt
         doc\ProofAssistantGUIDeriveFeature.html
         doc\ProofAssistantGUIDetailedInfo.html
         doc\ProofAssistantGUIQuickHOWTO.html
         doc\RunningTheMMJ2TestSuite.html
         mmj2jar\AnnotatedRunParms.txt
-        mmj2jar\PATutorial\Page405.mmp 
+        mmj2jar\PATutorial\Page405.mmp
 
 
-Source Code: 
+Source Code:
 
     New:
 
@@ -1327,7 +2384,7 @@ Source Code:
 
         src\mmj\pa\AuxFrameGUI.java
         src\mmj\pa\DerivationStep.java
-        src\mmj\pa\HypothesisStep.java 
+        src\mmj\pa\HypothesisStep.java
         src\mmj\pa\PaConstants.java
         src\mmj\pa\ProofAsst.java
         src\mmj\pa\ProofAsstGUI.java
@@ -1345,16 +2402,16 @@ Source Code:
         src\mmj\util\ProofAsstBoss.java
         src\mmj\util\UtilConstants.java
 
-        src\mmj\verify\EarleyParser.java 
+        src\mmj\verify\EarleyParser.java
         src\mmj\verify\Grammar.java
         src\mmj\verify\VerifyProofs.java
 
 
-Data: 
+Data:
 
     New:
 
-    Changed: 
+    Changed:
 
         compile\mmj\lang\langClasses.txt
         compile\mmj\pa\paClasses.txt
@@ -1374,13 +2431,13 @@ Data:
         mmj2jar\RunParmsPATutorial.txt
 
 
-Other: 
+Other:
 
     New:
 
         mmj2jar\CopyMMJ2Jar.bat
 
-    Changed: 
+    Changed:
 
 
 
@@ -1391,7 +2448,7 @@ Other:
 
     New/Changed Features -- Proof Assistant and general mmj2:
 
-Changes: 
+Changes:
     * New separate "mmj2jar.zip" download provided containing
       bare-minimum of executables plus tutorial and
       AnnotatedRunParms.txt (for reference). The full
@@ -1412,7 +2469,7 @@ Changes:
     * invoke DeriveHyp even if user doesn't
       enter a "?"; if the number of entered
       Hyps is less than the number of logical
-      hypotheses used by the entered Ref   
+      hypotheses used by the entered Ref
       assertion, automatically invoke DeriveHyp
       as if the user entered a "?". Also, if
       a Ref is entered and the correct number
@@ -1439,7 +2496,7 @@ Changes:
         StartRunParmTimer
         StopRunParmTimer
       (transparent to users)
-    * efficiency and logic fixes in 
+    * efficiency and logic fixes in
       mmj.lang.ParseNode.java#unifyWithSubtree() and
       mmj.lang.ParseNode.java#isDeepDup()
       (should be transparent to users)
@@ -1461,17 +2518,17 @@ Documentation:
         mmj2\doc\PAUserGuide\cmdwindow.html
         mmj2\doc\ProofAssistantGUIDeriveFeature.html
         mmj2\doc\ProofAssistantGUIDetailedInfo.html
-        mmj2\doc\ProofAssistantHelp.txt 
+        mmj2\doc\ProofAssistantHelp.txt
         mmj2\doc\RunningTheMMJ2TestSuite.html
-        mmj2\README.html 
+        mmj2\README.html
         mmj2\INSTALL.html
         mmj2\LicenseEnclosure.java
         mmj2\mmj2.html
- 
-    Deleted:  
+
+    Deleted:
 
 
-Source Code: 
+Source Code:
 
     New:
 
@@ -1488,8 +2545,8 @@ Source Code:
     Renamed:
 
 
-    Changed: 
- 
+    Changed:
+
         mmj2\src\mmj\lang\LangConstants.java
         mmj2\src\mmj\lang\Theorem.java
         mmj2\src\mmj\lang\Assrt.java
@@ -1514,15 +2571,15 @@ Source Code:
 
         mmj2\src\mmj\verify\VerifyProofs.java
 
- 
-    Deleted: 
+
+    Deleted:
 
 
-Data: 
+Data:
 
     New:
 
-        mmj2\data\mm\big.mm 
+        mmj2\data\mm\big.mm
         mmj2\data\mm\dvtest1ax3.mm
         mmj2\data\mm\dvtest1ax1.mm
         mmj2\data\mm\dvtest1HDR.mm
@@ -1569,12 +2626,12 @@ Data:
         mmj2\data\runparm\windows\VT2PA002.txt
 
         mmj2\mmj2jar\PATutorial\Page101.mmp
-        mmj2\mmj2jar\PATutorial\Page407.mmp 
+        mmj2\mmj2jar\PATutorial\Page407.mmp
 
-    Deleted: 
+    Deleted:
 
 
-Other: 
+Other:
 
     New:
 
@@ -1590,8 +2647,8 @@ Other:
         mmj2\mmj2jar\RunParmsPATutorial.txt
         mmj2\test\windows\RunUnitTest4.bat
 
- 
-    Deleted: 
+
+    Deleted:
 
 
 Regression test differences:
@@ -1600,7 +2657,7 @@ Regression test differences:
         mmj2\data\runparm\windows\UT2PA001.txt ->
         mmj2\data\mmp\tests\EPA0354.mmp
 
-        No longer generates error E-PA-0354 : 
+        No longer generates error E-PA-0354 :
         - specifying an extra Hyp = "?" no longer
           an error, Proof Worksheet now unifies
           successfully.
@@ -1622,30 +2679,30 @@ Regression test differences:
     New/Changed Features -- Proof Assistant and general mmj2:
 
     * Text Mode Formula Formatting (TMFF);
-    * Proof Get, and Browse Forward/Back through existing proofs 
+    * Proof Get, and Browse Forward/Back through existing proofs
       (no need to export from Metamath or via mmj2 batch).
-    * File/New-Next Proof menu item added which is a combination 
-      of File/New Proof and File/Forward-Get Proof. It creates a 
-      skeletal proof (like New Proof) for the next theorem in the 
-      database after location of the current Proof Worksheet 
-      (with respect to the database). This feature is provided for 
-      students who wish to work their way through, say, the first 
+    * File/New-Next Proof menu item added which is a combination
+      of File/New Proof and File/Forward-Get Proof. It creates a
+      skeletal proof (like New Proof) for the next theorem in the
+      database after location of the current Proof Worksheet
+      (with respect to the database). This feature is provided for
+      students who wish to work their way through, say, the first
       100 theorems without "cheating".
-    * Norm's Theorem Descriptions displayed on File/New, File/Get, 
-      and File/Browse Forward/Back Proof Worksheets (obtained from 
+    * Norm's Theorem Descriptions displayed on File/New, File/Get,
+      and File/Browse Forward/Back Proof Worksheets (obtained from
       comment immediately preceding $p statements).
-    * Unification Hints - upon request, provides list of assertions 
-      that unify with just the formula of a proof step, disregarding 
-      hypotheses. This ought to become a very popular item – and its 
+    * Unification Hints - upon request, provides list of assertions
+      that unify with just the formula of a proof step, disregarding
+      hypotheses. This ought to become a very popular item and its
       addition makes the Derive Feature much more powerful!
     * Cursor Handling fixed (to a great extent).
     * Edit Undo/Redo (can be disabled via RunParm? :).
-    * Proof Worksheet Popup Menu (e.g. right mouse/context sensitive) 
+    * Proof Worksheet Popup Menu (e.g. right mouse/context sensitive)
       providing Cut, Copy and Paste actions.
     * Set Proof Worksheet Foreground/Background Color.
-    * Help About showing memory utilization in addition to the 
+    * Help About showing memory utilization in addition to the
       typical stuff.
-    * mmj2 Jar file executable download available + simplified use 
+    * mmj2 Jar file executable download available + simplified use
       procedures.
     * Implemented 6-24-2006 Metamath.pdf spec change prohibiting
       Stmt.label and Sym.id namespace collisions.
@@ -1661,7 +2718,7 @@ Regression test differences:
       set to 'no' the "VerifyProof" RunParm is ignored (but an
       informational warning message is printed.)  Saves about 15MB
       for set.mm (9/14 version).
-      
+
 
 Documentation:
 
@@ -1680,19 +2737,19 @@ Documentation:
         C:\mmj2\mmj2.html
         C:\mmj2\LICENSE.TXT
         C:\mmj2\README.html (also, renamed from README.TXT)
-        
+
         doc\BasicsOfSyntaxAxiomsAndTypes.html
         doc\EarleyParseCompletedItemSetsExample.html
         doc\MMJ2DirectoryStructure.txt
         doc\ProofAssistantGUIDetailedInfo.html
         doc\ProofAssistantGUIQuickHOWTO.html
- 
-    Deleted: 
+
+    Deleted:
         doc\BottomUpParseFunctionAlgorithm.html
         doc\PhilosophicalNotesOnParsing.html
-        doc\ProofAssistantConsiderations.html 
+        doc\ProofAssistantConsiderations.html
 
-Source Code: 
+Source Code:
 
     New:
         mmj\pa\ProofAsstCursor.java
@@ -1718,8 +2775,8 @@ Source Code:
         mmj\pa\RequestMessagesGUI.java (to)
         mmj\pa\UnificationErrorsGUI.java (from)
 
-    Changed: 
- 
+    Changed:
+
         mmj\lang\Assrt.java
         mmj\lang\Axiom.java
         mmj\lang\Cnst.java
@@ -1727,7 +2784,7 @@ Source Code:
         mmj\lang\Hyp.java
         mmj\lang\LangConstants.java
         mmj\lang\LogHyp.java
-        mmj\lang\LogicalSystem.java 
+        mmj\lang\LogicalSystem.java
         mmj\lang\ParseNode.java
         mmj\lang\ProofCompression.java
         mmj\lang\MandFrame.java
@@ -1737,13 +2794,13 @@ Source Code:
         mmj\lang\Theorem.java
         mmj\lang\Var.java
         mmj\lang\VarHyp.java
- 
+
         mmj\mmio\MMIOConstants.java
         mmj\mmio\SrcStmt.java
         mmj\mmio\Statementizer.java
         mmj\mmio\Systemizer.java
 
-        mmj\pa\PaConstants.java      
+        mmj\pa\PaConstants.java
         mmj\pa\ProofAsst.java
         mmj\pa\ProofAsstGUI.java
         mmj\pa\ProofAsstPreferences.java
@@ -1753,7 +2810,7 @@ Source Code:
         mmj\util\BatchFramework.java
         mmj\util\BatchMMJ2.java
         mmj\util\Boss.java
-        mmj\util\Dump.java  
+        mmj\util\Dump.java
         mmj\util\LogicalSystemBoss.java
         mmj\util\OutputBoss.java
         mmj\util\ProofAsstBoss.java
@@ -1763,9 +2820,9 @@ Source Code:
         mmj\verify\GrammarConstants.java
         mmj\verify\ProofConstants.java
         mmj\verify\ProofDerivationStepEntry.java
-        mmj\verify\VerifyProofs.java 
+        mmj\verify\VerifyProofs.java
 
-Data: 
+Data:
 
     New:
         C:\mmj2\data\mm\setFirst100.mm
@@ -1783,7 +2840,7 @@ Data:
         C:\mmj2\data\runparm\windows\VT2PA002.txt
 
 
-Other: 
+Other:
 
     New:
         C:\mmj2\mmj2jar\*.*
@@ -1837,13 +2894,13 @@ Documentation:
         doc\ProofAssistantGUIDetailedInfo.html
         doc\ProofAssistantGUIQuickHOWTO.html
 
-Source Code: 
+Source Code:
 
     New:
 
         mmj\lang\ProofCompression.java
 
-    Changed: 
+    Changed:
 
         mmj\lang\Hyp.java
         mmj\lang\LangConstants.java
@@ -1877,7 +2934,7 @@ Source Code:
         mmj\verify\ProofConstants.java
         mmj\verify\VerifyProofs.java
 
-Tests: 
+Tests:
 
     New:
         C:\mmj2\test\windows\RunUnitTest3.bat
@@ -1920,14 +2977,14 @@ Added Proof Assistant in new package mmj.pa, along with
 new tests and some new code in old classes to support
 Proof Assistant:
 
-Source Code: 
+Source Code:
 
     New:
         mmj.pa package, Proof Assistant
 
         mmj\pa\ProofAsst.java
         mmj\pa\ProofAsstGUI.java
-        mmj\pa\ProofWorksheet.java  
+        mmj\pa\ProofWorksheet.java
         mmj\pa\ProofUnifier.java
         mmj\pa\ProofWorksheetParser.java
         mmj\pa\ProofAsstPreferences.java
@@ -1941,7 +2998,7 @@ Source Code:
 
         mmj\verify\ProofDerivationStepEntry.java
 
-    Changed: 
+    Changed:
 
         mmj\lang\Theorem.java
         mmj\lang\Axiom.java
@@ -1978,14 +3035,14 @@ Source Code:
         mmj\verify\ProofConstants.java
         mmj\verify\VerifyProofs.java
 
-Tests: 
+Tests:
     New:
         C:\mmj2\test\windows\RunUnitTest2.bat
         C:\mmj2\test\windows\RunUT2.bat
         C:\mmj2\test\windows\RunVolumeTest2.bat
         C:\mmj2\test\windows\RunVT2.bat
         C:\mmj2\test\windows\RunPAGUI.bat
-   
+
 
 Documentation:
     New:
@@ -2000,7 +3057,7 @@ Documentation:
         doc\UnificationProblem2.txt
         doc\NormsPatchToSetmm.txt
         doc\SolutionOneAndTwo.txt
-    
+
     Changed:
         C:\mmj2\mmj2.html
         C:\mmj2\CHGLOG.TXT
@@ -2011,38 +3068,38 @@ Documentation:
 ==========================================================
 
 Sep-25-2005:
-- Added barrage of unit tests that seek to exercise every 
+- Added barrage of unit tests that seek to exercise every
   error message involving Metamath files. This excludes
   a comprehensive set of unit tests for the BatchMMJ2.java
   program as well as those messages that can't (apparently)
   be triggered with the software in its current configuration
   (for example, a bit of code isn't exercised when batch
   .mm files are read in but could be exercised if the
-  java object's method were invoked directly.) 
-  
+  java object's method were invoked directly.)
+
   See:
     C:\mmj2\test\windows\RunUnitTest.bat (which calls RunUT1.bat)
     C:\mmj2\test\windows\RunUT1.bat
-    
+
     plus various new .mm files in
     C:\mmj2\data\mm\
-    
+
     and the corresponding RunParmFiles in
     C:\mmj2\data\runparm\windows\
-  
-- mmj.verify.TypeConversionRule#deriveAdditionalRules(): bug! 
-  derivation of new type conversion rules -- when adding a type 
-  converison rule must check both rules for hypothesis matches 
-  (i.e. rule "B isa A" and rule "C isa B" requires derived rule 
-  "C isa A" regardless of the order of input of the 1st two 
+
+- mmj.verify.TypeConversionRule#deriveAdditionalRules(): bug!
+  derivation of new type conversion rules -- when adding a type
+  converison rule must check both rules for hypothesis matches
+  (i.e. rule "B isa A" and rule "C isa B" requires derived rule
+  "C isa A" regardless of the order of input of the 1st two
   rules, so attempt derivation both ways when 2nd rule is read.)
-  
+
   In the example below, if the last two axioms were reversed,
   the error message was triggered, but as shown below, no error
-  was reported! 
-  
+  was reported!
+
     $( E-GR-0041 Syntax Axiom, label = ";
-                 " is a Type Conversion Rule that creates a 
+                 " is a Type Conversion Rule that creates a
                  " Type Conversion loop from Type = ";
                  ", to Type = "; $)
     $c c41a c41b c41c $.
@@ -2054,9 +3111,9 @@ Sep-25-2005:
     conv41b $a c41a v41b $.
     conv41a $a c41c v41a $.
 
-- mmj.verify.GrammarRule#add 
+- mmj.verify.GrammarRule#add
   Change message text of E-GR-0044 to reflect fact that the
-  duplicate grammar rule is *derived*, and to show the actual 
+  duplicate grammar rule is *derived*, and to show the actual
   rules involved!
 
 - mmj.util.BatchFramework.java
@@ -2066,18 +3123,18 @@ Sep-25-2005:
    after the Sample002 test was run (test file version
    mismatch -- oops! And similar version problem w/Sample003
    output.)
-   
+
 - mmj.mmio.MMIOConstants.java : misc typos
 - mmj.mmio.Systemizer
 - mmj.lang.LangConstants.java : misc typos
-- mmj.util.Dump.java 
+- mmj.util.Dump.java
     -> check grammar.getGrammarInitialized() in addition to "!= null"
 - mmj.vxerify.ProofConstants.java : misc typos
 - mmj.verify.GrammarConstants.java : misc.
 - mmj.verify.Grammar : comment typo fixed.
 
 ==============================================================
-    
+
 Aug-30-2005:
 - add CHGLOG.TXT to c:/mmj2 directory
 
@@ -2088,8 +3145,8 @@ Aug-30-2005:
 - add note cautioning the user to avoid or minimize changes to
   the contents of c:/mmj2 because newer versions of mmj2 will be
   just mmj2.zip's of the entire directory, and one would not like
-  to lose anything with an overlay update. 
-   
+  to lose anything with an overlay update.
+
 - typos
     * in c:\mmj2\mmj2.html
     * /mmj/lang/LangConstants.html#ERRMSG_PARSED_RPN_INCOMPLETE
@@ -2100,16 +3157,16 @@ Aug-30-2005:
 - add md5 checksum file for mmj2.zip
 
 - change getMandHypArray() to getMandHypArrayLength() due
-  to compiler errors in earlier Java versions: 
-  "cannot override getMandHypArray() in mmj.lang.Stmt; attempting 
+  to compiler errors in earlier Java versions:
+  "cannot override getMandHypArray() in mmj.lang.Stmt; attempting
   to use incompatible return type
-        found   : mmj.lang.VarHyp[] 
+        found   : mmj.lang.VarHyp[]
         required: mmj.lang.Hyp[]
              public VarHyp[] getMandHypArray() {"
   The "feature" allowing this assignment is described in 10.10
   of Java Language Specification, but even so appears less than
   robust. And mmj2 only needs the *count* of mandatory hypotheses.
-  
+
   Reference Search of mmj2 =
     C:\mmj2\src\mmj\lang\Assrt.java(106): public Hyp[] getMandHypArray() {
     C:\mmj2\src\mmj\lang\LogHyp.java(101): public VarHyp[] getMandHypArray() {

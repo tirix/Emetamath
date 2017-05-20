@@ -112,6 +112,16 @@ public class MMPPartitionScanner extends MMPartitionScanner {
 			return fToken;
 		}
 		
+		public IToken skipParenthesis(ICharacterScanner scanner) {
+			int c;
+			c = scanner.read();
+			if(c == EOF) return Token.EOF;
+			if(c == '(' || c == ')') scanner.read();
+			if(c == EOF) return Token.EOF;
+			scanner.unread();
+			return fToken;
+		}
+		
 		protected void buildEOLSequence(ICharacterScanner scanner) {
 			if(fSortedLineDelimiters == null) {
 				char[][] lineDelimiters = scanner.getLegalLineDelimiters();
@@ -143,7 +153,7 @@ public class MMPPartitionScanner extends MMPartitionScanner {
 		public IToken evaluate(ICharacterScanner scanner) {
 			if(scanner.getColumn() != 0) return Token.UNDEFINED;
 			int c = scanner.read();
-			if(!labelDetector.isWordPart((char) c)) return Token.UNDEFINED;
+			if(!labelDetector.isWordPart((char) c) && c != '!') return Token.UNDEFINED;
 
 			// search the first semicolon
 			// TODO check that we don't change lines ?
@@ -181,21 +191,21 @@ public class MMPPartitionScanner extends MMPartitionScanner {
 			int c = scanner.read();
 			scanner.unread();
 
+			buildEOLSequence(scanner);
+
+			if(scanner.getColumn() != 0) return Token.UNDEFINED;
+			if(isEol(scanner)) return commentToken; // consider a single empty line as a comment
+			
 			// we always start with the '*', and at the beginning of a line
 			if(c != COMMENT_CHAR) return Token.UNDEFINED;
-			if(scanner.getColumn() != 0) return Token.UNDEFINED;
-
-			buildEOLSequence(scanner);
 
 			do {
 				// search the next line not starting with whitespace
 				boolean eol = false;
-				do { c = scanner.read(); 
+				do {  
 					// Check for end of line
-					for (int i= 0; i < fSortedLineDelimiters.length; i++) {
-						if (c == fSortedLineDelimiters[i][0] && sequenceDetected(scanner, fSortedLineDelimiters[i], true))
-							eol =true;
-					}
+					eol = isEol(scanner);
+					scanner.read();
 				} while(!eol && c != EOF);
 				if(c == EOF) return Token.EOF;
 				c = scanner.read();
@@ -203,6 +213,16 @@ public class MMPPartitionScanner extends MMPartitionScanner {
 			if(c == EOF) return Token.EOF;
 			scanner.unread();
 			return commentToken;
+		}
+		
+		private boolean isEol(ICharacterScanner scanner) {
+			int c = scanner.read();
+			for (int i= 0; i < fSortedLineDelimiters.length; i++) {
+				if (c == fSortedLineDelimiters[i][0] && sequenceDetected(scanner, fSortedLineDelimiters[i], true))
+					return true;
+				}
+			scanner.unread();
+			return false;
 		}
 	}
 
@@ -275,6 +295,9 @@ public class MMPPartitionScanner extends MMPartitionScanner {
 				
 				// skip the theorem name label
 				if(skipLabel(scanner) == Token.EOF) return Token.EOF;
+			
+				// skip the theorem name label
+				if(skipParenthesis(scanner) == Token.EOF) return Token.EOF;
 			
 				c = scanner.read();
 				scanner.unread();

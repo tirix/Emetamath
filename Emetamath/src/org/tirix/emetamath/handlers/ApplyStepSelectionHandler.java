@@ -3,6 +3,7 @@ package org.tirix.emetamath.handlers;
 import mmj.lang.Assrt;
 import mmj.pa.PaConstants;
 import mmj.pa.StepRequest;
+import mmj.pa.StepRequest.StepRequestType;
 import mmj.pa.StepSelectorItem;
 
 import org.eclipse.core.commands.ExecutionEvent;
@@ -26,17 +27,19 @@ public class ApplyStepSelectionHandler extends UnifyHandler {
 		ISelection selection = stepSelectorView.getViewer().getSelection();
 		Object obj = ((IStructuredSelection)selection).getFirstElement();
 		if(obj instanceof StepSelectorItem) {
-	        Assrt assrtChoice = ((StepSelectorItem)obj).assrt;
+	        Assrt assrtChoice = ((StepSelectorItem)obj).getAssrt();
 			StepRequest stepRequest = new StepRequest(
-                    PaConstants.STEP_REQUEST_SELECTOR_CHOICE,
+					StepRequestType.SelectorChoice,
                     stepSelectorView.getStep(),
                     assrtChoice);
 			unify(context,
 					stepSelectorView.getActiveEditor(),
 					false,	// no renum
+		            false,  // no convertion of working variables
 		            null,	// no preprocess request
 		            stepRequest, //  step selector request
-		            null	// no TheoremLoader request
+		            null,	// no TheoremLoader request
+		            false	// don't print Ok messages
 			);
 		}
 

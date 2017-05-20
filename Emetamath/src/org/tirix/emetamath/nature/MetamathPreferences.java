@@ -1,7 +1,12 @@
 package org.tirix.emetamath.nature;
 
+import org.eclipse.jface.preference.IPreferenceStore;
+import org.tirix.emetamath.Activator;
+import org.tirix.emetamath.preferences.PreferenceConstants;
+
 import mmj.lang.LogicalSystem;
 import mmj.pa.ProofAsstPreferences;
+import mmj.pa.SessionStore;
 import mmj.tl.TlPreferences;
 import mmj.tmff.TMFFPreferences;
 
@@ -11,6 +16,33 @@ public class MetamathPreferences {
     private ProofAsstPreferences  proofAsstPreferences;
 	private TlPreferences tlPreferences;
 
+	private SessionStore store;
+	
+	private static MetamathPreferences singleton;
+	
+	public static MetamathPreferences getInstance() {
+		if(singleton == null) singleton = new MetamathPreferences();
+		return singleton;
+	}
+	
+	/**
+	 * Returns (MMJ) Preference Store
+	 * @return
+	 */
+	public SessionStore getSessionStore() {
+		if(store == null) store = new SessionStore();
+		// TODO link this with the Eclipse Preferences page!
+    	return store;
+	}
+
+	/**
+	 * Returns (Eclipse) Preference Store
+	 * @return
+	 */
+	public IPreferenceStore getPreferenceStore() {
+		return Activator.getDefault().getPreferenceStore();
+	}
+	
     /**
      *  Fetches a reference to the ProofAsstPreferences,
      *  first initializing it if necessary.
@@ -23,13 +55,11 @@ public class MetamathPreferences {
      *  @return ProofAsstPreferences object ready to go.
      */
     public ProofAsstPreferences getProofAsstPreferences() {
-
         if (proofAsstPreferences == null) {
             proofAsstPreferences  = new ProofAsstPreferences();
-            proofAsstPreferences.
-                setTMFFPreferences(getTMFFPreferences());
+            proofAsstPreferences.tmffPreferences = getTMFFPreferences();
         }
-
+        proofAsstPreferences.rpnProofRightCol.set(80);
         return proofAsstPreferences;
     }
 
@@ -43,6 +73,7 @@ public class MetamathPreferences {
 
         if (tmffPreferences == null) {
             tmffPreferences   = buildTMFFPreferences();
+            tmffPreferences.currFormatNbr.set(getPreferenceStore().getInt(PreferenceConstants.P_TMFF_FORMAT_NBR));
         }
         return tmffPreferences;
     }
@@ -54,7 +85,7 @@ public class MetamathPreferences {
      */
     protected TMFFPreferences buildTMFFPreferences() {
 
-        return new TMFFPreferences();
+        return new TMFFPreferences(getSessionStore());
     }
 
     /**
@@ -69,7 +100,7 @@ public class MetamathPreferences {
         if (tlPreferences == null) {
 
             tlPreferences         =
-                new TlPreferences(logicalSystem);
+                new TlPreferences(logicalSystem, getSessionStore());
         }
 
         return tlPreferences;

@@ -4,6 +4,7 @@ package mmj.util;
  * An interface designed to monitor the progress of the file loading or proof verifying
  */
 public interface Progress {
+    // TODO handle interruptions, e.g. by throwing an exception in "worked"
 
     /**
      * Notifies that some new task has been identified, 

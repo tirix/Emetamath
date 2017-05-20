@@ -11,26 +11,44 @@
 
 package mmj.lang;
 
+import mmj.mmio.SourcePosition;
+import mmj.pa.ErrorCode;
+import mmj.verify.VerifyException;
 
 /**
- *  Thrown when Metamath source file has a non-fatal error such
- *  as a syntax error.
+ * Thrown when Metamath source file has a non-fatal error such as a syntax
+ * error.
  */
-public class LangException extends Exception {
+public class LangException extends VerifyException {
+    public static final String NS = "LA";
+
     /**
-     * Default Constructor, <code>LangException</code>.
+     * Constructor, {@code LangException} with error message.
+     *
+     * @param code error message.
+     * @param args formatting arguments.
      */
-    public LangException() {
-        super();
+    public LangException(final ErrorCode code, final Object... args) {
+        super(code, args);
+        checkNS(NS);
     }
 
     /**
-     *  Contructor, <code>LangException</code> with
-     *  error message.
+     * Constructor, {@code LangException} with error message and cause.
      *
-     *  @param   errorMessage  error message.
+     * @param cause The source exception, for stack tracing
+     * @param code error message.
+     * @param args formatting arguments.
      */
-    public LangException(String errorMessage) {
-        super(errorMessage);
+    public LangException(final Throwable cause, final ErrorCode code,
+        final Object... args)
+    {
+        super(cause, code, args);
+        checkNS(NS);
+    }
+    
+    public LangException setPosition(SourcePosition position) {
+    	super.setPosition(position);
+    	return this;
     }
 }

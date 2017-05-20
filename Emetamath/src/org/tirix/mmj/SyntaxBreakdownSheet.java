@@ -72,6 +72,11 @@ public class SyntaxBreakdownSheet {
 		}
 
 		@Override
+		public int getHypCount() {
+			return hyps.length;
+		}
+
+		@Override
 		public String[] getHypSteps() {
 			if(hypSteps == null) {
 				hypSteps = new String[hyps.length];
@@ -93,16 +98,6 @@ public class SyntaxBreakdownSheet {
 		@Override
 		public String getStepName() {
 			return stepName;
-		}
-
-		@Override
-		public boolean isDerivationStep() {
-			return hyps.length > 0;
-		}
-
-		@Override
-		public boolean isHypothesisStep() {
-			return hyps.length == 0;
 		}
 
 		@Override

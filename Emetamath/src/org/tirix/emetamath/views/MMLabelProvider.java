@@ -19,7 +19,6 @@ import mmj.pa.StepSelectorItem;
 import mmj.pa.StepSelectorStore;
 
 import org.eclipse.jface.resource.FontRegistry;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.IFontProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.StyledString;
@@ -36,6 +35,7 @@ import org.tirix.emetamath.Activator;
 import org.tirix.emetamath.editors.IMMColorConstants;
 import org.tirix.emetamath.editors.MMSourceViewerConfiguration;
 import org.tirix.emetamath.nature.MetamathProjectNature;
+import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
 import org.tirix.emetamath.views.StepSelectorView.StepSelectorLine;
 
 /**
@@ -43,10 +43,10 @@ import org.tirix.emetamath.views.StepSelectorView.StepSelectorLine;
  * (eg. for the Outline view)
  * @author Thierry
  */
-public class MMLabelProvider extends LabelProvider implements IStyledLabelProvider, IFontProvider {
-	public static final String IMG_PATH_CLASS = "icons/mmClass.gif";
-	public static final String IMG_PATH_WFF = "icons/mmWff.gif";
-	public static final String IMG_PATH_SET = "icons/mmSet.gif";
+public class MMLabelProvider extends LabelProvider implements IStyledLabelProvider, IFontProvider, SystemLoadListener {
+//	public static final String IMG_PATH_CLASS = "icons/mmClass.gif";
+//	public static final String IMG_PATH_WFF = "icons/mmWff.gif";
+//	public static final String IMG_PATH_SET = "icons/mmSet.gif";
 	public static final String IMG_PATH_CONSTANT = "icons/mmConstant.gif";
 	public static final String IMG_PATH_FLOATING = "icons/mmFloating.gif";
 	public static final String IMG_PATH_ESSENTIAL = "icons/mmEssential.gif";
@@ -62,9 +62,9 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
 	private Image essentialImage = Activator.getImage(IMG_PATH_ESSENTIAL);
     private Image floatingImage = Activator.getImage(IMG_PATH_FLOATING); 
 	private Image constantImage = Activator.getImage(IMG_PATH_CONSTANT);
-    private Image setImage = Activator.getImage(IMG_PATH_SET); 
-    private Image wffImage = Activator.getImage(IMG_PATH_WFF); 
-    private Image classImage = Activator.getImage(IMG_PATH_CLASS); 
+//    private Image setImage = Activator.getImage(IMG_PATH_SET); 
+//    private Image wffImage = Activator.getImage(IMG_PATH_WFF); 
+//    private Image classImage = Activator.getImage(IMG_PATH_CLASS); 
 
     private Image stepHypImage = Activator.getImage("icons/mmStepEssential.gif"); 
     private Image stepItemImage = Activator.getImage("icons/mmStepItem.gif"); 
@@ -93,16 +93,21 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
 		
     public void setNature(MetamathProjectNature nature) {
     	this.nature = nature;
+    	nature.addSystemLoadListener(this);
+    }
+
+    @Override
+	public void systemLoaded() {
     	fVarStylers = new Hashtable<Cnst, MMStyler>();
     	Map<Cnst, RGB> typeColors = nature.getTypeColors();
     	for(Cnst type:typeColors.keySet()) {
-    		fVarStylers.put(type, new MMStyler(typeColors.get(type), false));
+    		fVarStylers.put(type, new MMStyler(typeColors.get(type), true));
     	}
-    }
-    
+	}
+
     @Override
 	public Image getImage(Object element) {
-		if(element instanceof StepSelectorItem) element = ((StepSelectorItem)element).assrt;
+		if(element instanceof StepSelectorItem) element = ((StepSelectorItem)element).getAssrt();
 		if(element instanceof Chapter) return   chapterImage;
 		if(element instanceof Section) return   sectionImage;
 		if(element instanceof Theorem) return   theoremImage;
@@ -156,7 +161,7 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
 	@Override
 	public String getText(Object element) {
 		if(element instanceof StepSelectorStore) return "Step "+((StepSelectorStore)element).getStep()+" Unifiable Assertions";
-		if(element instanceof StepSelectorItem) element = ((StepSelectorItem)element).assrt;
+		if(element instanceof StepSelectorItem) element = ((StepSelectorItem)element).getAssrt();
 		if(element instanceof Chapter) return ((Chapter)element).getChapterTitle();
 		if(element instanceof Section) return ((Section)element).getSectionTitle();
 		if(element instanceof MObj) {
@@ -197,12 +202,12 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
         floatingImage = null; 
         constantImage.dispose(); 
         constantImage = null; 
-        setImage.dispose(); 
-        setImage = null; 
-        wffImage.dispose(); 
-        wffImage = null; 
-        classImage.dispose(); 
-        classImage = null; 
+//        setImage.dispose(); 
+//        setImage = null; 
+//        wffImage.dispose(); 
+//        wffImage = null; 
+//        classImage.dispose(); 
+//        classImage = null; 
         stepHypImage.dispose(); 
         stepHypImage = null; 
         stepItemImage.dispose(); 
@@ -217,7 +222,7 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
 			if(nature.isType(element)) styler = fTypeConstantStyler;
 			else styler = fConstantStyler; 
 		}
-		if(element instanceof Var) styler = fVarStylers.get((Var)element);
+		if(element instanceof Var) styler = fVarStylers.get(nature.getType(element));
 //		if(element instanceof Var && nature.isSet((Var)element)) styler = fSetStyler;
 //		if(element instanceof Var && nature.isClass((Var)element)) styler = fClassStyler;
 //		if(element instanceof Var && nature.isWff((Var)element)) styler = fWffStyler;
@@ -229,14 +234,14 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
 
 	public StyledString getStyledText(Object element) {
 		if(element instanceof StepSelectorLine) return new StyledString(((StepSelectorLine)element).toString(), fStepSelectorLineStyler);
-		if(element instanceof StepSelectorItem) element = ((StepSelectorItem)element).assrt;
+		if(element instanceof StepSelectorItem) element = ((StepSelectorItem)element).getAssrt();
 		if(element instanceof Chapter) return new StyledString(((Chapter)element).getChapterTitle());
 		if(element instanceof Section) return new StyledString(((Section)element).getSectionTitle());
 		StyledString str = new StyledString(); 
 		if(element instanceof StepSelectorStore) { str.append("Step "); str.append(((StepSelectorStore)element).getStep(), fStatementStyler); str.append(" Unifiable Assertions"); return str; }
 		if(element instanceof Stmt) str.append(((MObj)element).toString(), fStatementStyler);
 		if(element instanceof Cnst) str.append(((MObj)element).toString(), fConstantStyler);
-		if(element instanceof Var) str.append(((MObj)element).toString(), fVarStylers.get((Var)element));
+		if(element instanceof Var) str.append(((MObj)element).toString(), fVarStylers.get(nature.getType((Var)element)));
 //		if(element instanceof Var && nature.isSet((Var)element)) str.append(((MObj)element).toString(), fSetStyler);
 //		if(element instanceof Var && nature.isClass((Var)element)) str.append(((MObj)element).toString(), fClassStyler);
 //		if(element instanceof Var && nature.isWff((Var)element)) str.append(((MObj)element).toString(), fWffStyler);
@@ -286,6 +291,11 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
 			if (hexValue.length() == 1)
 				buffer.append('0');
 			buffer.append(hexValue);
+		}
+		
+		@Override
+		public String toString() {
+			return "Styler "+foreground;
 		}
 	}
 }

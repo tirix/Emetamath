@@ -6,8 +6,11 @@ package org.tirix.emetamath.search;
 import java.util.ArrayList;
 
 import mmj.lang.MObj;
+import mmj.mmio.Source;
+import mmj.mmio.SourcePosition;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.search.ui.ISearchQuery;
 import org.eclipse.search.ui.text.AbstractTextSearchResult;
@@ -15,6 +18,7 @@ import org.eclipse.search.ui.text.IEditorMatchAdapter;
 import org.eclipse.search.ui.text.IFileMatchAdapter;
 import org.eclipse.search.ui.text.Match;
 import org.eclipse.ui.IEditorPart;
+import org.tirix.emetamath.nature.MetamathProjectNature.ResourceSource;
 
 public class MetamathSearchResult extends AbstractTextSearchResult implements IEditorMatchAdapter, IFileMatchAdapter {
 	MetamathSearchQuery fQuery;
@@ -78,7 +82,7 @@ public class MetamathSearchResult extends AbstractTextSearchResult implements IE
 	public boolean isShownInEditor(Match match, IEditorPart editor) {
 		Object element= match.getElement();
 		if (element instanceof MObj) {
-			element= ((MObj)element).getPosition().sourceId; // source file 
+			element= getFile(element); // source file 
 		} 
 		if (element instanceof IFile) {
 			return element != null && element.equals(editor.getEditorInput().getAdapter(IFile.class));
@@ -89,7 +93,11 @@ public class MetamathSearchResult extends AbstractTextSearchResult implements IE
 	@Override
 	public IFile getFile(Object element) {
 		if (element instanceof MObj) {
-			return (IFile)((MObj)element).getPosition().sourceId; // source file 
+			Source source = ((MObj)element).getPosition().source;
+			if(source instanceof ResourceSource) {
+				IResource resource = ((ResourceSource)source).resource;
+				if(resource instanceof IFile) return (IFile)resource;
+			}
 		}
 		return null;
 	}

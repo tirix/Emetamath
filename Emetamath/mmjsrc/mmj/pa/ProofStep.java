@@ -13,6 +13,7 @@ public interface ProofStep {
 	public String getStepName();
 	
 	public String[] getHypSteps();
+	public int getHypCount();
 	
 	public void setRef(Stmt ref);
 	public Stmt getRef();
@@ -20,6 +21,11 @@ public interface ProofStep {
 
 	public Formula getFormula();
 
-	public boolean isHypothesisStep();
-	public boolean isDerivationStep();
+	public static boolean isDerivationStep(ProofStep step) {
+		return step.getHypCount() > 0;
+	}
+
+	public static boolean isHypothesisStep(ProofStep step) {
+		return step.getHypCount() == 0;
+	}
 }

@@ -2,6 +2,7 @@ package org.tirix.emetamath.handlers;
 
 import mmj.lang.MObj;
 import mmj.lang.Stmt;
+import mmj.lang.ParseTree.RPNStep;
 import mmj.pa.ProofAsst;
 
 import org.eclipse.core.commands.ExecutionEvent;
@@ -15,7 +16,7 @@ public class BrowseSyntaxBreakdownHandler extends MetamathEditorActionHandler {
 		IEvaluationContext context = (IEvaluationContext)event.getApplicationContext();
 		MetamathProjectNature nature = getNature(context);
 		
-		MObj obj = getSelectedMObj(context);
+		MObj obj = getSelectedMObj(event);
 		if(!(obj instanceof Stmt)) return null;
 
 		// TODO also adapt to simple TextSelection to be parsed
@@ -23,7 +24,7 @@ public class BrowseSyntaxBreakdownHandler extends MetamathEditorActionHandler {
 		ProofAsst proofAsst = nature.getProofAsst();
 		if(proofAsst == null) return null;
 		
-		Stmt[] exprRPN = ((Stmt)obj).getExprRPN();
+		RPNStep[] exprRPN = ((Stmt)obj).getExprRPN();
 		
 		//ProofBrowserView = 
 		//MetamathUI.openInEditor(w, nature);

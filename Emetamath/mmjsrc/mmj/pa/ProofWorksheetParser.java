@@ -7,241 +7,286 @@
 //*4567890123456 (71-character line to adjust editor window) 23456789*/
 
 /*
- *  ProofWorksheetParser.java  0.03 03/01/2008
+ * ProofWorksheetParser.java  0.03 03/01/2008
  *
- *  Feb-1-2008 Version 0.02:
- *      - add inputCursorPos argument to next() method.
+ * Feb-1-2008 Version 0.02:
+ *     - add inputCursorPos argument to next() method.
  *
- *  Mar-1-2008 Version 0.03:
- *      - add stepRequest argument to next() method.
+ * Mar-1-2008 Version 0.03:
+ *     - add stepRequest argument to next() method.
  */
 
 package mmj.pa;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.*;
 
 import mmj.lang.LogicalSystem;
 import mmj.lang.MessageHandler;
-import mmj.mmio.MMIOError;
+import mmj.lang.Messages;
+import mmj.mmio.MMIOException;
+import mmj.mmio.Source;
+import mmj.mmio.Source.StringSource;
+import mmj.mmio.Source.FileSource;
 import mmj.mmio.Tokenizer;
 import mmj.verify.Grammar;
 
 /**
- *  ProofWorksheetParser handles the details of
- *  iteration through 1 or more ProofWorksheets
- *  input via String, File or Reader.
- *  <p>
- *  The big shortcoming that it has right now,
- *  which may not be big depending on your
- *  plans, is that an input ProofWorksheet
- *  with structural errors or other severe
- *  errors, throws an exception and leaves the
- *  input stream stuck in the middle of the
- *  worksheet tokens. An enhancement might be
- *  to add a routine to chunk through the input
- *  stream and bypass tokens until a proof
- *  worksheet "Footer" is found, and then grab
- *  the *next* token, which could be used to
- *  initiate and parse the following ProofWorksheet.
- *  However, at this time, batches of ProofWorksheets
- *  are used only in testing, so no energy has
- *  been expended in bypassing an errored
- *  ProofWorksheet's remaining tokens.
+ * ProofWorksheetParser handles the details of iteration through 1 or more
+ * ProofWorksheets input via String, File or Reader.
+ * <p>
+ * The big shortcoming that it has right now, which may not be big depending on
+ * your plans, is that an input ProofWorksheet with structural errors or other
+ * severe errors, throws an exception and leaves the input stream stuck in the
+ * middle of the worksheet tokens. An enhancement might be to add a routine to
+ * chunk through the input stream and bypass tokens until a proof worksheet
+ * "Footer" is found, and then grab the *next* token, which could be used to
+ * initiate and parse the following ProofWorksheet. However, at this time,
+ * batches of ProofWorksheets are used only in testing, so no energy has been
+ * expended in bypassing an errored ProofWorksheet's remaining tokens.
  */
-public class ProofWorksheetParser {
+public class ProofWorksheetParser implements Closeable {
 
-    //global variables stored here for mere convenience
-    private     Reader               proofTextReader;
-    private     ProofAsstPreferences proofAsstPreferences;
-    private     LogicalSystem        logicalSystem;
-    private     Grammar              grammar;
-    private     MessageHandler       messages;
+    // global variables stored here for mere convenience
+    private final ProofAsstPreferences proofAsstPreferences;
+    private final LogicalSystem logicalSystem;
+    private final Grammar grammar;
+    private final MessageHandler messageHandler;
+    private final MacroManager macroManager;
 
-    private     String               nextToken;
-    private     Tokenizer            proofTextTokenizer;
+    private String nextToken;
+    private final Tokenizer proofTextTokenizer;
 
     /**
-     *  Constructor.
+     * Constructor.
      *
-     *  @param proofTextReader Reader of ProofWorksheet tokens
-     *  @param proofTextSource Comment for debugging/testing
-     *  @param proofAsstPreferences variable settings
-     *  @param logicalSystem the loaded Metamath data
-     *  @param grammar the mmj.verify.Grammar object
-     *  @param messages the mmj.lang.Messages object used to store
-     *                  error and informational messages.
+     * @param proofTextReader Reader of ProofWorksheet tokens
+     * @param proofTextSource Comment for debugging/testing
+     * @param proofAsstPreferences variable settings
+     * @param logicalSystem the loaded Metamath data
+     * @param grammar the mmj.verify.Grammar object
+     * @param messages the mmj.lang.Messages object used to store error and
+     *            informational messages.
+     * @param macroManager the mmj.pa.MacroManager object
+     * @throws IOException if an error occurred
+     * @throws MMIOException if an error occurred
      */
     public ProofWorksheetParser(
-                Reader               proofTextReader,
-                Object               proofTextSource,
-                ProofAsstPreferences proofAsstPreferences,
-                LogicalSystem        logicalSystem,
-                Grammar              grammar,
-                MessageHandler       messages)
-                            throws IOException,
-                                   MMIOError {
+        final Source proofTextSource,
+        final ProofAsstPreferences proofAsstPreferences,
+        final LogicalSystem logicalSystem, final Grammar grammar,
+        final MessageHandler messageHandler, final MacroManager macroManager)
+            throws IOException, MMIOException
+    {
 
-        this.proofTextReader      = proofTextReader;
         this.proofAsstPreferences = proofAsstPreferences;
-        this.logicalSystem        = logicalSystem;
-        this.grammar              = grammar;
-        this.messages             = messages;
+        this.logicalSystem = logicalSystem;
+        this.grammar = grammar;
+        this.messageHandler = messageHandler;
+        this.macroManager = macroManager;
 
-        proofTextTokenizer        = new Tokenizer(proofTextReader,
-                                                  proofTextSource);
+        proofTextTokenizer = new Tokenizer(proofTextSource);
 
-        StringBuffer strBuf       = new StringBuffer();
-        int          offset       = 0;
-        proofTextTokenizer.getToken(strBuf,
-                                    offset);
-        nextToken                 = new String(strBuf);
+        final StringBuilder strBuf = new StringBuilder();
+        final int offset = 0;
+        proofTextTokenizer.getToken(strBuf, offset);
+        nextToken = strBuf.toString();
     }
 
     /**
-     *  Constructor.
+     * Constructor.
      *
-     *  @param proofText String containing ProofWorksheet tokens
-     *  @param proofTextSource Comment for debugging/testing
-     *  @param proofAsstPreferences variable settings
-     *  @param logicalSystem the loaded Metamath data
-     *  @param grammar the mmj.verify.Grammar object
-     *  @param messages the mmj.lang.Messages object used to store
-     *                  error and informational messages.
+     * @param proofTextReader Reader of ProofWorksheet tokens
+     * @param proofTextSource Comment for debugging/testing
+     * @param proofAsstPreferences variable settings
+     * @param logicalSystem the loaded Metamath data
+     * @param grammar the mmj.verify.Grammar object
+     * @param messages the mmj.lang.Messages object used to store error and
+     *            informational messages.
+     * @param macroManager the mmj.pa.MacroManager object
+     * @throws IOException if an error occurred
+     * @throws MMIOException if an error occurred
      */
     public ProofWorksheetParser(
-                String               proofText,
-                Object               proofTextSource,
-                ProofAsstPreferences proofAsstPreferences,
-                LogicalSystem        logicalSystem,
-                Grammar              grammar,
-                MessageHandler       messages)
-                            throws IOException,
-                                   MMIOError {
-        this(new StringReader(proofText),
-             proofTextSource,
-             proofAsstPreferences,
-             logicalSystem,
-             grammar,
-             messages);
+        final Reader proofTextReader,
+        final String proofTextSourceName,
+        final ProofAsstPreferences proofAsstPreferences,
+        final LogicalSystem logicalSystem, final Grammar grammar,
+        final MessageHandler messageHandler, final MacroManager macroManager)
+            throws IOException, MMIOException
+    {
+        // TODO do we create a Source from a Reader ?
+        this(new ReaderSource(proofTextReader, proofTextSourceName), proofAsstPreferences,
+                logicalSystem, grammar, messageHandler, macroManager);
     }
 
     /**
-     *  Constructor.
+     * Constructor.
      *
-     *  @param proofFile File object specifying ProofWorksheet token
-     *                   file for input.
-     *  @param proofTextSource Comment for debugging/testing
-     *  @param proofAsstPreferences variable settings
-     *  @param logicalSystem the loaded Metamath data
-     *  @param grammar the mmj.verify.Grammar object
-     *  @param messages the mmj.lang.Messages object used to store
-     *                  error and informational messages.
+     * @param proofText String containing ProofWorksheet tokens
+     * @param proofTextSource Comment for debugging/testing
+     * @param proofAsstPreferences variable settings
+     * @param logicalSystem the loaded Metamath data
+     * @param grammar the mmj.verify.Grammar object
+     * @param messages the mmj.lang.Messages object used to store error and
+     *            informational messages.
+     * @param macroManager the mmj.pa.MacroManager object
+     * @throws IOException if an error occurred
+     * @throws MMIOException if an error occurred
      */
-     public ProofWorksheetParser(
-                File                 proofFile,
-                Object               proofTextSource,
-                ProofAsstPreferences proofAsstPreferences,
-                LogicalSystem        logicalSystem,
-                Grammar              grammar,
-                MessageHandler       messages)
-                            throws IOException,
-                                   MMIOError {
-
-        this(new BufferedReader(new FileReader(proofFile)),
-             proofTextSource,
-             proofAsstPreferences,
-             logicalSystem,
-             grammar,
-             messages);
+    public ProofWorksheetParser(final String proofText,
+        final String proofTextSourceName,
+        final ProofAsstPreferences proofAsstPreferences,
+        final LogicalSystem logicalSystem, final Grammar grammar,
+        final MessageHandler messageHandler, final MacroManager macroManager)
+            throws IOException, MMIOException
+    {
+        this(new StringSource(proofText, proofTextSourceName), proofAsstPreferences,
+            logicalSystem, grammar, messageHandler, macroManager);
     }
 
     /**
-     *  Closes the ProofWorksheet token reader.
-     *  <p>
-     *  Use this when finished, it doesn't get called
-     *  automatically!
-     */
-    public void closeReader() {
-        if (proofTextReader != null) {
-            try {
-                proofTextReader.close();
-            }
-            catch (IOException e) {
-            }
-        }
-    }
-
-    /**
-     *  Checks to see if another ProofWorksheet is available.
+     * Constructor.
      *
-     *  @return      true if at least one more ProofWorksheet token
-     *           exists to be processed.
+     * @param proofFile File object specifying ProofWorksheet token file for
+     *            input.
+     * @param proofTextSource Comment for debugging/testing
+     * @param proofAsstPreferences variable settings
+     * @param logicalSystem the loaded Metamath data
+     * @param grammar the mmj.verify.Grammar object
+     * @param messages the mmj.lang.Messages object used to store error and
+     *            informational messages.
+     * @param macroManager the mmj.pa.MacroManager object
+     * @throws IOException if an error occurred
+     * @throws MMIOException if an error occurred
+     */
+    public ProofWorksheetParser(final File proofFile,
+        final ProofAsstPreferences proofAsstPreferences,
+        final LogicalSystem logicalSystem, final Grammar grammar,
+        final MessageHandler messageHandler, final MacroManager macroManager)
+            throws IOException, MMIOException
+    {
+
+        this(new FileSource(proofFile),
+            proofAsstPreferences, logicalSystem, grammar, messageHandler,
+            macroManager);
+    }
+
+    @Override
+    public void close() throws IOException {
+        proofTextTokenizer.close();
+    }
+
+    /**
+     * Checks to see if another ProofWorksheet is available.
+     *
+     * @return true if at least one more ProofWorksheet token exists to be
+     *         processed.
      */
     public boolean hasNext() {
-        if (nextToken.length() > 0) {
+        if (nextToken.length() > 0)
             return true;
-        }
-        else {
+        else
             return false;
-        }
     }
 
     /**
-     *  Returns the next ProofWorksheet from the input source
-     *  for situations when input cursor position not available.
+     * Returns the next ProofWorksheet from the input source for situations when
+     * input cursor position not available.
      *
-     *  @return      ProofWorksheet or throws an exception!
+     * @return ProofWorksheet or throws an exception!
+     * @throws IOException if an error occurred
+     * @throws MMIOException if an error occurred
+     * @throws ProofAsstException if an error occurred
      */
     public ProofWorksheet next()
-                    throws IOException,
-                           MMIOError,
-                           ProofAsstException {
-        return next(-1,
-                    null);
+        throws IOException, MMIOException, ProofAsstException
+    {
+        return next(-1, null);
     }
 
     /**
-     *  Returns the next ProofWorksheet from the input source.
+     * Returns the next ProofWorksheet from the input source.
      *
-     *  @param inputCursorPos offset plus one of Caret in
-     *         Proof TextArea;
-     *
-     *  @param stepRequest may be null, or StepSelector Search or
-     *                     Choice request and will be loaded into
-     *                     the ProofWorksheet.
-     *
-     *  @return      ProofWorksheet or throws an exception!
+     * @param inputCursorPos offset plus one of Caret in Proof TextArea;
+     * @param stepRequest may be null, or StepSelector Search or Choice request
+     *            and will be loaded into the ProofWorksheet.
+     * @return ProofWorksheet or throws an exception!
+     * @throws IOException if an error occurred
+     * @throws MMIOException if an error occurred
+     * @throws ProofAsstException if an error occurred
      */
-    public ProofWorksheet next(int         inputCursorPos,
-                               StepRequest stepRequest)
-                    throws IOException,
-                           MMIOError,
-                           ProofAsstException {
+    public ProofWorksheet next(final int inputCursorPos,
+        final StepRequest stepRequest)
+            throws IOException, MMIOException, ProofAsstException
+    {
 
-        ProofWorksheet proofWorksheet
-                                  =
-            new ProofWorksheet(proofTextTokenizer,
-                               proofAsstPreferences,
-                               logicalSystem,
-                               grammar,
-                               messages);
+        final ProofWorksheet proofWorksheet = new ProofWorksheet(
+            proofTextTokenizer, proofAsstPreferences, logicalSystem, grammar,
+            messageHandler, macroManager);
 
         /*
          * loadWorksheet() returns next token *after* this
          * worksheet, if any -- for use when processing a
          */
-        nextToken                 =
-            proofWorksheet.loadWorksheet(nextToken,
-                                         inputCursorPos,
-                                         stepRequest);
+        nextToken = proofWorksheet.loadWorksheet(nextToken, inputCursorPos,
+            stepRequest);
 
         return proofWorksheet;
     }
 
-}
+    /**
+     * Ideally we would not use this class 
+     * but always directly call the ProofWorksheetParser with the right Source object
+     * @author Thierry
+     */
+    private static class ReaderSource implements Source {
+    	Reader reader;
+    	String name;
+    	
+		public ReaderSource(Reader reader, String name) {
+			this.reader = reader;
+			this.name = name;
+		}
 
+		@Override
+		public Reader createReader() throws FileNotFoundException {
+			return reader;
+		}
+		
+		@Override
+		public String getContents() throws IOException {
+			Reader reader = createReader();
+			int intValueOfChar;
+			String targetString = "";
+		    while ((intValueOfChar = reader.read()) != -1) {
+		        targetString += (char) intValueOfChar;
+		    }
+		    return targetString;
+		}
+		
+		@Override
+		public void replace(int offset, int length, String text) throws IOException {
+			throw new UnsupportedOperationException("Replacing contents of reader source is not implemented - normally not used!");
+		}
+		
+		@Override
+		public int getSize() throws FileNotFoundException {
+			return 1;
+		}
+
+		@Override
+		public String getUniqueId() throws IOException {
+			return name;
+		}
+
+		@Override
+		public Source createSourceId(String fileName) {
+			throw new UnsupportedOperationException("Cannot create source from a reader source!");
+		}
+    	
+		@Override
+		public String toString() {
+			return name+" reader";
+		}
+    }
+}

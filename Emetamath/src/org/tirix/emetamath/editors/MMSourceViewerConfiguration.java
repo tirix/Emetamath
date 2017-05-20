@@ -1,11 +1,7 @@
 package org.tirix.emetamath.editors;
 
-import mmj.lang.MObj;
-
-import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.internal.text.html.BrowserInformationControl;
 import org.eclipse.jface.resource.FontRegistry;
-import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.text.AbstractReusableInformationControlCreator;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DefaultInformationControl;
@@ -19,26 +15,31 @@ import org.eclipse.jface.text.ITextHoverExtension;
 import org.eclipse.jface.text.ITextHoverExtension2;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.TextAttribute;
-import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.text.presentation.IPresentationReconciler;
 import org.eclipse.jface.text.rules.BufferedRuleBasedScanner;
 import org.eclipse.jface.text.rules.DefaultDamagerRepairer;
 import org.eclipse.jface.text.rules.ITokenScanner;
 import org.eclipse.jface.text.rules.Token;
 import org.eclipse.jface.text.source.ISourceViewer;
-import org.eclipse.jface.text.source.SourceViewerConfiguration;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.editors.text.EditorsUI;
+import org.eclipse.ui.editors.text.TextSourceViewerConfiguration;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.tirix.eclipse.FastPresentationReconciler;
 import org.tirix.emetamath.editors.MMScanner.MMProofScanner;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
+import org.tirix.emetamath.preferences.PreferenceConstants;
 import org.tirix.emetamath.views.MMHTMLPrinter;
 
-public class MMSourceViewerConfiguration extends SourceViewerConfiguration implements SystemLoadListener {
+import mmj.lang.MObj;
+
+// 
+@SuppressWarnings("restriction")
+public class MMSourceViewerConfiguration extends TextSourceViewerConfiguration implements SystemLoadListener {
 	public static String EDITOR_FONT_REGISTRY_NAME = "org.tirix.emetamath.preferences.editorFont";
 	protected MMDoubleClickStrategy doubleClickStrategy;
 	protected MMScanner mmScanner;
@@ -53,7 +54,7 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 		this.colorManager = colorManager;
 		this.fTextEditor = textEditor;
 		FontRegistry fontRegistry = PlatformUI.getWorkbench().getThemeManager().getCurrentTheme().getFontRegistry();
-		this.fEditorFont = fontRegistry.get(EDITOR_FONT_REGISTRY_NAME);
+		MMSourceViewerConfiguration.fEditorFont = fontRegistry.get(EDITOR_FONT_REGISTRY_NAME);
 	}
 
 	public String[] getConfiguredContentTypes(ISourceViewer sourceViewer) {
@@ -151,17 +152,20 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 	
 	@Override
 	public int getTabWidth(ISourceViewer sourceViewer) {
+		if(fPreferenceStore != null) return fPreferenceStore.getInt(PreferenceConstants.P_EDITOR_SPACES_FOR_TABS);
 		return 2;
 	}
+	
 	
 	@Override
 	public ITextHover getTextHover(ISourceViewer sourceViewer, String contentType) {
 		if(!contentType.equals(MMPartitionScanner.MM_COMMENT)) {
-			return new MetamathTextHover(MetamathProjectNature.getNature(fTextEditor.getEditorInput()));
+			MetamathProjectNature nature = MetamathProjectNature.getNature(fTextEditor.getEditorInput());
+			if(nature != null) return new MetamathTextHover(nature);
 			}
 		return null;
 	}
-
+	
 	@Override
 	public void systemLoaded() {
 		// TODO Auto-generated method stub
@@ -196,6 +200,7 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 			return MMRegionProvider.getWord(textViewer.getDocument(), offset);
 		}
 
+		@Override
 		public Object getHoverInfo2(ITextViewer textViewer, IRegion hoverRegion) {
 			return getHoverInfo(textViewer, hoverRegion);
 		}
@@ -211,6 +216,19 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 							@Override
 							public IInformationControlCreator getInformationPresenterControlCreator() {
 								return creator;
+								}
+							@Override
+							public Point computeSizeHint() {
+								Point size = super.computeSizeHint();
+								size.y += 50;
+								return size;
+								}
+							
+							@Override
+							public Point computeSizeConstraints(int widthInChars, int heightInChars) {
+								Point size = super.computeSizeConstraints(widthInChars, heightInChars);
+								size.y += 50;
+								return size;
 								}
 							};
 							// cannot access the methods that would allow us to set the hover information size constraints (protected or private access)

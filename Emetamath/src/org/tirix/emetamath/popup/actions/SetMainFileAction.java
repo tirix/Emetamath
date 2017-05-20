@@ -39,6 +39,8 @@ public class SetMainFileAction implements IObjectActionDelegate {
 		try {
 			MetamathProjectNature nature = (MetamathProjectNature) selectedFile.getProject().getNature(MetamathProjectNature.NATURE_ID);
 			nature.setMainFile(selectedFile);
+		} catch (NullPointerException e) { // if the project does not have the Metamath Project Nature, nature == null
+			action.setEnabled(false);
 		} catch (CoreException e) {
 			e.printStackTrace();
 		}
@@ -52,6 +54,8 @@ public class SetMainFileAction implements IObjectActionDelegate {
 			selectedFile = (IResource)((TreeSelection)selection).getFirstElement();
 			nature = (MetamathProjectNature)(selectedFile.getProject().getNature(MetamathProjectNature.NATURE_ID));
 			action.setEnabled(selectedFile != null && !selectedFile.equals(nature.getMainFile()));
+		} catch (NullPointerException e) { // if the project does not have the Metamath Project Nature, nature == null
+			action.setEnabled(false);
 		} catch (CoreException e) {
 			action.setEnabled(false);
 		} catch (ClassCastException e) {

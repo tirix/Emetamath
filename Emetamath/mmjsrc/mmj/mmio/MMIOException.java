@@ -9,79 +9,44 @@
 /*
  * MMIOException.java  0.03 02/01/2006
  *
- *  Dec-22-2005:
- *  - add charNbr, store line, column and charNbr
+ * Dec-22-2005:
+ * - add charNbr, store line, column and charNbr
  */
 
 package mmj.mmio;
 
+import mmj.pa.ErrorCode;
+import mmj.pa.MMJException;
 
 /**
- * Thrown when Metamath source file has a non-fatal error such
- * as a syntax error.
+ * Thrown when Metamath source file has a non-fatal error such as a syntax
+ * error.
  */
-public class MMIOException extends Exception {
-    public SourcePosition position;
+public class MMIOException extends MMJException {
+    public static final String NS = "IO";
 
     /**
-     * Default Constructor, <code>MMIOException</code>.
+     * Constructor, {@code MMIOException} with error message.
+     *
+     * @param code error message.
+     * @param args formatting arguments.
      */
-    public MMIOException() {
-        super();
+    public MMIOException(final ErrorCode code, final Object... args) {
+        super(code, args);
+        checkNS(NS);
     }
 
     /**
-     * Contructor, <code>MMIOException</code> with
-     * error message.
+     * Constructor, {@code MMIOException} with error message and cause.
      *
-     * @param   errorMessage  error message.
+     * @param cause The source exception, for stack tracing
+     * @param code error message.
+     * @param args formatting arguments.
      */
-    public MMIOException(String errorMessage) {
-        super(errorMessage);
-    }
-
-    /**
-     * Contructor, <code>MMIOException</code> with
-     * source position and error message.
-     *
-     * @param   position      Source position of error
-     * @param   errorMessage  error message.
-     */
-    public MMIOException(SourcePosition position,
-                         String  errorMessage) {
-        super(errorMessage
-              + MMIOConstants.ERRMSG_TXT_SOURCE_ID
-              + position.sourceId
-              + MMIOConstants.ERRMSG_TXT_LINE
-              + position.lineNbr
-              + MMIOConstants.ERRMSG_TXT_COLUMN
-              + position.columnNbr);
-        this.position			  = position;
-    }
-
-    /**
-     * Contructor, <code>MMIOException</code> with
-     * file name, line number, column number and error message.
-     *
-     * @param   sourceId      String identifying source of error
-     * @param   lineNbr       line number assigned to the error
-     * @param   columnNbr     column number assigned to the error
-     * @param   charNbr       character number of the error
-     * @param   errorMessage  error message.
-     */
-    public MMIOException(Object  sourceId,
-    					 long    lineNbr,
-                         long    columnNbr,
-                         long    charStartNbr,
-                         long    charEndNbr,
-                         String  errorMessage) {
-        super(errorMessage
-              + MMIOConstants.ERRMSG_TXT_SOURCE_ID
-              + sourceId
-              + MMIOConstants.ERRMSG_TXT_LINE
-              + lineNbr
-              + MMIOConstants.ERRMSG_TXT_COLUMN
-              + columnNbr);
-        position = new SourcePosition(sourceId, lineNbr, columnNbr, charStartNbr, charEndNbr);
+    public MMIOException(final Throwable cause, final ErrorCode code,
+        final Object... args)
+    {
+        super(cause, code, args);
+        checkNS(NS);
     }
 }

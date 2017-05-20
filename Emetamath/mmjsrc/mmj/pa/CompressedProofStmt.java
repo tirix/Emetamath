@@ -10,15 +10,11 @@ package mmj.pa;
 */
 
 import java.util.ArrayList;
-
-import org.tirix.mmj.ProofWorksheetText;
-
 import mmj.lang.LangConstants;
 import mmj.lang.Stmt;
 import mmj.mmio.MMIOConstants;
 
 public class CompressedProofStmt extends GeneratedProofStmt {
-	
   /**
    *  Default Constructor.
    */
@@ -33,18 +29,33 @@ public class CompressedProofStmt extends GeneratedProofStmt {
    */
   public CompressedProofStmt(ProofWorksheet w,
                             Stmt[] rpnProof) {
+      this(w, rpnProof,
+    		  w.proofAsstPreferences.rpnProofLeftCol.get(),
+    		  w.proofAsstPreferences.rpnProofRightCol.get()
+    		  );
+  	}
+  
+  /**
+   *  Standard Constructor for GeneratedProofStmt.
+   *
+   *  @param rpnProof Proof Stmt Array in RPN format
+   */
+  public CompressedProofStmt(ProofWorksheet w,
+                            Stmt[] rpnProof, final int left, final int right) {
       super(w);
       
-      ProofWorksheetText text = new ProofWorksheetText(w, 
-    		  w.proofAsstPreferences.getRPNProofLeftCol(),
-    		  w.proofAsstPreferences.getRPNProofRightCol()
-    		  );
+      ProofWorksheetText text = new ProofWorksheetText(w, left, right);
 
       // the codes that will be used for compressing, cf. 
       ArrayList<Stmt> statementsUsed = new ArrayList<Stmt>();
-      
-      // pre-populate the statements used with the mandatory hypotheses
-      for(Stmt s:w.theorem.getMandFrame().hypArray) statementsUsed.add(s);
+
+	  // pre-populate the statements used with the mandatory hypotheses
+      if(w.isNewTheorem()) {
+          for (final ProofWorkStmt step : w.getProofWorkStmtList()) 
+        	  if (step instanceof HypothesisStep) statementsUsed.add(((HypothesisStep)step).getRef());
+      } else {
+	      for(Stmt s:w.theorem.getMandFrame().hypArray) statementsUsed.add(s);
+      }
       
       // the encoded sequence, starting with an empty list
       ArrayList<Integer> encodedSequence = new ArrayList<Integer>();
@@ -62,12 +73,19 @@ public class CompressedProofStmt extends GeneratedProofStmt {
       }
       
       // now write the compressed proof:
-      text.append(PaConstants.GENERATED_PROOF_STMT_TOKEN);
+      //text.append(PaConstants.GENERATED_PROOF_STMT_TOKEN);
 
       // start by writing the labels of the statements used (except mandatory hyps) 
       text.append(MMIOConstants.MM_BEGIN_COMPRESSED_PROOF_LIST_CHAR);
-      for (int i=w.theorem.getMandHypArrayLength();i<statementsUsed.size();i++) {
-          text.append(statementsUsed.get(i).getLabel());
+      if(w.isNewTheorem()) {
+          for (final ProofWorkStmt step : w.getProofWorkStmtList()) {
+        	  if (step instanceof HypothesisStep) 
+        		  text.append(((HypothesisStep)step).getRef().getLabel());
+          }
+      } else {
+	      for (int i=w.theorem.getMandHypArrayLength();i<statementsUsed.size();i++) {
+	          text.append(statementsUsed.get(i).getLabel());
+	      }
       }
       text.append(MMIOConstants.MM_END_COMPRESSED_PROOF_LIST_CHAR);
 
@@ -77,7 +95,7 @@ public class CompressedProofStmt extends GeneratedProofStmt {
       }
 
       text.append(PaConstants.END_PROOF_STMT_TOKEN);
-      stmtText = text.toStringBuffer();
+      stmtText = text.toStringBuilder();
       lineCnt = text.getLineCnt();
   }
 
@@ -125,5 +143,26 @@ public class CompressedProofStmt extends GeneratedProofStmt {
   public void tmffReformat() {
   }
 
+  public static interface StmtText {
+	  public void append(String str);
+  }
+  
+  public static class StringBufferStmtText implements StmtText {
+	  StringBuffer buffer;
+
+@Override
+public void append(String str) {
+	buffer.append(str);
+}
+
+	
+  }
+  
+  public static interface StmtTextFactory {
+
+	StmtText createText(ProofWorksheet w);
+	  
+  }
+  
 }
 
