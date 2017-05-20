@@ -12,6 +12,8 @@ package mmj.mmio;
 import java.io.*;
 import java.util.*;
 
+import mmj.util.Progress;
+
 /**
  * Nitty-gritty IncludeFile work switching Tokenizers and
  * keeping a list, checking it twice.
@@ -28,13 +30,21 @@ import java.util.*;
  */
 
 public class IncludeFile {
+	private static	ReaderProvider	readerProvider		= new DefaultReaderProvider();
+    private     String      	fileName                = null;
+    private     long        	restartCharsToBypass    = 0;
+    private     Tokenizer   	tokenizer               = null;
+    private     Tokenizer   	prevTokenizer           = null;
 
-    private     String      fileName                = null;
-    private     long        restartCharsToBypass    = 0;
-    private     Tokenizer   tokenizer               = null;
-    private     Tokenizer   prevTokenizer           = null;
 
-    /**
+	public static Reader openFile(String fileName, Progress loadProgress) throws IOException {
+        Reader readerIn = readerProvider.createReader(fileName);
+        loadProgress.addTask(readerProvider.getSize(fileName));
+        
+        return readerIn;
+	}
+
+	/**
      * <p>
      * Switches Statementizer processing to an include file
      * after recording restart information of the previous
@@ -71,8 +81,8 @@ public class IncludeFile {
      * @throws    FileNotFoundException if bogus include file name.
      */
     public static Tokenizer initIncludeFile(
-                                ArrayList     fileList,
-                                File          f,
+                                ArrayList<IncludeFile> fileList,
+                                Progress  loadProgress,
                                 String        fileName,
                                 Statementizer statementizer)
                                     throws FileNotFoundException,
@@ -92,16 +102,13 @@ public class IncludeFile {
         i.restartCharsToBypass    = 0;
         i.tokenizer               =
             new Tokenizer(
-                new BufferedReader(
-                    new InputStreamReader(
-                        new FileInputStream(f)
-                        ),
-                    MMIOConstants.READER_BUFFER_SIZE
-                    ),
-                fileName);
+            	readerProvider.createReader(fileName),
+                readerProvider.getSource(fileName));
         i.prevTokenizer           = statementizer.setTokenizer(
                                                         i.tokenizer);
         fileList.add(i);
+
+        loadProgress.addTask(readerProvider.getSize(fileName));
 
         return i.tokenizer;
     }
@@ -163,13 +170,8 @@ public class IncludeFile {
 
             currI.tokenizer       =
                 new Tokenizer(
-                    new BufferedReader(
-                        new InputStreamReader(
-                            new FileInputStream(currI.fileName)
-                            ),
-                        MMIOConstants.READER_BUFFER_SIZE
-                        ),
-                    currI.fileName,
+                	readerProvider.createReader(currI.fileName),
+                	readerProvider.getSource(currI.fileName),
                     currI.restartCharsToBypass);
 
             currI.restartCharsToBypass
@@ -179,4 +181,42 @@ public class IncludeFile {
         return retTokenizer;
     }
 
+    public static void setReaderProvider(ReaderProvider readerProvider) {
+    	IncludeFile.readerProvider = readerProvider;
+    }
+    
+    public static interface ReaderProvider {
+    	public Reader createReader(String fileName) throws FileNotFoundException;
+		public long getSize(String fileName) throws FileNotFoundException;
+    	public Object getSource(String fileName);
+    	public String getFileName(Object sourceId);
+    }
+
+    public static class DefaultReaderProvider implements ReaderProvider {
+		@Override
+    	public Reader createReader(String fileName) throws FileNotFoundException {
+    		return new BufferedReader(
+                new InputStreamReader(
+                    new FileInputStream(fileName)
+                    ),
+                MMIOConstants.READER_BUFFER_SIZE
+                );
+    		}
+
+		@Override
+		public long getSize(String fileName) throws FileNotFoundException {
+			File f = new File(fileName);
+			return f.length();
+		}
+
+		@Override
+		public Object getSource(String fileName) {
+			return fileName;
+		}
+
+		@Override
+		public String getFileName(Object sourceId) {
+			return (String)sourceId;
+		}
+    }
 }

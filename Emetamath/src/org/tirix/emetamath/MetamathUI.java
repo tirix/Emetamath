@@ -19,6 +19,7 @@ public class MetamathUI {
 	}
 
 	public static void openInEditor(SourceElement elt, boolean activate) {
+		if(elt == null) return;
 		IWorkbench workbench= Activator.getDefault().getWorkbench();
 		IWorkbenchPage page= workbench.getActiveWorkbenchWindow().getActivePage();
 		SourcePosition position = elt.getPosition();

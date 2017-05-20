@@ -72,6 +72,7 @@ public class GrammarAmbiguity {
         if (grammar.getVarHypTypSet().size() !=
             grammar.getSyntaxAxiomTypSet().size()) {
             grammar.accumInfoMsgInList(
+            	null,
                 GrammarConstants.ERRMSG_UNDEF_NON_TERMINAL_1
                     + grammar.getSyntaxAxiomTypSet().size()
                     + GrammarConstants.ERRMSG_UNDEF_NON_TERMINAL_2
@@ -82,6 +83,7 @@ public class GrammarAmbiguity {
         if (grammar.getNotationGRSet().size() ==
             grammar.getNotationGRGimmeMatchCnt()) {
             grammar.accumInfoMsgInList(
+               	null,
                 GrammarConstants.ERRMSG_GRAMMAR_UNAMBIGUOUS);
         }
 
@@ -284,12 +286,13 @@ public class GrammarAmbiguity {
                              Integer.MAX_VALUE,
                              baseSyntaxAxiom.getLabel());
                 if (errmsg != null) {
-                    grammar.accumInfoMsgInList(errmsg);
+                    grammar.accumInfoMsgInList(baseSyntaxAxiom.getPosition(), errmsg);
                 }
             }
             catch (VerifyException e) {
                 grammar.accumErrorMsgInList(
-                    e.getMessage()
+                	baseSyntaxAxiom.getPosition(), 
+                	e.getMessage()
                     + GrammarConstants.ERRMSG_LABEL_CAPTION
                     + baseSyntaxAxiom.getLabel());
                 errorsFound = true;

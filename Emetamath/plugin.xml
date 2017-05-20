@@ -126,7 +126,7 @@
             name="Metamath Proof Assistant"
             extensions="mmp"
             icon="icons/mmpFile.gif"
-            class="org.tirix.emetamath.editors.ProofAssistantEditor"
+            class="org.tirix.emetamath.editors.proofassistant.ProofAssistantEditor"
             id="org.tirix.emetamath.ProofAssistant">
       </editor>
    </extension>
@@ -138,7 +138,7 @@
       </provider>
       <provider
       		extensions="mmp"
-            class="org.tirix.emetamath.editors.MMPDocumentProvider"
+            class="org.tirix.emetamath.editors.proofassistant.ProofDocumentProvider"
             id="org.tirix.emetamath.ProofDocumentProvider">
       </provider>
    </extension>
@@ -346,11 +346,21 @@
             id="org.tirix.emetamath.importWizards.sampleCategory">
       </category>
       <wizard
-            name="Import Metamath File"
+            name="Metamath File from Local File System"
             icon="icons/aleph0.gif"
             category="org.tirix.emetamath.importWizards.sampleCategory"
-            class="org.tirix.emetamath.importWizards.ImportWizard"
-            id="org.tirix.emetamath.importWizards.ImportWizard">
+            class="org.tirix.emetamath.importWizards.ImportFileWizard"
+            id="org.tirix.emetamath.importWizards.ImportFileWizard">
+         <description>
+            Import a file from the local file system into the workspace.
+         </description>
+      </wizard>
+      <wizard
+            category="org.tirix.emetamath.importWizards.sampleCategory"
+            class="org.tirix.emetamath.importWizards.ImportSetMmWizard"
+            icon="icons/aleph0.gif"
+            id="org.tirix.emetamath.importWizards.ImportSetMmWizard"
+            name="Set.mm File from Metamath Web Site">
          <description>
             Import a file from the local file system into the workspace.
          </description>
@@ -438,13 +448,37 @@
       </contexts>
    </extension>
    <extension
-	  id="MetamathSearchResultPage"
-	  point="org.eclipse.search.searchResultViewPages">
-	  <viewPage
-		id="org.tirix.emetamath.views.MetamathSearchResultPage"
-		searchResultClass="org.tirix.emetamath.search.MetamathSearchResult"
-		class="org.eclipse.search.ui.text.AbstractTextSearchViewPage">
-	  </viewPage>
+         point="org.eclipse.ui.navigator.navigatorContent">
+      <commonWizard
+            type="new"
+            wizardId="org.tirix.emetamath.wizards.MetamathNewProjectWizard">
+         <enablement>
+         </enablement>
+      </commonWizard>
+      <commonWizard
+            type="new"
+            wizardId="org.tirix.emetamath.wizards.MetamathNewFileWizard">
+         <enablement>
+         </enablement>
+      </commonWizard>
+      <commonWizard
+            type="new"
+            wizardId="org.tirix.emetamath.wizards.ProofNewFileWizard">
+         <enablement>
+         </enablement>
+      </commonWizard>
+      <commonWizard
+            type="import"
+            wizardId="org.tirix.emetamath.importWizards.ImportFileWizard">
+         <enablement>
+         </enablement>
+      </commonWizard>
+      <commonWizard
+            type="import"
+            wizardId="org.tirix.emetamath.importWizards.ImportSetMmWizard">
+         <enablement>
+         </enablement>
+      </commonWizard>
    </extension>
 
 </plugin>

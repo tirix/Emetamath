@@ -51,7 +51,7 @@ import java.io.*;
 import java.util.*;
 
 import mmj.lang.*;
-import mmj.util.LoadProgress;
+import mmj.util.Progress;
 
 /**
  * Feed <code>SystemLoader</code> interface with <code>SrcStmt</code>
@@ -84,8 +84,8 @@ public class Systemizer {
     private   SystemLoader      systemLoader;
 
     private   boolean           eofReached          = false;
-    private   ArrayList         fileList            = null;
-    private   ArrayList         filesAlreadyLoaded  = null;
+    private   ArrayList<IncludeFile> fileList       = null;
+    private   ArrayList<String>	filesAlreadyLoaded  = null;
 
     private   SrcStmt           currSrcStmt         = null;
 
@@ -95,7 +95,7 @@ public class Systemizer {
 
     private   boolean           loadProofs          = true;
 
-    private   LoadProgress		loadProgress		= null;
+    private   Progress		loadProgress		= null;
 
     private   ArrayList         defaultProofList    = null;
 	
@@ -118,7 +118,7 @@ public class Systemizer {
         this.messageHandler = messageHandler;
         this.systemLoader   = systemLoader;
 
-        filesAlreadyLoaded  = new ArrayList();
+        filesAlreadyLoaded  = new ArrayList<String>();
         tokenizer           = null;
         statementizer       = null;
 
@@ -226,7 +226,7 @@ public class Systemizer {
     }
 
 
-	public void setLoadProgress(LoadProgress loadProgress) {
+	public void setLoadProgress(Progress loadProgress) {
 		this.loadProgress		= loadProgress;
 	}
 
@@ -262,7 +262,7 @@ public class Systemizer {
 	    boolean errorFound        = false;
 	
 	    //init stack of include files
-	    fileList                  = new ArrayList();
+	    fileList                  = new ArrayList<IncludeFile>();
 	
 	    eofReached                = false;
 	
@@ -307,27 +307,17 @@ public class Systemizer {
      *
      */
     public MessageHandler load(String fileNameIn,
-                         String sourceId)
+                         Object sourceId)
                             throws MMIOException,
                                    IOException {
         Reader readerIn;
         try {
-            File f = isInFilesAlreadyLoaded(filesAlreadyLoaded,
-                                            fileNameIn);
-            if (f == null) {
+        	if(isInFilesAlreadyLoaded(filesAlreadyLoaded, fileNameIn)) {
                 throw new MMIOException(
-                    MMIOConstants.ERRMSG_LOAD_REQ_FILE_DUP +
-                        fileNameIn);
-            }
-
-            readerIn = new BufferedReader(
-                           new InputStreamReader(
-                               new FileInputStream(f)
-                               ),
-                           MMIOConstants.READER_BUFFER_SIZE
-                           );
-
-            loadProgress.addTask(f.length());
+                        MMIOConstants.ERRMSG_LOAD_REQ_FILE_DUP +
+                            fileNameIn);
+                }
+        	readerIn = IncludeFile.openFile(fileNameIn, loadProgress);
         }
         catch (FileNotFoundException e) {
             throw new MMIOError(
@@ -694,10 +684,9 @@ public class Systemizer {
                                IOException {
 
         try {
-            File f                = isInFilesAlreadyLoaded(
-                                        filesAlreadyLoaded,
-                                        currSrcStmt.includeFileName);
-            if (f == null) {
+            if (isInFilesAlreadyLoaded(
+                    filesAlreadyLoaded,
+                    currSrcStmt.includeFileName)) {
                 raiseParseException(
                     MMIOConstants.ERRMSG_INCL_FILE_DUP +
                         currSrcStmt.includeFileName);
@@ -705,11 +694,9 @@ public class Systemizer {
             tokenizer             =
                 IncludeFile.initIncludeFile(
                     fileList,
-                    f,
+                    loadProgress,
                     currSrcStmt.includeFileName,
                     statementizer);
-
-            loadProgress.addTask(f.length());
         }
         catch (FileNotFoundException e) {
             raiseParseException(
@@ -738,25 +725,22 @@ public class Systemizer {
         }
     }
 
-    private   File isInFilesAlreadyLoaded(
-                                       ArrayList filesAlreadyLoaded,
+    private boolean isInFilesAlreadyLoaded(
+                                       ArrayList<String> filesAlreadyLoaded,
                                        String    fileNameIn)
                               throws FileNotFoundException,
                                      IOException {
 
-        File f         = new File(fileNameIn);
-        String absPath = f.getAbsolutePath();
-
-        for (int i = 0; i < filesAlreadyLoaded.size(); i++) {
-            if (((String)filesAlreadyLoaded.get(i)).equals(absPath)) {
-                return null;
-            }
-        }
-        filesAlreadyLoaded.add(absPath);
-
-        return f;
+    	boolean alreadyLoaded = filesAlreadyLoaded.contains(fileNameIn);
+    	if(!alreadyLoaded) filesAlreadyLoaded.add(fileNameIn);
+    	return alreadyLoaded;
     }
 
+    public void clearFilesAlreadyLoaded() {
+    	filesAlreadyLoaded = new ArrayList<String>();
+    	fileList = new ArrayList<IncludeFile>();
+    }
+    
     private void finalizePrematureEOF() {
 	    try {
 	        while (true) {

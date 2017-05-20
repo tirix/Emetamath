@@ -2,3 +2,5 @@ Changes vs. original mmj lib by Mel'O'Cat:
 - changed Systemizer and Tokenizer SourceId to Object, in order to accomodate with IFile
 - added SourcePosition class to store source position of Metamath elements (Chapters, Sections, )
 - added LoadProgress class to give feedback about the loading progress
+- added ReaderProvider class to enable opening IFile's instead of File's when using include
+- added clear methods to BookManager and SeqAssigner to enable (partial) rebuild

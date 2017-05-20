@@ -12,13 +12,23 @@ import mmj.lang.BookManager;
 import mmj.lang.LangConstants;
 import mmj.lang.LogicalSystem;
 import mmj.lang.MessageHandler;
+import mmj.lang.Messages;
+import mmj.lang.ParseTree;
 import mmj.lang.SeqAssigner;
+import mmj.lang.Stmt;
+import mmj.lang.VerifyException;
+import mmj.mmio.IncludeFile;
 import mmj.mmio.MMIOException;
 import mmj.mmio.SourcePosition;
 import mmj.mmio.Systemizer;
-import mmj.util.LoadProgress;
+import mmj.mmio.IncludeFile.ReaderProvider;
+import mmj.util.Progress;
+import mmj.util.RunParmArrayEntry;
+import mmj.util.UtilConstants;
+import mmj.verify.Grammar;
 
 import org.eclipse.core.resources.ICommand;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -31,14 +41,14 @@ import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
+import org.tirix.emetamath.nature.MetamathProjectNature.MetamathMessageHandler;
+
 /**
  * Makes use of Mel'O Cat's MMJ library to load, parse and verify a metamath file. 
  * @author Thierry
  */
 public class MetamathBuilder extends IncrementalProjectBuilder {
 	public static final String BUILDER_ID = "org.tirix.emetamath.metamathBuilder";
-
-	private static final String MARKER_TYPE = "org.tirix.emetamath.MMProblem";
 
 	
 	/**
@@ -161,9 +171,9 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 	 */
 	protected void fullBuild(MetamathProjectNature nature, final IProgressMonitor monitor) throws CoreException {
 		// delete all project markers
-		nature.getProject().deleteMarkers(MARKER_TYPE, false, IResource.DEPTH_INFINITE);
+		nature.getProject().deleteMarkers(MetamathProjectNature.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
 		// empty logical system, in order not to have duplicate symbols
-		nature.logicalSystem = null;
+		nature.clearLogicalSystem(null, new MetamathMessageHandler(nature.getProject()));
 		buildMetamath(nature, nature.getMainFile(), monitor);
 	}
 
@@ -231,7 +241,7 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 
 	private static void deleteMarkers(IFile file) {
 		try {
-			file.deleteMarkers(MARKER_TYPE, false, IResource.DEPTH_ZERO);
+			file.deleteMarkers(MetamathProjectNature.MARKER_TYPE, false, IResource.DEPTH_ZERO);
 		} catch (CoreException ce) {
 		}
 	}
@@ -244,6 +254,8 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 			try {
 				// TODO get nature from file.getProject().getNature()?
 				doLoadFile(file, nature, messageHandler, monitor);
+				nature.initializeGrammar(messageHandler);
+				doParse(file, nature, messageHandler);
 			} catch (Exception e) {
 			}
 		}
@@ -274,59 +286,9 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 	                           FileNotFoundException,
 	                           IOException {
 	
-	    nature.logicalSystemLoaded   = false;
-	
-	    if (nature.logicalSystem == null) {
-	        if (nature.bookManager == null) {
-	            nature.bookManager       =
-	                new BookManager(nature.bookManagerEnabledParm,
-	                                nature.provableLogicStmtTypeParm);
-	        }
-	
-	        if (nature.seqAssigner == null) {
-	            nature.seqAssigner       =
-	                new SeqAssigner(
-	                    nature.seqAssignerIntervalSizeParm,
-	                    nature.seqAssignerIntervalTblInitialSizeParm);
-	        }
-	
-	        int i = nature.symTblInitialSizeParm;
-	        if (i <= 0) {
-	            i = LangConstants.SYM_TBL_INITIAL_SIZE_DEFAULT;
-	        }
-	        int j = nature.symTblInitialSizeParm;
-	        if (j <= 0) {
-	            j = LangConstants.STMT_TBL_INITIAL_SIZE_DEFAULT;
-	        }
-	
-	        nature.logicalSystem     =
-	            new LogicalSystem(
-	                    nature.provableLogicStmtTypeParm,
-	                    nature.logicStmtTypeParm,
-	                    nature.bookManager,
-	                    nature.seqAssigner,
-	                    i,
-	                    j,
-	                    null,  //use null to override default
-	                    null); //use null to override default
-	    }
-	    else {
-	        // precautionary, added for 08/01/2008 release
-	        nature.logicalSystem.setSyntaxVerifier(null);
-	        nature.logicalSystem.setProofVerifier(null);
-	        nature.logicalSystem.clearTheoremLoaderCommitListenerList();
-	    }
-	
-	    if (nature.systemizer == null) {
-	        nature.systemizer        =
-	        new Systemizer(messageHandler,
-	                       nature.logicalSystem);
-	    }
-	    else {
-	        nature.systemizer.setSystemLoader(nature.logicalSystem);
-	        nature.systemizer.setMessages(messageHandler);
-	    }
-	
+		// selectively clear the logical system for this file
+		nature.clearLogicalSystem(file, messageHandler);
+
 	    LoadProgressMonitor loadProgress = new LoadProgressMonitor("Loading System", monitor);
 	    loadProgress.addTask(file.getLocation().toFile().length());
 	    
@@ -338,6 +300,8 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 	    nature.systemizer.setLoadProofs(nature.loadProofs);
 	    nature.systemizer.setLoadProgress(loadProgress);
 	    
+	    IncludeFile.setReaderProvider(nature.readerProvider);
+	    
 	    try {
 			nature.systemizer.load(new InputStreamReader(file.getContents()), file);
 		} catch (CoreException e) {
@@ -347,59 +311,56 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 	
 	    nature.setLogicalSystemLoaded();
 	}
-	
-	public static class MetamathMessageHandler implements MessageHandler {
-		protected IFile file;
-		
-		MetamathMessageHandler(IFile file) {
-			this.file = file;
-		}
-		
-		private void addMarker(String message, int severity) {
-			MetamathBuilder.addMarker(new SourcePosition(file, 0, 0, 0, 0), message, severity);
-		}
 
-		@Override
-		public boolean accumMMIOException(MMIOException e) {
-			MetamathBuilder.addMarker(e.position, e.getMessage(), IMarker.SEVERITY_ERROR);
-			return false;
-		}
+    /**
+     *  Executes the Parse command, prints any messages,
+     *  etc.
+     *
+     *  @param runParm RunParmFile line.
+     */
+    public static void doParse(IFile file, MetamathProjectNature nature, MessageHandler messageHandler)
+                        throws IllegalArgumentException,
+                               IOException,
+                               VerifyException {
 
-		@Override
-		public boolean accumErrorMessage(String errorMessage) {
-			addMarker(errorMessage, IMarker.SEVERITY_ERROR);
-			return false;
-		}
+        LogicalSystem logicalSystem = nature.getLogicalSystem();
 
-		@Override
-		public boolean accumInfoMessage(String infoMessage) {
-			addMarker(infoMessage, IMarker.SEVERITY_INFO);
-			return false;
-		}
+        Grammar grammar = nature.getGrammar();
 
-		@Override
-		public boolean maxErrorMessagesReached() {
-			return false;
-		}
-	}
+        if (true) {
+            grammar.parseAllFormulas(
+                messageHandler,
+                logicalSystem.getSymTbl(),
+                logicalSystem.getStmtTbl());
+        }
+        else {
+            Stmt stmt = null;
+            ParseTree parseTree =
+                grammar.parseOneStmt(messageHandler,
+                                     logicalSystem.getSymTbl(),
+                                     logicalSystem.getStmtTbl(),
+                                     stmt);
+            if (parseTree != null) {
+                Stmt[] exprRPN    =
+                    parseTree.convertToRPN();
+                StringBuffer sb = new StringBuffer();
+                sb.append(
+                    UtilConstants.ERRMSG_PARSE_RPN_1);
+                sb.append(stmt.getLabel());
+                sb.append(
+                    UtilConstants.ERRMSG_PARSE_RPN_2);
+                for (int i = 0; i < exprRPN.length; i++) {
+                    sb.append(exprRPN[i].getLabel());
+                    sb.append(" ");
+                }
+                messageHandler.accumInfoMessage(stmt.getPosition(), sb.toString());
+            }
+        }
 
-	protected static void addMarker(SourcePosition position, String message, int severity) {
-		try {
-			IFile file = (IFile)position.sourceId;
-			IMarker marker = file.createMarker(MARKER_TYPE);
-			marker.setAttribute(IMarker.MESSAGE, message);
-			marker.setAttribute(IMarker.SEVERITY, severity);
-			if (position.lineNbr == -1) {
-				position.lineNbr = 1;
-			}
-			marker.setAttribute(IMarker.LINE_NUMBER, position.lineNbr);
-			marker.setAttribute(IMarker.CHAR_START, position.charStartNbr);
-			marker.setAttribute(IMarker.CHAR_END, position.charEndNbr);
-		} catch (CoreException e) {
-		}
-	}
+        logicalSystem.setSyntaxVerifier(grammar);
+    }
 
-	protected static class LoadProgressMonitor implements LoadProgress {
+    protected static class LoadProgressMonitor implements Progress {
 		long workDone = 0;
 		long workRemaining;
 		private IProgressMonitor monitor;

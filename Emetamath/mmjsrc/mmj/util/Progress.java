@@ -1,9 +1,9 @@
 package mmj.util;
 
 /**
- * An interface designed to monitor the progress of the file loading
+ * An interface designed to monitor the progress of the file loading or proof verifying
  */
-public interface LoadProgress {
+public interface Progress {
 
     /**
      * Notifies that some new task has been identified, 

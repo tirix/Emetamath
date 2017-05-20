@@ -510,4 +510,10 @@ public class SeqAssigner implements TheoremLoaderCommitListener {
         return bitSet;
     }
 
+    public void clear() {
+    	intervalTbl.clear();
+    	mObjCount = 0;
+    	nbrIntervals = 0;
+    }
+    
 }

@@ -5,10 +5,12 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.Region;
+import org.tirix.emetamath.editors.MMScanner.MMLabelDetector;
 import org.tirix.emetamath.editors.MMScanner.MMTokenDetector;
 
 public class MMRegionProvider {
 	final static MMTokenDetector DETECTOR = new MMTokenDetector();
+	final static MMLabelDetector LABEL_DETECTOR = new MMLabelDetector();
 	
 	public static IRegion getComment(ITextViewer textViewer, int offset) {
 		IDocument doc = textViewer.getDocument();
@@ -77,6 +79,43 @@ public class MMRegionProvider {
 			while (pos < length) {
 				c = doc.getChar(pos);
 				if (!DETECTOR.isWordPart(c))
+					break;
+				++pos;
+			}
+
+			endPos = pos;
+			return new Region(startPos + 1, endPos - startPos - 1);
+
+		} catch (BadLocationException x) {
+		}
+
+		return null;
+	}
+
+	public static IRegion getLabel(ITextViewer textViewer, int offset) {
+		IDocument doc = textViewer.getDocument();
+		int startPos, endPos;
+
+		try {
+
+			int pos = offset;
+			char c;
+
+			while (pos >= 0) {
+				c = doc.getChar(pos);
+				if (!LABEL_DETECTOR.isWordPart(c))
+					break;
+				--pos;
+			}
+
+			startPos = pos;
+
+			pos = offset;
+			int length = doc.getLength();
+
+			while (pos < length) {
+				c = doc.getChar(pos);
+				if (!LABEL_DETECTOR.isWordPart(c))
 					break;
 				++pos;
 			}

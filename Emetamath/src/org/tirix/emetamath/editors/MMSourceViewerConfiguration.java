@@ -34,12 +34,12 @@ import org.tirix.emetamath.nature.MetamathProjectNature;
 import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
 
 public class MMSourceViewerConfiguration extends SourceViewerConfiguration implements SystemLoadListener {
-	private MMDoubleClickStrategy doubleClickStrategy;
-	private MMScanner mmScanner;
-	private MMCommentScanner mmCommentScanner;
-	private BufferedRuleBasedScanner mmFileInclusionScanner;
-	private ColorManager colorManager;
-	private ITextEditor fTextEditor;
+	protected MMDoubleClickStrategy doubleClickStrategy;
+	protected MMScanner mmScanner;
+	protected MMCommentScanner mmCommentScanner;
+	protected BufferedRuleBasedScanner mmFileInclusionScanner;
+	protected ColorManager colorManager;
+	protected ITextEditor fTextEditor;
 	
 	public MMSourceViewerConfiguration(ITextEditor textEditor, ColorManager colorManager) {
 		this.colorManager = colorManager;

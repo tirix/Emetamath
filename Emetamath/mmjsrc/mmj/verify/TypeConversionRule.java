@@ -326,6 +326,7 @@ public class TypeConversionRule extends GrammarRule {
         if (TypeConversionRule.isLoop(fromTyp,
                                       toTyp)) {
             grammar.accumErrorMsgInList(
+            	toTyp.getPosition(),
                 GrammarConstants.ERRMSG_TYPCONV_AXIOM_LOOP_1
                 + baseSyntaxAxiom.getLabel()
                 + GrammarConstants.ERRMSG_TYPCONV_AXIOM_LOOP_2

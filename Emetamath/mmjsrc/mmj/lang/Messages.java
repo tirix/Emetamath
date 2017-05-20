@@ -21,6 +21,8 @@ import java.io.*;
 import java.util.Hashtable;
 
 import mmj.mmio.MMIOException;
+import mmj.mmio.SourcePosition;
+import mmj.pa.PaConstants;
 
 /**
  *  Repository of error and informational messages during
@@ -166,6 +168,13 @@ public class Messages implements MessageHandler {
     }
 
     /* (non-Javadoc)
+	 * @see mmj.lang.MessageHandler#accumErrorMessage(SourcePosition, java.lang.String)
+	 */
+    public boolean accumErrorMessage(SourcePosition position, String errorMessage) {
+        return accumErrorMessage(errorMessage);
+    }
+
+    /* (non-Javadoc)
 	 * @see mmj.lang.MessageHandler#accumInfoMessage(java.lang.String)
 	 */
     public boolean accumInfoMessage(String infoMessage) {
@@ -175,6 +184,13 @@ public class Messages implements MessageHandler {
             return true;
         }
         return false;
+    }
+
+    /* (non-Javadoc)
+	 * @see mmj.lang.MessageHandler#accumInfoMessage(SourcePosition, java.lang.String)
+	 */
+    public boolean accumInfoMessage(SourcePosition position, String errorMessage) {
+        return accumInfoMessage(errorMessage);
     }
 
     /**
@@ -335,6 +351,53 @@ public class Messages implements MessageHandler {
     public void clearMessages() {
         errorMessageCnt = 0;
         infoMessageCnt  = 0;
+    }
+
+    /**
+     *  Obtain output message text.
+     *  <p>
+     *  Note: this is a key function used by ProofAsstGUI.
+     *  <p>
+     *  Note: with word wrap 'on', newlines are ignored in
+     *  JTextArea, so we insert spacer lines.
+     *
+     *  @param  messages Messages object.
+     *  @return      Proof Error Message Text area as String.
+     */
+    public String getOutputMessageText() {
+
+        if (getErrorMessageCnt() == 0 &&
+            getInfoMessageCnt() == 0) {
+            return null;
+        }
+
+        StringBuffer sb           =
+            new StringBuffer(
+                (getErrorMessageCnt() +
+                 getInfoMessageCnt())
+                 * 80); //guessing average message length
+        String[] msgArray         =
+            getErrorMessageArray();
+        int msgCount              =
+            getErrorMessageCnt();
+        for (int i = 0; i < msgCount; i++) {
+            sb.append(msgArray[i]);
+            sb.append(PaConstants.PROOF_WORKSHEET_NEW_LINE);
+            sb.append(PaConstants.ERROR_TEXT_SPACER_LINE);
+            sb.append(PaConstants.PROOF_WORKSHEET_NEW_LINE);
+        }
+        msgArray                  =
+            getInfoMessageArray();
+        msgCount                  =
+            getInfoMessageCnt();
+        for (int i = 0; i < msgCount; i++) {
+            sb.append(msgArray[i]);
+            sb.append(PaConstants.PROOF_WORKSHEET_NEW_LINE);
+            sb.append(PaConstants.ERROR_TEXT_SPACER_LINE);
+            sb.append(PaConstants.PROOF_WORKSHEET_NEW_LINE);
+        }
+        clearMessages();
+        return sb.toString();
     }
 
     /**

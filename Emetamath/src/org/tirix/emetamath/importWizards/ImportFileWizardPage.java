@@ -29,11 +29,11 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.dialogs.WizardNewFileCreationPage;
 
 
-public class ImportWizardPage extends WizardNewFileCreationPage {
+public class ImportFileWizardPage extends WizardNewFileCreationPage {
 	
 	protected FileFieldEditor editor;
 
-	public ImportWizardPage(String pageName, IStructuredSelection selection) {
+	public ImportFileWizardPage(String pageName, IStructuredSelection selection) {
 		super(pageName, selection);
 		setTitle(pageName); //NON-NLS-1
 		setDescription("Import a file from the local file system into the workspace"); //NON-NLS-1
@@ -58,11 +58,11 @@ public class ImportWizardPage extends WizardNewFileCreationPage {
 		editor = new FileFieldEditor("fileSelect","Select File: ",fileSelectionArea); //NON-NLS-1 //NON-NLS-2
 		editor.getTextControl(fileSelectionArea).addModifyListener(new ModifyListener(){
 			public void modifyText(ModifyEvent e) {
-				IPath path = new Path(ImportWizardPage.this.editor.getStringValue());
+				IPath path = new Path(ImportFileWizardPage.this.editor.getStringValue());
 				setFileName(path.lastSegment());
 			}
 		});
-		String[] extensions = new String[] { "*.zip;*.tar;*.jar" }; //NON-NLS-1
+		String[] extensions = new String[] { "*.mm;*.mmp" }; //NON-NLS-1
 		editor.setFileExtensions(extensions);
 		fileSelectionArea.moveAbove(null);
 

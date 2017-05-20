@@ -145,7 +145,7 @@ public class Tokenizer
      *         is less than zero.
      *
      */
-    public Tokenizer(Reader r, String s, long nbrCharsToBypass)
+    public Tokenizer(Reader r, Object s, long nbrCharsToBypass)
             throws  IOException,
                     IllegalArgumentException {
         this(r, s);

@@ -149,8 +149,8 @@ public class MetamathEditor extends TextEditor implements IShowInSource {
 	               }});
 			Display.getDefault().asyncExec(new Runnable() {
 	               public void run() {
-	            	   editor.getSourceViewer().invalidateTextPresentation();
-	            	   //((ITextViewerExtension2)editor.getSourceViewer()).invalidateTextPresentation(0, 1000000);
+	            	   if(editor.getSourceViewer() != null) 
+	            		   editor.getSourceViewer().invalidateTextPresentation();
 	               }});
 		}
 

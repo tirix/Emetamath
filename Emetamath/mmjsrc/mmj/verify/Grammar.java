@@ -39,6 +39,7 @@
 
 package mmj.verify;
 import mmj.lang.*;
+import mmj.mmio.SourcePosition;
 
 import java.util.*;
 
@@ -605,7 +606,8 @@ public class Grammar implements SyntaxVerifier {
                 initializeGrammarTables();
             }
             catch (VerifyException e) {
-                accumErrorMsgInList(e.getMessage());
+            	// TODO I believe Verify exception is never thrown in the catch block
+                accumErrorMsgInList(null, e.getMessage());
             }
             if (!grammarInitialized) {
                 return null;
@@ -624,7 +626,8 @@ public class Grammar implements SyntaxVerifier {
                    stmt.getFormula(),
                    stmt.getMandVarHypArray(),
                    stmt.getSeq(),
-                   stmt.getLabel());
+                   stmt.getLabel(),
+                   stmt.getPosition());
 
     }
 
@@ -670,7 +673,8 @@ public class Grammar implements SyntaxVerifier {
                 initializeGrammarTables();
             }
             catch (VerifyException e) {
-                accumErrorMsgInList(e.getMessage());
+            	// TODO I believe Verify exception is never thrown in the catch block
+                accumErrorMsgInList(null, e.getMessage());
             }
             if (!grammarInitialized) {
                 return null;
@@ -679,7 +683,8 @@ public class Grammar implements SyntaxVerifier {
         return grammaticalParseOneFormula(formula,
                                           varHypArray,
                                           highestSeq,
-                                          defaultStmt.getLabel());
+                                          defaultStmt.getLabel(),
+                                          defaultStmt.getPosition());
     }
 
     /**
@@ -701,7 +706,8 @@ public class Grammar implements SyntaxVerifier {
                 initializeGrammarTables();
             }
             catch (VerifyException e) {
-                accumErrorMsgInList(e.getMessage());
+            	// TODO I believe Verify exception is never thrown in the catch block
+                accumErrorMsgInList(null, e.getMessage());
             }
             if (!grammarInitialized) {
                 return;
@@ -736,7 +742,8 @@ public class Grammar implements SyntaxVerifier {
                                               stmt.getFormula(),
                                               varHypArray,
                                               stmt.getSeq(),
-                                              stmt.getLabel());
+                                              stmt.getLabel(),
+                                              stmt.getPosition());
 
             }
             if (exprParseTree == null) {
@@ -787,7 +794,8 @@ public class Grammar implements SyntaxVerifier {
             initializeGrammarTables();
         }
         catch (VerifyException e) {
-            accumErrorMsgInList(e.getMessage());
+        	// TODO I believe Verify exception is never thrown in the catch block
+            accumErrorMsgInList(null, e.getMessage());
         }
         return grammarInitialized;
     }
@@ -901,7 +909,8 @@ public class Grammar implements SyntaxVerifier {
                                      Formula   formula,
                                      VarHyp[]  varHypArray,
                                      int       highestSeq,
-                                     String    defaultStmtLabel) {
+                                     String    defaultStmtLabel,
+                                     SourcePosition position) {
 //      Stmt[]      exprRPN = null;
         ParseTree   exprParseTree = null;
 
@@ -914,7 +923,7 @@ public class Grammar implements SyntaxVerifier {
 //                             + defaultStmtLabel);
 // */
         	boolean debug = defaultStmtLabel.equals("df-mlim");
-        	
+
         	parseTreeCnt = grammaticalParser.parseExpr(
                         parseTreeArray,
                         formula.getTyp(),
@@ -923,6 +932,7 @@ public class Grammar implements SyntaxVerifier {
                         debug);
             if (parseTreeCnt < 0) {
                 accumErrorMsgInList(
+                	new SourcePosition(position, ((parseTreeCnt * -1) + 1)), // TODO Complete with more information from parseTreeCnt
                     GrammarConstants.ERRMSG_PARSE_FAILED_AT_POS_1
                     + defaultStmtLabel
                     + GrammarConstants.ERRMSG_PARSE_FAILED_AT_POS_2
@@ -938,6 +948,7 @@ public class Grammar implements SyntaxVerifier {
                         break;
                     case 0:
                         accumErrorMsgInList(
+                        	position,
                             GrammarConstants.ERRMSG_PARSE_FAILED
                             + defaultStmtLabel);
                         break;
@@ -950,6 +961,7 @@ public class Grammar implements SyntaxVerifier {
                         exprParseTree =
                             parseTreeArray[0];
                         accumInfoMsgInList(
+                        	position,
                             GrammarConstants.ERRMSG_2_PARSE_TREES_1
                             + defaultStmtLabel
                             + GrammarConstants.ERRMSG_2_PARSE_TREES_2
@@ -977,13 +989,13 @@ public class Grammar implements SyntaxVerifier {
                             GrammarConstants.ERRMSG_N_PARSE_TREES_3);
                           s.append(parseTreeArray[i].toString());
                         }
-                        accumInfoMsgInList(s.toString());
+                        accumInfoMsgInList(position, s.toString());
                         break;
                 }
             }
         }
         catch (VerifyException e) {
-            accumErrorMsgInList(e.getMessage()
+            accumErrorMsgInList(position, e.getMessage()
                 + GrammarConstants.ERRMSG_LABEL_CAPTION
                 + defaultStmtLabel);
         }
@@ -1061,12 +1073,12 @@ public class Grammar implements SyntaxVerifier {
     }
 
 
-    /* friendly */ void accumErrorMsgInList(String errorMsg) {
-        messageHandler.accumErrorMessage(errorMsg);
+    /* friendly */ void accumErrorMsgInList(SourcePosition position, String errorMsg) {
+        messageHandler.accumErrorMessage(position, errorMsg);
     }
 
-    /* friendly */ void accumInfoMsgInList(String infoMsg) {
-        messageHandler.accumInfoMessage(infoMsg);
+    /* friendly */ void accumInfoMsgInList(SourcePosition position, String infoMsg) {
+        messageHandler.accumInfoMessage(position, infoMsg);
     }
 
     /**
@@ -1280,6 +1292,7 @@ public class Grammar implements SyntaxVerifier {
             if (sym == null ||
                 !sym.isCnst()) {
                 accumErrorMsgInList(
+                	sym.getPosition(), 
                     GrammarConstants.ERRMSG_PROVABLE_TYP_NOT_A_CNST_1
                     + i
                     +
@@ -1303,6 +1316,7 @@ public class Grammar implements SyntaxVerifier {
             if (sym == null ||
                 !sym.isCnst()) {
                 accumErrorMsgInList(
+                	sym.getPosition(), 
                     GrammarConstants.ERRMSG_LOGIC_TYP_NOT_A_CNST_1
                     + i
                     + GrammarConstants.ERRMSG_LOGIC_TYP_NOT_A_CNST_2
@@ -1361,6 +1375,7 @@ public class Grammar implements SyntaxVerifier {
 
                 if (cnst.getIsProvableLogicStmtTyp()) {
                     accumErrorMsgInList(
+                    	cnst.getPosition(),
                         GrammarConstants.ERRMSG_VARHYP_TYP_PROVABLE_1
                         + stmt.getLabel()
                         +
@@ -1429,6 +1444,7 @@ public class Grammar implements SyntaxVerifier {
         MandFrame mandFrame = axiom.getMandFrame();
         if (mandFrame.djVarsArray.length != 0) {
             accumErrorMsgInList(
+            	axiom.getPosition(),
                 GrammarConstants.ERRMSG_DJ_VARS_ON_SYNTAX_1
                 + axiom.getLabel()
                 + GrammarConstants.ERRMSG_DJ_VARS_ON_SYNTAX_2);
@@ -1436,6 +1452,7 @@ public class Grammar implements SyntaxVerifier {
         }
         if (mandFrame.hypArray.length != varHypArray.length) {
             accumErrorMsgInList(
+               	axiom.getPosition(),
                 GrammarConstants.ERRMSG_LOGHYP_FOR_SYNTAX_1
                 + axiom.getLabel()
                 + GrammarConstants.ERRMSG_LOGHYP_FOR_SYNTAX_2);
@@ -1475,6 +1492,7 @@ public class Grammar implements SyntaxVerifier {
                     if (varHypArray[i].getVar() == var) {
                         if (dest >= reseqVarHyp.length) {
                             accumErrorMsgInList(
+                                	axiom.getPosition(),
                      GrammarConstants.ERRMSG_SYNTAX_VARHYP_MISMATCH_1
                                 + axiom.getLabel()
                                 +
@@ -1485,6 +1503,7 @@ public class Grammar implements SyntaxVerifier {
                         else {
                             if (reseqVarHyp[dest] != 0) {
                                 accumErrorMsgInList(
+                                    	axiom.getPosition(),
                         GrammarConstants.ERRMSG_SYNTAX_VAR_GT_1_OCC_1
                                     + axiom.getLabel()
                                     +
@@ -1508,6 +1527,7 @@ public class Grammar implements SyntaxVerifier {
             }
             if (dest != reseqVarHyp.length) {
                 accumErrorMsgInList(
+                    	axiom.getPosition(),
                     GrammarConstants.ERRMSG_SYNTAX_VARHYP_MISMATCH_1
                     + axiom.getLabel()
                     +
@@ -1577,6 +1597,7 @@ public class Grammar implements SyntaxVerifier {
           //}
             if (cnst.getIsGrammaticalTyp()) {
                 accumErrorMsgInList(
+                    	axiom.getPosition(),
                     GrammarConstants.ERRMSG_SYNTAX_USES_TYP_AS_CNST_1
                     + axiom.getLabel()
                     +
@@ -1589,5 +1610,13 @@ public class Grammar implements SyntaxVerifier {
             }
         }
         return !errorsFound;
+    }
+
+    /**
+     * Resets this grammar object to its initial state
+     */
+    public void clear() {
+    	grammarInitialized = false;
+    	
     }
 }

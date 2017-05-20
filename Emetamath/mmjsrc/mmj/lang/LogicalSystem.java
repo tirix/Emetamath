@@ -1336,4 +1336,14 @@ public class LogicalSystem implements SystemLoader {
                 + existingStmt.getLabel());
         }
     }
+
+    public void clear() {
+        symTbl                     =  new HashMap();
+        stmtTbl                    =  new HashMap();
+
+        //init stack of scope levels
+        scopeDefList               = new ArrayList();
+        beginScope();   //initialize global scope level
+
+    }
 }

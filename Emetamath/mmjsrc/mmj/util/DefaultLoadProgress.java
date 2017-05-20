@@ -4,10 +4,10 @@ package mmj.util;
  * Default implementation of LoadProgress.
  * Does nothing.
  * 
- * @see LoadProgress
+ * @see Progress
  * @author Thierry
  */
-public class DefaultLoadProgress implements LoadProgress {
+public class DefaultLoadProgress implements Progress {
 
 	@Override
 	public void addTask(long work) {

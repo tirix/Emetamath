@@ -780,4 +780,17 @@ public class BookManager implements TheoremLoaderCommitListener {
             ++totalNbrMObjs;
         }
     }
+
+	public void clear() {
+        chapterList.clear();
+        sectionList.clear();
+        inputSectionCounter = 0;
+        totalNbrMObjs = 0;
+
+        currChapter = null;
+        currSymSection = null;
+        currVarHypSection = null;
+        currSyntaxSection = null;
+        currLogicSection = null;
+    }
 }

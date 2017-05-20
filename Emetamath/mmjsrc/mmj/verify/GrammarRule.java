@@ -345,6 +345,7 @@ public abstract class GrammarRule {
                                            rfe))
                 != null) {
             grammar.accumErrorMsgInList(
+            	baseSyntaxAxiom.getPosition(),
                 GrammarConstants.ERRMSG_BASE_RULE_IS_DUP_1
                 + baseSyntaxAxiom.getLabel()
                 + GrammarConstants.ERRMSG_BASE_RULE_IS_DUP_2
@@ -379,6 +380,7 @@ public abstract class GrammarRule {
                     derivedRule.getBaseSyntaxAxiom().getTyp()) {
                     errorsFound = true;
                     grammar.accumErrorMsgInList(
+                       	baseSyntaxAxiom.getPosition(),
                         // mod Sep-23-2005 chg msg text
                         GrammarConstants.ERRMSG_DUP_RULE_DIFF_TYP_1
                         + derivedRule.getBaseSyntaxAxiom().getTyp()

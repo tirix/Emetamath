@@ -60,7 +60,7 @@ public class LogicalSystemBoss extends Boss {
 
     protected boolean        loadComments;
     protected boolean        loadProofs;
-    protected LoadProgress	 loadProgress;
+    protected Progress	 loadProgress;
 
     protected LogicalSystem  logicalSystem;
 

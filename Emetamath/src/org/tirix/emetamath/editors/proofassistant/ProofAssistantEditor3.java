@@ -81,7 +81,7 @@
  *  ==> Add TheoremLoader stuff.
  */
 
-package org.tirix.emetamath.editors;
+package org.tirix.emetamath.editors.proofassistant;
 
 import java.io.BufferedReader;
 import java.io.IOException;

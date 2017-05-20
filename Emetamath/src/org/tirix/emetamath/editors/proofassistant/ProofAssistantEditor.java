@@ -81,7 +81,7 @@
  *  ==> Add TheoremLoader stuff.
  */
 
-package org.tirix.emetamath.editors;
+package org.tirix.emetamath.editors.proofassistant;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -113,6 +113,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.Text;
@@ -123,10 +124,14 @@ import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.editors.text.TextEditor;
+import org.eclipse.ui.part.IShowInSource;
+import org.eclipse.ui.part.ShowInContext;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.StatusLineContributionItem;
 import org.eclipse.ui.views.contentoutline.ContentOutlinePage;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
+import org.tirix.emetamath.editors.ColorManager;
+import org.tirix.emetamath.editors.MetamathEditor;
 import org.tirix.emetamath.editors.MetamathEditor.MMContentOutlinePage;
 
 /**
@@ -151,7 +156,7 @@ import org.tirix.emetamath.editors.MetamathEditor.MMContentOutlinePage;
  *  the longest theorem unification computation is around
  *  1/2 second.)
  */
-public class ProofAssistantEditor extends TextEditor {
+public class ProofAssistantEditor extends MetamathEditor {
 
 	public static final String EDITOR_ID = "org.tirix.emetamath.ProofAssistant";
 	// save constructor parms: proofAsst, proofAsstPreferences
@@ -230,7 +235,7 @@ public class ProofAssistantEditor extends TextEditor {
 		return bar;
 	}
 
-    public static final class TopCenterLayout extends Layout {
+	public static final class TopCenterLayout extends Layout {
 		private final int barHeight;
 
 		public TopCenterLayout(int barHeight) {

@@ -29,6 +29,10 @@ public class MMScanner extends RuleBasedScanner {
 	public final static String MM_THEOREM = "__mm_theorem";
 
 	final static String[] mmKeywords = new String[] { "$c", "$v", "$d", "$f", "$e", "$a", "$p", "$=", "${", "$}", "$." };
+
+	protected MMScanner() {
+		
+	}
 	
 	public MMScanner(MetamathProjectNature nature, ColorManager manager) {
 		IToken mmLabel = new Token( new TextAttribute( manager.getColor(IMMColorConstants.LABEL)));

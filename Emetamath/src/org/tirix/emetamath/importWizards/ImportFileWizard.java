@@ -16,11 +16,11 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.ui.IImportWizard;
 import org.eclipse.ui.IWorkbench;
 
-public class ImportWizard extends Wizard implements IImportWizard {
+public class ImportFileWizard extends Wizard implements IImportWizard {
 	
-	ImportWizardPage mainPage;
+	ImportFileWizardPage mainPage;
 
-	public ImportWizard() {
+	public ImportFileWizard() {
 		super();
 	}
 
@@ -40,7 +40,7 @@ public class ImportWizard extends Wizard implements IImportWizard {
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
 		setWindowTitle("File Import Wizard"); //NON-NLS-1
 		setNeedsProgressMonitor(true);
-		mainPage = new ImportWizardPage("Import Metamath File",selection); //NON-NLS-1
+		mainPage = new ImportFileWizardPage("Import Metamath File",selection); //NON-NLS-1
 	}
 	
 	/* (non-Javadoc)

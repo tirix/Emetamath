@@ -315,7 +315,7 @@ public class ProofWorksheet {
                 ProofAsstPreferences proofAsstPreferences,
                 LogicalSystem        logicalSystem,
                 Grammar              grammar,
-                Messages             messages) {
+                MessageHandler       messageHandler) {
 
         this.proofTextTokenizer   =  proofTextTokenizer;
         this.proofAsstPreferences =  proofAsstPreferences;
@@ -360,7 +360,7 @@ public class ProofWorksheet {
                 ProofAsstPreferences proofAsstPreferences,
                 LogicalSystem        logicalSystem,
                 Grammar              grammar,
-                Messages             messages) {
+                MessageHandler       messageHandler) {
 
         this.proofAsstPreferences =  proofAsstPreferences;
         this.logicalSystem        =  logicalSystem;
@@ -416,7 +416,7 @@ public class ProofWorksheet {
                 ProofAsstPreferences proofAsstPreferences,
                 LogicalSystem        logicalSystem,
                 Grammar              grammar,
-                Messages             messages) {
+                MessageHandler       messageHandler) {
 
         this.proofAsstPreferences =  proofAsstPreferences;
         this.logicalSystem        =  logicalSystem;
@@ -1866,6 +1866,35 @@ public class ProofWorksheet {
     }
 
     /**
+     *  Obtain output message text from ProofWorksheet.
+     *  <p>
+     *  Note: this is a key function used by ProofAsstGUI.
+     *  <p>
+     *  Note: with word wrap 'on', newlines are ignored in
+     *  JTextArea, so we insert spacer lines.
+     *
+     *  @return      Proof Error Message Text area as String.
+     */
+    public String getOutputMessageText() {
+        return ProofWorksheet.getOutputMessageText(messageHandler);
+    }
+
+    /**
+     *  Obtain output message text from ProofWorksheet.
+     *  <p>
+     *  Note: this is a key function used by ProofAsstGUI.
+     *  <p>
+     *  Note: with word wrap 'on', newlines are ignored in
+     *  JTextArea, so we insert spacer lines.
+     *
+     *  @param  messages Messages object.
+     *  @return      Proof Error Message Text area as String.
+     */
+    public static String getOutputMessageText(MessageHandler messages) {
+    	return messages.getOutputMessageText();
+    }
+
+   	/**
      *  Obtain output proof text from ProofWorksheet.
      *  <p>
      *  Note: this is a key function used by ProofAssistantEditor.

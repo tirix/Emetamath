@@ -258,7 +258,7 @@ public class HeaderStmt extends ProofWorkStmt {
         if (stmt == null) {
             if (!Statementizer.areLabelCharsValid(
                     theoremLabel)) {
-                w.messages.accumErrorMessage(
+                w.messageHandler.accumErrorMessage(
                     PaConstants.ERRMSG_BAD_LABEL_CHAR_1
                     + theoremLabel
                     + PaConstants.ERRMSG_BAD_LABEL_CHAR_2);
@@ -267,7 +267,7 @@ public class HeaderStmt extends ProofWorkStmt {
             }
             if (Statementizer.isLabelOnProhibitedList(
                     theoremLabel)) {
-                w.messages.accumErrorMessage(
+                w.messageHandler.accumErrorMessage(
                     PaConstants.ERRMSG_PROHIB_LABEL_1
                     + theoremLabel
                     + PaConstants.ERRMSG_PROHIB_LABEL_2);
@@ -276,7 +276,7 @@ public class HeaderStmt extends ProofWorkStmt {
             }
             if (w.logicalSystem.getSymTbl().
                     containsKey(theoremLabel)) {
-                w.messages.accumErrorMessage(
+                w.messageHandler.accumErrorMessage(
                     PaConstants.
                         ERRMSG_STMT_LABEL_DUP_OF_SYM_ID_1_1
                     + theoremLabel
@@ -290,7 +290,7 @@ public class HeaderStmt extends ProofWorkStmt {
 
         if (stmt instanceof Theorem) {
             if (stmt.getTyp() != w.getProvableLogicStmtTyp()) {
-                w.messages.accumErrorMessage(
+                w.messageHandler.accumErrorMessage(
                     PaConstants.ERRMSG_BAD_TYP_CD_1
                     + theoremLabel
                     + PaConstants.ERRMSG_BAD_TYP_CD_2
@@ -308,7 +308,7 @@ public class HeaderStmt extends ProofWorkStmt {
             }
         }
 
-        w.messages.accumErrorMessage(
+        w.messageHandler.accumErrorMessage(
             PaConstants.ERRMSG_NOT_A_THRM_1
             + theoremLabel
             + PaConstants.ERRMSG_NOT_A_THRM_2);
@@ -334,7 +334,7 @@ public class HeaderStmt extends ProofWorkStmt {
             (Stmt)(w.logicalSystem.getStmtTbl().get(
                 locAfterLabel));
         if (stmt == null) {
-            w.messages.accumErrorMessage(
+            w.messageHandler.accumErrorMessage(
                 PaConstants.ERRMSG_LOC_NOTFND_1
                 + w.getErrorLabelIfPossible()
                 + PaConstants.ERRMSG_LOC_NOTFND_2
