@@ -14,10 +14,19 @@
  */
 
 package mmj.tl;
-import java.util.*;
-import java.io.*;
-import mmj.lang.*;
-import mmj.mmio.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
+import mmj.lang.LangException;
+import mmj.lang.LogicalSystem;
+import mmj.lang.MessageHandler;
+import mmj.lang.TheoremLoaderException;
 
 /**
  *   MMTTheoremSet represents a set of MMTTheoremStmtGroup objects

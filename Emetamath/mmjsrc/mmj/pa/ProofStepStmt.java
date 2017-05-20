@@ -45,18 +45,25 @@
 
 package mmj.pa;
 
-import  java.io.StringReader;
-import  java.io.IOException;
-import  java.util.ArrayList;
-import  java.util.HashMap;
-import  mmj.lang.*;
-import  mmj.mmio.*;
-import  mmj.tmff.*;
-import  mmj.verify.*;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+
+import mmj.lang.Formula;
+import mmj.lang.ParseNode;
+import mmj.lang.ParseTree;
+import mmj.lang.Stmt;
+import mmj.lang.Sym;
+import mmj.lang.WorkVar;
+import mmj.lang.WorkVarHyp;
+import mmj.mmio.MMIOError;
+import mmj.mmio.Tokenizer;
+import mmj.verify.VerifyProofs;
 
 
-public abstract class ProofStepStmt extends ProofWorkStmt {
-
+public abstract class ProofStepStmt extends ProofWorkStmt implements ProofStep {
+	private final static String[] NO_HYP_STEPS = new String[] {};
+	
     //this is obtained from the input proof text line
     //on input, and for generated statements, is
     //obtained from ProofAsstPreferences.
@@ -173,6 +180,7 @@ public abstract class ProofStepStmt extends ProofWorkStmt {
             w.proofCursor.
                 setCursorAtProofWorkStmt(this,
                                          PaConstants.FIELD_ID_REF);
+            if(w.proofTextTokenizer != null) posCharNbr = w.proofTextTokenizer.getCurrentCharNbr();
         }
 
     }
@@ -698,12 +706,25 @@ public abstract class ProofStepStmt extends ProofWorkStmt {
         return refLabel;
     }
 
+	public Formula getFormula() {
+		return formula;
+	}
+
+	public String getStepName() {
+		return step;
+	}
+
     public String getStmtDiagnosticInfo() {
         return this.getClass().getName()
                + " "
                + step;
     }
 
+    @Override
+    public String[] getHypSteps() {
+    	return NO_HYP_STEPS;
+    }
+    
     /**
      *  Updates the first token of the text area.
      *  <p>
@@ -874,5 +895,4 @@ public abstract class ProofStepStmt extends ProofWorkStmt {
         ProofStepStmt.reviseStepHypRefInStmtTextArea(stmtText,
                                                      newStepHypRef);
     }
-
 }

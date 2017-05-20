@@ -12,8 +12,11 @@ public interface IMMColorConstants {
 	RGB COMMENT = new RGB(128, 128, 128);
 
 	RGB CONSTANT = new RGB(0, 0, 0);
+	RGB TYPE = new RGB(128, 128, 128);
 
 	RGB CLASS = new RGB(255, 0, 255);
 	RGB SET = new RGB(255, 0, 0);
 	RGB WFF = new RGB(0, 0, 255);
+
+	RGB PROOF = new RGB(160, 160, 192);
 }

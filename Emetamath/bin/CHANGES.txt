@@ -4,3 +4,8 @@ Changes vs. original mmj lib by Mel'O'Cat:
 - added LoadProgress class to give feedback about the loading progress
 - added ReaderProvider class to enable opening IFile's instead of File's when using include
 - added clear methods to BookManager and SeqAssigner to enable (partial) rebuild
+- added access to the stepSelectionStore object from the ProofWorksheet
+- added a list of incomplete proofs to LogicalSystem
+- added an interface for "StepProof" to StepProofStmt, to expose only basic properties (not linked with a Worksheet)
+- added the method "apply" to formula, for applying a set of substitutions (similar to a method in VerifyProof, but without need of the class context)
+ 

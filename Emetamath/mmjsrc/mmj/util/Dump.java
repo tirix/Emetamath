@@ -30,12 +30,38 @@
 
 package mmj.util;
 
-import java.util.*;
-import java.io.*;
-import mmj.lang.*;
-import mmj.verify.*;
-import mmj.mmio.*;
-import mmj.tmff.*;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeSet;
+
+import mmj.lang.Assrt;
+import mmj.lang.Axiom;
+import mmj.lang.BookManager;
+import mmj.lang.Chapter;
+import mmj.lang.Cnst;
+import mmj.lang.LogHyp;
+import mmj.lang.LogicalSystem;
+import mmj.lang.MObj;
+import mmj.lang.MandFrame;
+import mmj.lang.OptFrame;
+import mmj.lang.ParseNode;
+import mmj.lang.Section;
+import mmj.lang.Stmt;
+import mmj.lang.Sym;
+import mmj.lang.Theorem;
+import mmj.lang.Var;
+import mmj.lang.VarHyp;
+import mmj.tmff.TMFFPreferences;
+import mmj.tmff.TMFFStateParams;
+import mmj.verify.GRForest;
+import mmj.verify.Grammar;
+import mmj.verify.GrammarRule;
+import mmj.verify.NotationRule;
+import mmj.verify.NullsPermittedRule;
+import mmj.verify.TypeConversionRule;
 
 /**
  *  Dump started out as just testing code that could be

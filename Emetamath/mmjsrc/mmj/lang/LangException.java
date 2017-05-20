@@ -11,12 +11,12 @@
 
 package mmj.lang;
 
+
 /**
  *  Thrown when Metamath source file has a non-fatal error such
  *  as a syntax error.
  */
 public class LangException extends Exception {
-
     /**
      * Default Constructor, <code>LangException</code>.
      */

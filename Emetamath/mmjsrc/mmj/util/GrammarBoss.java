@@ -32,13 +32,17 @@
  */
 
 package mmj.util;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import mmj.mmio.*;
-import mmj.lang.*;
-import mmj.verify.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import mmj.lang.LogicalSystem;
+import mmj.lang.Messages;
+import mmj.lang.ParseTree;
+import mmj.lang.Stmt;
+import mmj.lang.VerifyException;
+import mmj.mmio.MMIOException;
+import mmj.verify.Grammar;
+import mmj.verify.GrammarConstants;
 
 
 /**

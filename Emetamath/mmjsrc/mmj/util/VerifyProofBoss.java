@@ -21,10 +21,17 @@
  */
 
 package mmj.util;
-import java.io.*;
-import mmj.mmio.*;
-import mmj.lang.*;
-import mmj.verify.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import mmj.lang.LangException;
+import mmj.lang.LogicalSystem;
+import mmj.lang.Messages;
+import mmj.lang.Stmt;
+import mmj.lang.Theorem;
+import mmj.lang.VerifyException;
+import mmj.mmio.MMIOException;
+import mmj.verify.VerifyProofs;
 
 /**
  *  Responsible for building, loading, maintaining and fetching

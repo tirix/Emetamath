@@ -14,7 +14,10 @@
  */
 
 package mmj.util;
-import mmj.lang.*;
+import mmj.lang.LogicalSystem;
+import mmj.lang.MessageHandler;
+import mmj.lang.VerifyException;
+import mmj.lang.WorkVarManager;
 import mmj.verify.Grammar;
 
 /**

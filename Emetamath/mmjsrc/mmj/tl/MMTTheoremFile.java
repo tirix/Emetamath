@@ -14,10 +14,23 @@
  */
 
 package mmj.tl;
-import java.io.*;
-import java.util.*;
-import mmj.lang.*;
-import mmj.mmio.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.Iterator;
+import java.util.List;
+
+import mmj.lang.TheoremLoaderException;
+import mmj.mmio.MMIOConstants;
+import mmj.mmio.Statementizer;
+import mmj.mmio.Tokenizer;
 
 /**
  *  MMTTheoremFile is a little helper class for MMT Theorem files.

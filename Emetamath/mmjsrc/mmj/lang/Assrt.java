@@ -51,7 +51,10 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.ListIterator;
+import java.util.Map;
 
 /**
  *  Assrt is an "Assertion", of which there are two

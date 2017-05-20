@@ -43,8 +43,14 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import mmj.mmio.SrcStmt;
+import mmj.verify.SubstMapEntry;
 
 /**
  *  Formula is, basically just an array of Sym, with a counter.
@@ -773,5 +779,29 @@ public class Formula {
             }
         }
         return max;
+    }
+    
+    /**
+     * Applies a set of substitutions to this formula.
+     * 
+     * @param the substitutions to be applied
+     * @return the resulting formula
+     * @see VerifyProofs.applySubstMapping 
+     */
+    public Formula apply(SubstMapEntry[] substitutions) {
+    	ArrayList<Sym> newExpression = new ArrayList<Sym>();
+    	
+    	for(Sym s:sym) {
+    		boolean found = false;
+    		for(SubstMapEntry e:substitutions)
+    			if(e.substFrom == s) {
+    				//newExpression.addAll(e.substTo);
+    				for(Sym t:e.substTo) 
+    					newExpression.add(t);
+    				found = true;
+    			}
+			if(!found) newExpression.add(s);
+    	}
+    	return new Formula(newExpression);
     }
 }

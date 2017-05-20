@@ -11,7 +11,10 @@
 
 package mmj.verify;
 
-import mmj.lang.*;
+import mmj.lang.Cnst;
+import mmj.lang.ParseNodeHolder;
+import mmj.lang.ParseTree;
+import mmj.lang.VerifyException;
 
 /**
  *  GrammaticalParser is an interface established so that

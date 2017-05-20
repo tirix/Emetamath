@@ -47,10 +47,21 @@
 
 package mmj.mmio;
 
-import java.io.*;
-import java.util.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.ListIterator;
 
-import mmj.lang.*;
+import mmj.lang.Axiom;
+import mmj.lang.Cnst;
+import mmj.lang.LangException;
+import mmj.lang.LogHyp;
+import mmj.lang.MessageHandler;
+import mmj.lang.SystemLoader;
+import mmj.lang.Theorem;
+import mmj.lang.Var;
+import mmj.lang.VarHyp;
 import mmj.util.Progress;
 
 /**
@@ -99,6 +110,7 @@ public class Systemizer {
 
     private   ArrayList         defaultProofList    = null;
 	
+    private   DependencyListener	dependencyListener = null;
     /**
      * Construct <code>Systemizer</code> from a
      * <code>Messages</code> object and a
@@ -175,6 +187,15 @@ public class Systemizer {
         this.messageHandler = messageHandler;
     }
 
+    /**
+     *  Get <code>DependencyListener</code> object
+     *
+     * @return <code>DependencyListener</code> object, or null if not set
+     *
+     */
+	public void setDependencyListener(DependencyListener dependencyListener) {
+		this.dependencyListener = dependencyListener;
+	}
 
     /**
      *  Set LoadLimit Stmt Nbr parm
@@ -683,7 +704,9 @@ public class Systemizer {
                         throws MMIOException,
                                IOException {
 
-        try {
+    	if(dependencyListener != null) dependencyListener.addDependency(tokenizer.getSourceId(), IncludeFile.getSource(currSrcStmt.includeFileName));
+
+    	try {
             if (isInFilesAlreadyLoaded(
                     filesAlreadyLoaded,
                     currSrcStmt.includeFileName)) {
@@ -866,5 +889,15 @@ public class Systemizer {
         public boolean getEndpointReached() {
             return endpointReached;
         }
+    }
+
+    // TODO need to add the offset in the toSourceId
+    public interface DependencyListener {
+    	/**
+    	 * Registers an include file dependency
+    	 * @param includerSourceId the sourceId of the file containing the include statement $[ ... $]
+    	 * @param includedSourceId the sourceId of the file included
+    	 */
+    	public abstract void addDependency(Object includerSourceId, Object includedSourceId);
     }
 }

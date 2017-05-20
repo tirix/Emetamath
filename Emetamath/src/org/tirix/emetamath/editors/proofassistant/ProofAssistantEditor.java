@@ -83,56 +83,18 @@
 
 package org.tirix.emetamath.editors.proofassistant;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
-import mmj.pa.*;
-import mmj.lang.Assrt;
-import mmj.lang.Stmt;
-import mmj.lang.Theorem;
-import mmj.lang.Messages;
-import mmj.mmio.SourceElement;
 import mmj.mmio.SourcePosition;
-import mmj.tmff.TMFFException;
-import mmj.tmff.TMFFConstants;
-import mmj.tl.*;
+import mmj.pa.ProofWorksheet;
 
-import org.eclipse.core.resources.IFile;
-import org.eclipse.jface.action.Separator;
-import org.eclipse.jface.viewers.ITreeSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.jface.viewers.TreeViewer;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StackLayout;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowLayout;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.ToolBar;
-import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorSite;
-import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.PartInitException;
-import org.eclipse.ui.editors.text.TextEditor;
-import org.eclipse.ui.part.IShowInSource;
-import org.eclipse.ui.part.ShowInContext;
-import org.eclipse.ui.texteditor.IDocumentProvider;
-import org.eclipse.ui.texteditor.StatusLineContributionItem;
-import org.eclipse.ui.views.contentoutline.ContentOutlinePage;
-import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.tirix.emetamath.editors.ColorManager;
 import org.tirix.emetamath.editors.MetamathEditor;
-import org.tirix.emetamath.editors.MetamathEditor.MMContentOutlinePage;
 
 /**
  *  The <code>ProofAssistantEditor</code> class is the main user
@@ -159,17 +121,7 @@ import org.tirix.emetamath.editors.MetamathEditor.MMContentOutlinePage;
 public class ProofAssistantEditor extends MetamathEditor {
 
 	public static final String EDITOR_ID = "org.tirix.emetamath.ProofAssistant";
-	// save constructor parms: proofAsst, proofAsstPreferences
-    private ProofAsst               proofAsst;
-    private ProofAsstPreferences
-                                    proofAsstPreferences;
 
-    private TheoremLoader           theoremLoader;
-    private TlPreferences           tlPreferences;
-
-    protected Stmt					fStmt;
-    
-	protected MMContentOutlinePage	fOutlinePage;
 	protected Composite				fParent, fDefaultComposite, fProofAssistantBar;
 	protected Label					fTheoremLabel;
 	protected Text					fInsertAfterText;
@@ -177,6 +129,7 @@ public class ProofAssistantEditor extends MetamathEditor {
 	protected void initializeEditor() {
 		super.initializeEditor();
 		setSourceViewerConfiguration(new ProofViewerConfiguration(this, new ColorManager()));
+		setEditorContextMenuId(EDITOR_ID);
 		}
 
 	/**
@@ -184,118 +137,67 @@ public class ProofAssistantEditor extends MetamathEditor {
 	 */
 	public void init(IEditorSite site, IEditorInput editorInput)
 		throws PartInitException {
-		if (!(editorInput instanceof IFileEditorInput))
-			throw new PartInitException("Invalid Input: Must be IFileEditorInput");
+//		if (!(editorInput instanceof IFileEditorInput))
+//			throw new PartInitException("Invalid Input: Must be IFileEditorInput");
 		super.init(site, editorInput);
 	}
 
+//	@Override
+//	public void createPartControl(Composite parent) {
+//		fParent = new Composite(parent, SWT.NONE);
+//		
+//		// Creating my own layout seems simpler than reusing one ?
+//		final int barHeight = SWT.DEFAULT;
+//		Layout layout = new MMLayout.TopCenterLayout(barHeight);
+//		fParent.setLayout(layout);
+//
+//		fProofAssistantBar = createProofAssistantBar(fParent);
+//		
+//		fDefaultComposite = new Composite(fParent, SWT.NONE);
+//		fDefaultComposite.setLayout(new FillLayout());
+//
+//		super.createPartControl(fDefaultComposite);
+//		
+//		}
+	
+	public ProofDocument getDocument() {
+		return (ProofDocument) getDocumentProvider().getDocument(getEditorInput());
+	}
+
+	public void displayProofWorksheet(ProofWorksheet w) {
+		getDocument().set(w);
+	}
+
 	@Override
-	public void createPartControl(Composite parent) {
-		fParent = new Composite(parent, SWT.NONE);
-		
-		// Creating my own layout seems simpler than reusing one ?
-		final int barHeight = SWT.DEFAULT;
-		Layout layout = new TopCenterLayout(barHeight);
-		fParent.setLayout(layout);
-
-		fProofAssistantBar = createProofAssistantBar(fParent);
-		
-		fDefaultComposite = new Composite(fParent, SWT.NONE);
-		fDefaultComposite.setLayout(new FillLayout());
-
-		super.createPartControl(fDefaultComposite);
-		
-		}
-
-	private Composite createProofAssistantBar(Composite parent) {
-		Composite bar = new Composite(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 7;
-		bar.setLayout(layout);
-
-		GridData data = new GridData();
-		data.verticalAlignment = GridData.FILL;
-		data.horizontalAlignment = GridData.FILL;
-		bar.setLayoutData(data);
-
-		//new Label(bar, SWT.NONE).setText("Theorem : ");
-		fTheoremLabel = new Label(bar, SWT.NONE);
-		fTheoremLabel.setData("Test2");
-		new Label(bar, SWT.BORDER); // Vertical Separator
-		new Label(bar, SWT.NONE).setText("Insert after : ");
-		fInsertAfterText = new Text(bar, SWT.SINGLE | SWT.BORDER);
-		fInsertAfterText.setData("Test3");
-		
-		// horizontal strut
-		new Label(bar, SWT.NONE).setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL | GridData.GRAB_HORIZONTAL));
-		
-		ToolBar toolBar = new ToolBar(bar, SWT.FLAT | SWT.WRAP);
-		ToolItem item = new ToolItem(toolBar, SWT.PUSH);
-		item.setText("Test 0");
-		return bar;
+	public void doSave(IProgressMonitor progressMonitor) {
+		super.doSave(progressMonitor);
 	}
 
-	public static final class TopCenterLayout extends Layout {
-		private final int barHeight;
-
-		public TopCenterLayout(int barHeight) {
-			this.barHeight = barHeight;
-		}
-
-		@Override
-		protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-			Control[] children = composite.getChildren();
-			Control top = children[0];
-			Point topSize = top.computeSize(wHint, barHeight, flushCache);
-
-			Control center = children[1];
-			Point centerSize = center.computeSize(wHint, SWT.DEFAULT, flushCache);
-			
-			return new Point(Math.max(topSize.x, centerSize.x), topSize.y + centerSize.y);
-		}
-
-		@Override
-		protected void layout(Composite composite, boolean flushCache) {
-			Rectangle rect = composite.getClientArea();
-			Control[] children = composite.getChildren();
-			
-			Control top = children[0];
-			Point pt = top.computeSize(SWT.DEFAULT, barHeight, flushCache);
-			top.setBounds(rect.x, rect.y, rect.width, pt.y);
-
-			Control center = children[1];
-			center.setBounds(rect.x, rect.y + pt.y, rect.width, rect.height - pt.y);
-		}
-	}
-
-    public static final class BarLayout extends Layout {
-		private final int margin;
-
-		public BarLayout(int margin) {
-			this.margin = margin;
-		}
-
-		@Override
-		protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-			int width = 0;
-			
-			for(Control child:composite.getChildren()) {
-				Point size = child.computeSize(SWT.DEFAULT, hHint, flushCache);
-				width += size.x + margin;
-			}
-			return new Point(width, hHint);
-		}
-
-		@Override
-		protected void layout(Composite composite, boolean flushCache) {
-			Rectangle rect = composite.getClientArea();
-			int x = rect.x;
-			
-			for(Control child:composite.getChildren()) {
-				Point size = child.computeSize(SWT.DEFAULT, rect.height, flushCache);
-				child.setBounds(x, rect.y, size.x, rect.height);
-				x += size.x + margin;
-			}
-		}
-	}
+//	private Composite createProofAssistantBar(Composite parent) {
+//		Composite bar = new Composite(parent, SWT.NONE);
+//		GridLayout layout = new GridLayout();
+//		layout.numColumns = 7;
+//		bar.setLayout(layout);
+//
+//		GridData data = new GridData();
+//		data.verticalAlignment = GridData.FILL;
+//		data.horizontalAlignment = GridData.FILL;
+//		bar.setLayoutData(data);
+//
+//		//new Label(bar, SWT.NONE).setText("Theorem : ");
+//		fTheoremLabel = new Label(bar, SWT.NONE);
+//		fTheoremLabel.setData("Test2");
+//		new Label(bar, SWT.BORDER); // Vertical Separator
+//		new Label(bar, SWT.NONE).setText("Insert after : ");
+//		fInsertAfterText = new Text(bar, SWT.SINGLE | SWT.BORDER);
+//		fInsertAfterText.setData("Test3");
+//		
+//		// horizontal strut
+//		new Label(bar, SWT.NONE).setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL | GridData.GRAB_HORIZONTAL));
+//		
+//		ToolBar toolBar = new ToolBar(bar, SWT.FLAT | SWT.WRAP);
+//		ToolItem item = new ToolItem(toolBar, SWT.PUSH);
+//		item.setText("Test 0");
+//		return bar;
+//	}
 }

@@ -15,8 +15,6 @@ import org.eclipse.search.ui.text.IEditorMatchAdapter;
 import org.eclipse.search.ui.text.IFileMatchAdapter;
 import org.eclipse.search.ui.text.Match;
 import org.eclipse.ui.IEditorPart;
-import org.tirix.emetamath.handlers.SearchReferencesHandler;
-import org.tirix.emetamath.nature.MetamathProjectNature;
 
 public class MetamathSearchResult extends AbstractTextSearchResult implements IEditorMatchAdapter, IFileMatchAdapter {
 	MetamathSearchQuery fQuery;

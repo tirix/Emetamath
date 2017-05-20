@@ -19,7 +19,8 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
 
 /**
  *  Axiom embodies Metamath $a statements, the "axiomatic

@@ -14,9 +14,12 @@
  */
 
 package mmj.tl;
-import java.io.*;
-import java.util.*;
-import mmj.lang.*;
+import java.io.File;
+import java.util.List;
+
+import mmj.lang.LogicalSystem;
+import mmj.lang.MessageHandler;
+import mmj.lang.TheoremLoaderException;
 
 
 /**

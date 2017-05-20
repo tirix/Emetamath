@@ -14,8 +14,15 @@
  */
 
 package mmj.verify;
-import mmj.lang.*;
-import java.util.*;
+import java.util.Comparator;
+
+import mmj.lang.Axiom;
+import mmj.lang.Cnst;
+import mmj.lang.ParseNode;
+import mmj.lang.ParseNodeHolder;
+import mmj.lang.ParseTree;
+import mmj.lang.Sym;
+import mmj.lang.VarHyp;
 
 /**
  *  GrammarRule is the superclass of NotationRule,

@@ -63,14 +63,31 @@
  */
 
 package mmj.pa;
-import  java.util.Iterator;
-import  java.util.Collection;
-import  java.util.Collections;
-import  java.util.ArrayList;
-import  java.util.List;
-import  mmj.lang.*;
-import  mmj.verify.*;
-import  mmj.util.MergeSortedArrayLists;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+
+import mmj.lang.Assrt;
+import mmj.lang.Cnst;
+import mmj.lang.Formula;
+import mmj.lang.Hyp;
+import mmj.lang.LogHyp;
+import mmj.lang.LogicalSystem;
+import mmj.lang.MObj;
+import mmj.lang.MessageHandler;
+import mmj.lang.ParseNode;
+import mmj.lang.ParseTree;
+import mmj.lang.Stmt;
+import mmj.lang.Var;
+import mmj.lang.VarHyp;
+import mmj.lang.VerifyException;
+import mmj.lang.WorkVar;
+import mmj.lang.WorkVarHyp;
+import mmj.lang.WorkVarManager;
+import mmj.util.MergeSortedArrayLists;
+import mmj.verify.Grammar;
+import mmj.verify.VerifyProofs;
 
 
 /**
@@ -2249,7 +2266,14 @@ public class ProofUnifier {
                                   =
             PaConstants.UNIFICATION_STATUS_UNIFICATION_ERROR;
 
+        proofWorksheet.
+            getProofCursor().
+                setCursorAtProofWorkStmt(
+                    derivStep,
+                    PaConstants.FIELD_ID_REF);
+
         messages.accumErrorMessage(
+           	derivStep.getPosition(),
             PaConstants.ERRMSG_REF_UNIFY_ERR_1
                 + getErrorLabelIfPossible(proofWorksheet)
                 + PaConstants.ERRMSG_REF_UNIFY_ERR_2
@@ -2257,12 +2281,6 @@ public class ProofUnifier {
                 + PaConstants.ERRMSG_REF_UNIFY_ERR_3
                 + derivStep.refLabel
                 + PaConstants.ERRMSG_REF_UNIFY_ERR_4);
-
-        proofWorksheet.
-            getProofCursor().
-                setCursorAtProofWorkStmt(
-                    derivStep,
-                    PaConstants.FIELD_ID_REF);
     }
 
     private void markUnificationFailure() {
@@ -2291,18 +2309,19 @@ public class ProofUnifier {
                                   =
                 PaConstants.UNIFICATION_STATUS_UNIFICATION_ERROR;
 
-            messages.accumErrorMessage(
-                PaConstants.ERRMSG_STEP_UNIFY_ERR_1
-                    + getErrorLabelIfPossible(proofWorksheet)
-                    + PaConstants.ERRMSG_STEP_UNIFY_ERR_2
-                    + derivStep.step
-                    + PaConstants.ERRMSG_STEP_UNIFY_ERR_3);
-
             proofWorksheet.
                 getProofCursor().
                     setCursorAtProofWorkStmt(
                         derivStep,
                         PaConstants.FIELD_ID_REF);
+
+            messages.accumErrorMessage(
+            	derivStep.getPosition(),
+                PaConstants.ERRMSG_STEP_UNIFY_ERR_1
+                    + getErrorLabelIfPossible(proofWorksheet)
+                    + PaConstants.ERRMSG_STEP_UNIFY_ERR_2
+                    + derivStep.step
+                    + PaConstants.ERRMSG_STEP_UNIFY_ERR_3);
         }
     }
 
@@ -2481,11 +2500,15 @@ public class ProofUnifier {
 
             if (selectorSearchStmt == derivStep) {
 
+                proofWorksheet.stepSelectorStore
+				                =
+				  stepSelectorSearch.
+				      loadStepSelectorResults(
+				          derivStep);
                 proofWorksheet.stepSelectorResults
                                   =
-                    stepSelectorSearch.
-                        loadStepSelectorResults(
-                            derivStep);
+                        proofWorksheet.stepSelectorStore.
+                        createStepSelectorResults();
                 return; // our work here is complete ;-)
             }
 

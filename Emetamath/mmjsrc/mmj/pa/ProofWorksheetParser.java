@@ -18,15 +18,18 @@
 
 package mmj.pa;
 
-import  java.io.File;
-import  java.io.Reader;
-import  java.io.StringReader;
-import  java.io.FileReader;
-import  java.io.BufferedReader;
-import  java.io.IOException;
-import  mmj.lang.*;
-import  mmj.verify.*;
-import  mmj.mmio.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+
+import mmj.lang.LogicalSystem;
+import mmj.lang.MessageHandler;
+import mmj.mmio.MMIOError;
+import mmj.mmio.Tokenizer;
+import mmj.verify.Grammar;
 
 /**
  *  ProofWorksheetParser handles the details of
@@ -57,7 +60,7 @@ public class ProofWorksheetParser {
     private     ProofAsstPreferences proofAsstPreferences;
     private     LogicalSystem        logicalSystem;
     private     Grammar              grammar;
-    private     Messages             messages;
+    private     MessageHandler       messages;
 
     private     String               nextToken;
     private     Tokenizer            proofTextTokenizer;
@@ -75,11 +78,11 @@ public class ProofWorksheetParser {
      */
     public ProofWorksheetParser(
                 Reader               proofTextReader,
-                String               proofTextSource,
+                Object               proofTextSource,
                 ProofAsstPreferences proofAsstPreferences,
                 LogicalSystem        logicalSystem,
                 Grammar              grammar,
-                Messages             messages)
+                MessageHandler       messages)
                             throws IOException,
                                    MMIOError {
 
@@ -112,11 +115,11 @@ public class ProofWorksheetParser {
      */
     public ProofWorksheetParser(
                 String               proofText,
-                String               proofTextSource,
+                Object               proofTextSource,
                 ProofAsstPreferences proofAsstPreferences,
                 LogicalSystem        logicalSystem,
                 Grammar              grammar,
-                Messages             messages)
+                MessageHandler       messages)
                             throws IOException,
                                    MMIOError {
         this(new StringReader(proofText),
@@ -141,11 +144,11 @@ public class ProofWorksheetParser {
      */
      public ProofWorksheetParser(
                 File                 proofFile,
-                String               proofTextSource,
+                Object               proofTextSource,
                 ProofAsstPreferences proofAsstPreferences,
                 LogicalSystem        logicalSystem,
                 Grammar              grammar,
-                Messages             messages)
+                MessageHandler       messages)
                             throws IOException,
                                    MMIOError {
 

@@ -38,10 +38,35 @@
  */
 
 package mmj.verify;
-import mmj.lang.*;
-import mmj.mmio.SourcePosition;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
+import java.util.TreeSet;
 
-import java.util.*;
+import mmj.lang.Assrt;
+import mmj.lang.Axiom;
+import mmj.lang.Cnst;
+import mmj.lang.Formula;
+import mmj.lang.Hyp;
+import mmj.lang.LogHyp;
+import mmj.lang.MObj;
+import mmj.lang.MandFrame;
+import mmj.lang.MessageHandler;
+import mmj.lang.ParseNode;
+import mmj.lang.ParseNodeHolder;
+import mmj.lang.ParseTree;
+import mmj.lang.Stmt;
+import mmj.lang.Sym;
+import mmj.lang.SyntaxVerifier;
+import mmj.lang.Theorem;
+import mmj.lang.Var;
+import mmj.lang.VarHyp;
+import mmj.lang.VerifyException;
+import mmj.mmio.SourcePosition;
 
 /**
  *  Grammar processes a mmj LogicalSystem, extracts a Grammar,

@@ -21,12 +21,14 @@
 
 package mmj.lang;
 
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+
 import mmj.verify.GRNode;
 import mmj.verify.NotationRule;
-import mmj.verify.TypeConversionRule;
 import mmj.verify.NullsPermittedRule;
-
-import java.util.*;
+import mmj.verify.TypeConversionRule;
 
 /**
  *  Cnst holds a declared Metamath constant symbol.

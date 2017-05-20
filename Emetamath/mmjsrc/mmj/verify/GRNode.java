@@ -26,8 +26,9 @@
  */
 
 package mmj.verify;
-import mmj.lang.*;
-import java.util.*;
+import java.util.Collection;
+
+import mmj.lang.Cnst;
 
 
 /*

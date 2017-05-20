@@ -15,9 +15,12 @@
  */
 
 package mmj.lang;
-import mmj.verify.Grammar;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+
 import mmj.mmio.Statementizer;
-import java.util.*;
+import mmj.verify.Grammar;
 
 /**
  *  WorkVarManager is a "helper" class that is used to

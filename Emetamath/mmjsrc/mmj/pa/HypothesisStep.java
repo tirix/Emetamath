@@ -43,14 +43,16 @@
 
 package mmj.pa;
 
-import  java.io.IOException;
-import  java.util.HashMap;
-import  java.util.Iterator;
-import  java.util.ArrayList;
-import  mmj.lang.*;
-import  mmj.mmio.*;
-import  mmj.tmff.*;
-import  mmj.verify.*;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import mmj.lang.Formula;
+import mmj.lang.LogHyp;
+import mmj.lang.ParseTree;
+import mmj.lang.Stmt;
+import mmj.mmio.MMIOError;
+import mmj.mmio.Statementizer;
 
 public class HypothesisStep extends ProofStepStmt {
 

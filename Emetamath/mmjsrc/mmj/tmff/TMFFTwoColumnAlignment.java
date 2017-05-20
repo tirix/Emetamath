@@ -24,11 +24,9 @@
 package mmj.tmff;
 import mmj.lang.Assrt;
 import mmj.lang.Axiom;
-import mmj.lang.Formula;
 import mmj.lang.ParseNode;
 import mmj.lang.Stmt;
 import mmj.lang.Sym;
-import mmj.lang.VarHyp;
 
 /**
  *  TMFFTwoColumnAlignment aligns portions of a sub-expression into

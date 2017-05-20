@@ -16,8 +16,16 @@
 
 package mmj.verify;
 
-import mmj.lang.*;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
+import mmj.lang.Cnst;
+import mmj.lang.ParseNodeHolder;
+import mmj.lang.ParseTree;
+import mmj.lang.VarHyp;
+import mmj.lang.VerifyException;
 
 /**
  *  EarleyParser is my implementation of the Earley Parse

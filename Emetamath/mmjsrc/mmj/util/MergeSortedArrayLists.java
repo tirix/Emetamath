@@ -10,8 +10,11 @@
  */
 
 package mmj.util;
-import java.util.*;
-import mmj.lang.Assrt;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  *  Class <code>MergeSortedArrayLists</code> merges elements

@@ -25,6 +25,8 @@
 
 package mmj.pa;
 
+import mmj.mmio.SourcePosition;
+
 /**
  *  Simple data structure to hold caret/scroll params for
  *  the Proof Asst GUI.
@@ -38,7 +40,7 @@ public class ProofAsstCursor {
     /* friendly */ int      fieldId;
 
     /* friendly */ int      caretCharNbr;
-    /* friendly */ int      caretLine;
+	/* friendly */ int      caretLine;
     /* friendly */ int      caretCol;
     /* friendly */ int      scrollToLine;
     /* friendly */ int      scrollToCol;
@@ -123,6 +125,7 @@ public class ProofAsstCursor {
                     int           fieldId) {
         if (!cursorIsSet) {
             this.proofWorkStmt    = proofWorkStmt;
+            this.caretCharNbr	  = (int)proofWorkStmt.posCharNbr;
             this.fieldId          = fieldId;
             cursorIsSet           = true;
         }
@@ -158,6 +161,20 @@ public class ProofAsstCursor {
         }
     }
 
+    /**
+	 * @return the caretCharNbr
+	 */
+	public int getCaretCharNbr() {
+		return caretCharNbr;
+	}
+
+    public SourcePosition getPositionIn(ProofWorksheet w) {
+    	if(!cursorIsSet || w == null || w.proofTextTokenizer == null) return null;
+    	Object sourceId = w.proofTextTokenizer.getCurrentPosition().sourceId;
+    	if(proofWorkStmt != null) proofWorkStmt.setStmtCursorToCurrLineColumn();
+    	return new SourcePosition(sourceId, caretLine, caretCol, caretCharNbr, caretCharNbr+1);
+    }
+    
     public String outputCursorInstrumentation(String theoremLabel) {
         String stmtDiagnosticInfo;
         if (proofWorkStmt == null) {

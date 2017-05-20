@@ -26,11 +26,11 @@
 
 package mmj.lang;
 
-import  java.util.ArrayList;
-import  java.util.Iterator;
-import  java.util.HashMap;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
-import  mmj.pa.DistinctVariablesStmt;
+import mmj.pa.DistinctVariablesStmt;
 
 /**
  *  Mandatory "Frame" of an Assrt (assertion).

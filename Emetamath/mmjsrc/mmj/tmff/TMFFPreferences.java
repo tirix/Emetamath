@@ -36,10 +36,10 @@ package mmj.tmff;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import mmj.pa.PaConstants;
-import mmj.lang.ParseNode;
-import mmj.lang.ParseTree;
+
 import mmj.lang.Formula;
+import mmj.lang.ParseTree;
+import mmj.pa.PaConstants;
 
 /**
  *  Holds user settings/preferences used by the

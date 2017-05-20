@@ -21,8 +21,13 @@
  */
 
 package mmj.verify;
-import mmj.lang.*;
-import java.util.*;
+import java.util.Iterator;
+
+import mmj.lang.Axiom;
+import mmj.lang.Cnst;
+import mmj.lang.ParseNode;
+import mmj.lang.ParseNodeHolder;
+import mmj.lang.ParseTree;
 
 /**
  *  A Type Conversion Rule is a Grammar Rules that says that

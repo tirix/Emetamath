@@ -29,11 +29,13 @@
 
 package mmj.pa;
 
-import  java.io.IOException;
-import  java.util.ArrayList;
-import  java.util.Iterator;
-import  mmj.mmio.*;
-import  mmj.lang.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+import mmj.lang.Sym;
+import mmj.lang.Var;
+import mmj.mmio.MMIOError;
 
 /**
  *  DistinctVariablesStmt represents a single Metamath

@@ -14,13 +14,22 @@
  */
 
 package mmj.util;
-import java.io.*;
-import java.util.*;
-import mmj.mmio.*;
-import mmj.lang.*;
-import mmj.verify.*;
-import mmj.pa.*;
-import mmj.tl.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+
+import mmj.lang.LangException;
+import mmj.lang.LogicalSystem;
+import mmj.lang.MessageHandler;
+import mmj.lang.Messages;
+import mmj.lang.Theorem;
+import mmj.lang.TheoremLoaderException;
+import mmj.lang.VerifyException;
+import mmj.mmio.MMIOException;
+import mmj.pa.ProofAsst;
+import mmj.tl.TheoremLoader;
+import mmj.tl.TlConstants;
+import mmj.tl.TlPreferences;
 
 /**
  *  Responsible for building and referencing TheoremLoader.

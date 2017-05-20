@@ -47,10 +47,19 @@
 
 package mmj.lang;
 
-import java.util.*;
-import mmj.verify.GrammarConstants;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+
 import mmj.mmio.SourcePosition;
-import mmj.tl.*;
+import mmj.tl.MMTTheoremSet;
+import mmj.tl.TheoremLoaderCommitListener;
+import mmj.tl.TheoremStmtGroup;
+import mmj.verify.GrammarConstants;
 
 /**
  * The <code>LogicalSystem</code>, along with the rest of the
@@ -108,6 +117,8 @@ public class LogicalSystem implements SystemLoader {
     // faster...)
     private   Map              stmtTbl;
 
+    private	ArrayList          incompleteTheorems;
+    
     /**
      * Construct with full set of parameters.
      *
@@ -185,7 +196,7 @@ public class LogicalSystem implements SystemLoader {
 
         symTbl                     =  new HashMap(symTblInitialSize);
         stmtTbl                    =  new HashMap(stmtTblInitialSize);
-
+        incompleteTheorems         =  new ArrayList();
 
         this.syntaxVerifier        =  syntaxVerifier;
         this.proofVerifier         =  proofVerifier;
@@ -662,6 +673,8 @@ public class LogicalSystem implements SystemLoader {
                 put(labelS,
                     theorem);
 
+        if(theorem.hasUnknownSteps()) incompleteTheorems.add(theorem);
+        
         dupCheckStmtAdd(existingStmt);
 
         bookManager.assignChapterSectionNbrs(theorem);
@@ -1057,6 +1070,17 @@ public class LogicalSystem implements SystemLoader {
     }
 
     /**
+     *  Returns the list of all incomplete theorems, 
+     *  i.e. containing an unknown proof step '?'
+     *  <p>
+     *
+     *  @return list of all incomplete <code>Theorem</code>s
+     */
+    public List     getIncompleteTheorems() {
+        return incompleteTheorems;
+    }
+
+    /**
      *  Returns an instance of ProofCompression.
      *  <p>
      *  Reuses the existing ProofCompression instance if
@@ -1340,7 +1364,8 @@ public class LogicalSystem implements SystemLoader {
     public void clear() {
         symTbl                     =  new HashMap();
         stmtTbl                    =  new HashMap();
-
+        incompleteTheorems         = new ArrayList();
+        
         //init stack of scope levels
         scopeDefList               = new ArrayList();
         beginScope();   //initialize global scope level

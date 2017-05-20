@@ -32,9 +32,8 @@
 
 package mmj.lang;
 
-import java.util.*;
-
-import mmj.mmio.SourcePosition;
+import java.util.ArrayList;
+import java.util.Map;
 
 /**
  *  Var holds a declared Metamath variable symbol.

@@ -1,16 +1,16 @@
 package org.tirix.emetamath.editors.proofassistant;
 
+
+
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentPartitioner;
 import org.eclipse.jface.text.rules.FastPartitioner;
-import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.editors.text.FileDocumentProvider;
 import org.eclipse.ui.part.FileEditorInput;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 
-public class ProofDocumentProvider extends FileDocumentProvider {
+public class ProofFileDocumentProvider extends FileDocumentProvider {
 
 	@Override
 	protected IDocument createEmptyDocument() {
@@ -47,8 +47,10 @@ public class ProofDocumentProvider extends FileDocumentProvider {
 				new FastPartitioner(
 					new MMPPartitionScanner(),
 					new String[] {
-						MMPPartitionScanner.MM_COMMENT,
-						MMPPartitionScanner.MM_LABEL_LIST,
+						MMPPartitionScanner.MMP_HEADER,
+						MMPPartitionScanner.MMP_COMMENT,
+						MMPPartitionScanner.MMP_PROOF,
+						MMPPartitionScanner.MMP_LABEL_LIST,
 						IDocument.DEFAULT_CONTENT_TYPE
 						});
 			partitioner.connect(document);

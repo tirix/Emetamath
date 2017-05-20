@@ -15,8 +15,13 @@
 
 package mmj.lang;
 
-import java.util.*;
-import mmj.tl.*;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import mmj.tl.MMTTheoremSet;
+import mmj.tl.TheoremLoaderCommitListener;
+import mmj.tl.TheoremStmtGroup;
 
 /**
  *  The <code>SeqAssigner</code> generates sequence numbers for

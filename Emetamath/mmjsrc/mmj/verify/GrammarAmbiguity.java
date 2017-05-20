@@ -10,8 +10,12 @@
  */
 
 package mmj.verify;
-import mmj.lang.*;
-import java.util.*;
+import java.util.Iterator;
+
+import mmj.lang.Axiom;
+import mmj.lang.Cnst;
+import mmj.lang.ParseNodeHolder;
+import mmj.lang.VerifyException;
 
 /**
  *  GrammarAmbiguity was separated out from Grammar because

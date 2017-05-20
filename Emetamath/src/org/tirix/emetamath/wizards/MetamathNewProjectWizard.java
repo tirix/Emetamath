@@ -71,7 +71,8 @@ public class MetamathNewProjectWizard extends BasicNewResourceWizard implements 
 		
 		addProjectNature(newProject, MetamathProjectNature.NATURE_ID);
 		MetamathBuilder.addBuilderToProject(newProject);
-		
+
+		// This is not supported in Eclipse 3.3. It would have to be removed to have backwards compatibility
 		IWorkingSet[] workingSets = _pageOne.getSelectedWorkingSets();
 		getWorkbench().getWorkingSetManager().addToWorkingSets(newProject,
 				workingSets);

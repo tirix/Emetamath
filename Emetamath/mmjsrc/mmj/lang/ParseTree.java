@@ -26,7 +26,7 @@
  */
 
 package mmj.lang;
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  *  A simple tree structure to hold a ParseNode root.

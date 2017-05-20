@@ -1,46 +1,38 @@
 package org.tirix.emetamath.nature;
 
+import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import mmj.lang.BookManager;
-import mmj.lang.LangConstants;
 import mmj.lang.LogicalSystem;
 import mmj.lang.MessageHandler;
-import mmj.lang.Messages;
 import mmj.lang.ParseTree;
-import mmj.lang.SeqAssigner;
 import mmj.lang.Stmt;
 import mmj.lang.VerifyException;
 import mmj.mmio.IncludeFile;
 import mmj.mmio.MMIOException;
-import mmj.mmio.SourcePosition;
-import mmj.mmio.Systemizer;
-import mmj.mmio.IncludeFile.ReaderProvider;
 import mmj.util.Progress;
-import mmj.util.RunParmArrayEntry;
 import mmj.util.UtilConstants;
 import mmj.verify.Grammar;
 
 import org.eclipse.core.resources.ICommand;
-import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
-import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-
 import org.tirix.emetamath.nature.MetamathProjectNature.MetamathMessageHandler;
 
 /**
@@ -50,7 +42,6 @@ import org.tirix.emetamath.nature.MetamathProjectNature.MetamathMessageHandler;
 public class MetamathBuilder extends IncrementalProjectBuilder {
 	public static final String BUILDER_ID = "org.tirix.emetamath.metamathBuilder";
 
-	
 	/**
 	 * Adds the processing builder to a project
 	 * 
@@ -147,19 +138,16 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 		
 		MetamathProjectNature nature = (MetamathProjectNature)getProject().getNature(MetamathProjectNature.NATURE_ID);
 		
-		// TODO for now, always do full build...
-		fullBuild(nature, monitor);
-		
-//		if (kind == FULL_BUILD) {
-//			fullBuild(nature, monitor);
-//		} else {
-//			IResourceDelta delta = getDelta(getProject());
-//			if (delta == null) {
-//				fullBuild(nature, monitor);
-//			} else {
-//				incrementalBuild(delta, nature, monitor);
-//			}
-//		}
+		if (kind == FULL_BUILD) {
+			fullBuild(nature, monitor);
+		} else {
+			IResourceDelta delta = getDelta(getProject());
+			if (delta == null) {
+				fullBuild(nature, monitor);
+			} else {
+				incrementalBuild(delta, nature, monitor);
+			}
+		}
 		return null;
 	}
 
@@ -183,80 +171,112 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 	 * @param monitor
 	 * @throws CoreException
 	 */
-	protected void incrementalBuild(IResourceDelta delta, MetamathProjectNature nature, 
-			IProgressMonitor monitor) throws CoreException {
+	protected void incrementalBuild(IResourceDelta delta, final MetamathProjectNature nature, 
+			final IProgressMonitor monitor) throws CoreException {
 		// the visitor does the work.
-		delta.accept(new MmDeltaVisitor(nature, monitor));
-	}
+		//delta.accept(new MmDeltaVisitor(nature, monitor));
+		delta.accept(new IResourceDeltaVisitor() {
+			@Override
+			public boolean visit(IResourceDelta delta) throws CoreException {
+				// if the project itself was changed (no file extension), skip
+				if(delta.getResource().getFileExtension() == null) return true;
 
-	public static class MmDeltaVisitor implements IResourceDeltaVisitor {
-		MetamathProjectNature nature;
-		IProgressMonitor monitor;
-		
-		public MmDeltaVisitor(MetamathProjectNature nature, IProgressMonitor monitor) {
-			this.nature = nature;
-			this.monitor = monitor;
-		}
+				// if a MMP file was changed, do nothing 
+				if(delta.getResource().getFileExtension().equals("mmp")) return true;
+				
+				// if a MM file was changed, do a full build and stop.
+				if(delta.getResource().getFileExtension().equals("mm")) { 
+					// TODO for now, always do full build...
+					System.out.println("Triggering full build because of "+delta+" "+delta.getKind());
+					fullBuild(nature, monitor); 
+					return false; 
+				}
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see org.eclipse.core.resources.IResourceDeltaVisitor#visit(org.eclipse.core.resources.IResourceDelta)
-		 */
-		public boolean visit(IResourceDelta delta) throws CoreException {
-			IResource resource = delta.getResource();
-			switch (delta.getKind()) {
-			case IResourceDelta.ADDED:
-				// handle added resource
-				buildMetamath(nature, resource, monitor);
-				break;
-			case IResourceDelta.REMOVED:
-				// handle removed resource
-				break;
-			case IResourceDelta.CHANGED:
-				// handle changed resource
-				buildMetamath(nature, resource, monitor);
-				break;
+				// if an XML typesetting file was changed, parse it again.
+				if(delta.getResource().getName().equals("typesetting.xml")) { 
+					// TODO for now, always do full build...
+					System.out.println("Reloading Typesetting because of "+delta+" "+delta.getKind());
+					loadTypesetting(nature, (IFile)delta.getResource(), monitor);
+					return false; 
+				}
+				return false;
 			}
-			//return true to continue visiting children.
-			return true;
-		}
+		});
 	}
 
-	public static class MmResourceVisitor implements IResourceVisitor {
-		MetamathProjectNature nature;
-		IProgressMonitor monitor;
 
-		public MmResourceVisitor(MetamathProjectNature nature, IProgressMonitor monitor) {
-			this.nature = nature;
-			this.monitor = monitor;
-		}
-
-		public boolean visit(IResource resource) {
-			buildMetamath(nature, resource, monitor);
-			//return true to continue visiting children.
-			return true;
-		}
-	}
-
-	private static void deleteMarkers(IFile file) {
+	private void loadTypesetting(MetamathProjectNature nature, IFile typeSettingFile, IProgressMonitor monitor) {
 		try {
-			file.deleteMarkers(MetamathProjectNature.MARKER_TYPE, false, IResource.DEPTH_ZERO);
-		} catch (CoreException ce) {
-		}
+			nature.getMathMLTypeSetting().setData(new InputStreamReader(typeSettingFile.getContents(), "UTF-8"));
+		} catch (Exception e) {
+			// use the monitor to report the exception?
+			//e.printStackTrace();
+			System.err.println(e.getMessage());
+		} 
 	}
+
+		//	public static class MmDeltaVisitor implements IResourceDeltaVisitor {
+//		MetamathProjectNature nature;
+//		IProgressMonitor monitor;
+//		
+//		public MmDeltaVisitor(MetamathProjectNature nature, IProgressMonitor monitor) {
+//			this.nature = nature;
+//			this.monitor = monitor;
+//		}
+//
+//		/*
+//		 * (non-Javadoc)
+//		 * 
+//		 * @see org.eclipse.core.resources.IResourceDeltaVisitor#visit(org.eclipse.core.resources.IResourceDelta)
+//		 */
+//		public boolean visit(IResourceDelta delta) throws CoreException {
+//			IResource resource = delta.getResource();
+//			switch (delta.getKind()) {
+//			case IResourceDelta.ADDED:
+//				// handle added resource
+//				buildMetamath(nature, resource, monitor);
+//				break;
+//			case IResourceDelta.REMOVED:
+//				// handle removed resource
+//				break;
+//			case IResourceDelta.CHANGED:
+//				// handle changed resource
+//				buildMetamath(nature, resource, monitor);
+//				break;
+//			}
+//			//return true to continue visiting children.
+//			return true;
+//		}
+//	}
+//
+//	public static class MmResourceVisitor implements IResourceVisitor {
+//		MetamathProjectNature nature;
+//		IProgressMonitor monitor;
+//
+//		public MmResourceVisitor(MetamathProjectNature nature, IProgressMonitor monitor) {
+//			this.nature = nature;
+//			this.monitor = monitor;
+//		}
+//
+//		public boolean visit(IResource resource) {
+//			buildMetamath(nature, resource, monitor);
+//			//return true to continue visiting children.
+//			return true;
+//		}
+//	}
 
 	static void buildMetamath(MetamathProjectNature nature, IResource resource, IProgressMonitor monitor) {
 		if (resource instanceof IFile && resource.getName().endsWith(".mm")) {
 			IFile file = (IFile) resource;
-			deleteMarkers(file);
 			MetamathMessageHandler messageHandler = new MetamathMessageHandler(file);
+			messageHandler.clearMessages(file);
 			try {
 				// TODO get nature from file.getProject().getNature()?
 				doLoadFile(file, nature, messageHandler, monitor);
 				nature.initializeGrammar(messageHandler);
 				doParse(file, nature, messageHandler);
 			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 	}
@@ -332,6 +352,7 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
                 messageHandler,
                 logicalSystem.getSymTbl(),
                 logicalSystem.getStmtTbl());
+            nature.allStatementsParsedSuccessfully = true;
         }
         else {
             Stmt stmt = null;

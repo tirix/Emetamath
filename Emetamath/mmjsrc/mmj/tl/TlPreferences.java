@@ -14,8 +14,10 @@
  */
 
 package mmj.tl;
-import mmj.lang.*;
 import java.io.File;
+
+import mmj.lang.LogicalSystem;
+import mmj.lang.TheoremLoaderException;
 
 /**
  *  Holds user settings/preferences used by the

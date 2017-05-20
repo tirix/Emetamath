@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Eclipse Metamath Plug-in
+Bundle-Name: Metamath
 Bundle-SymbolicName: org.tirix.emetamath;singleton:=true
-Bundle-Version: 0.1.0
+Bundle-Version: 0.1.0.v20110127
 Bundle-Activator: org.tirix.emetamath.Activator
 Bundle-Vendor: Thierry Arnoux
 Require-Bundle: org.eclipse.ui,
@@ -13,10 +13,11 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.ui.ide,
  org.eclipse.ui.console,
  org.eclipse.search,
- commons_compress;bundle-version="1.0.0",
  org.eclipse.ui.navigator
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Bundle-ActivationPolicy: lazy
 Import-Package: org.eclipse.core.expressions,
  org.eclipse.search.ui.text,
- org.eclipse.ui.views.contentoutline
+ org.eclipse.ui.internal.browser
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .,
+ commons-compress/commons-compress-1.1.jar

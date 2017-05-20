@@ -14,10 +14,10 @@
  */
 
 package mmj.pa;
+import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.IOException;
 
 /**
  *  EraseWffsPreprocessRequest implements a user request for an

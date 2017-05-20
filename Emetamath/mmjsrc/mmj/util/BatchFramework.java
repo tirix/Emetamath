@@ -35,15 +35,14 @@
 
 package mmj.util;
 
-import java.io.*;
-import java.util.*;
-import mmj.mmio.*;
-import mmj.lang.*;
-import mmj.verify.*;
-import mmj.pa.*;
-import mmj.tmff.*;
-import mmj.svc.*;
-import mmj.tl.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+import mmj.lang.TheoremLoaderException;
+import mmj.lang.VerifyException;
+import mmj.mmio.MMIOException;
 
 /**
  *  BatchFramework is a quick hack to run mmj2 without

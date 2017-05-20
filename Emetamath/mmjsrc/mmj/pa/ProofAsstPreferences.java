@@ -51,16 +51,16 @@
  */
 
 package mmj.pa;
-import  mmj.lang.Assrt;
-import  mmj.lang.WorkVarManager;
-import  mmj.tmff.TMFFPreferences;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GraphicsEnvironment;
+import java.io.File;
+import java.util.Iterator;
+import java.util.TreeSet;
 
-import  java.io.File;
-import  java.awt.Color;
-import  java.awt.Font;
-import  java.awt.GraphicsEnvironment;
-import  java.util.Iterator;
-import  java.util.TreeSet;
+import mmj.lang.Assrt;
+import mmj.lang.WorkVarManager;
+import mmj.tmff.TMFFPreferences;
 
 /**
  *  Holds user settings/preferences used by the

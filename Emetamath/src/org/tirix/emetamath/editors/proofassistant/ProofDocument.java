@@ -7,7 +7,6 @@ import mmj.pa.ProofWorksheet;
 import mmj.verify.Grammar;
 
 import org.eclipse.jface.text.Document;
-import org.eclipse.jface.text.IDocument;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
 
@@ -21,6 +20,13 @@ public class ProofDocument extends Document implements SystemLoadListener {
 		proofWorksheetInitialized = false;
 	}
 	
+	public void setup(ProofWorksheet proofWorksheet, MetamathProjectNature nature) {
+		this.newTheoremLabel = proofWorksheet.getTheoremLabel();
+		this.nature = nature;
+		this.proofWorksheet = proofWorksheet;
+		proofWorksheetInitialized = true;
+	}
+
 	public void setup(String newTheoremLabel, MetamathProjectNature nature) {
 		this.newTheoremLabel = newTheoremLabel;
 		this.nature = nature;
@@ -34,7 +40,11 @@ public class ProofDocument extends Document implements SystemLoadListener {
 		ProofAsstPreferences proofAsstPreferences = new ProofAsstPreferences();
 		proofWorksheet = new ProofWorksheet(newTheoremLabel, proofAsstPreferences, logicalSystem, grammar, messageHandler);
 		proofWorksheetInitialized = true;
-		System.out.println("Proof Worksheet Successfully initialized");
+	}
+
+	public void set(ProofWorksheet w) {
+		this.proofWorksheet = w;
+		set(w.getOutputProofText());
 	}
 
 	@Override

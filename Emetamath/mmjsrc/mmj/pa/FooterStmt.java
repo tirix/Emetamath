@@ -42,8 +42,9 @@
 
 package mmj.pa;
 
-import  java.io.IOException;
-import  mmj.mmio.*;
+import java.io.IOException;
+
+import mmj.mmio.MMIOError;
 
 public class FooterStmt extends ProofWorkStmt {
 

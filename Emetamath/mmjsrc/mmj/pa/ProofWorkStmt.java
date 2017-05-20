@@ -33,8 +33,10 @@
 
 package mmj.pa;
 
-import  java.io.IOException;
-import  mmj.mmio.*;
+import java.io.IOException;
+
+import mmj.mmio.MMIOError;
+import mmj.mmio.SourcePosition;
 
 /**
  *  General object representing an item on a ProofWorksheet.
@@ -58,6 +60,10 @@ public abstract class ProofWorkStmt {
      */
     int               lineCnt;
 
+    /**
+     *  Position in the Worksheet Proof Text in characters
+     */
+    long posCharNbr;
 
     /**
      *  Default ProofWorkStmt constructor.
@@ -68,6 +74,7 @@ public abstract class ProofWorkStmt {
     public ProofWorkStmt(ProofWorksheet w) {
         this.w                    = w;
         lineCnt                   = 1;
+        posCharNbr				  = -1;
     }
 
     /**
@@ -214,6 +221,15 @@ public abstract class ProofWorkStmt {
     }
 
     /**
+     * Get source position of this ProofWorkStmt
+     * @return a SourcePosition object describing where this statement lies in the source object
+     */
+    public SourcePosition getPosition() {
+    	if(w.proofTextTokenizer == null) return null;
+    	return new SourcePosition(w.proofTextTokenizer.getSourceId(), lineCnt, 0, posCharNbr, posCharNbr+getStmtText().length());
+    }
+    
+    /**
      *  Returns diagnostic data for this ProofWorkStmt, which
      *  in this case is the Class name.
      *  <p>
@@ -232,6 +248,10 @@ public abstract class ProofWorkStmt {
         return stmtText;
     }
 
+    public String toString() {
+        return stmtText.toString();
+    }
+
     // only set caret if not already set
     protected void setStmtCursorToCurrLineColumn() {
 
@@ -241,7 +261,7 @@ public abstract class ProofWorkStmt {
 
         // sets cursor pos only if not already set.
         w.proofCursor.setCursorAtCaret(
-            -1,                     // charNbr not set
+            (int)posCharNbr,                     // charNbr not set
             total + 1,
             stmtText.length() + 1);
     }

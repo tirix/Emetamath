@@ -35,9 +35,12 @@
 
 package mmj.pa;
 
-import  java.io.IOException;
-import  mmj.mmio.*;
-import  mmj.lang.*;
+import java.io.IOException;
+
+import mmj.lang.Stmt;
+import mmj.lang.Theorem;
+import mmj.mmio.MMIOError;
+import mmj.mmio.Statementizer;
 
 public class HeaderStmt extends ProofWorkStmt {
     String            theoremLabel;
@@ -259,7 +262,8 @@ public class HeaderStmt extends ProofWorkStmt {
             if (!Statementizer.areLabelCharsValid(
                     theoremLabel)) {
                 w.messageHandler.accumErrorMessage(
-                    PaConstants.ERRMSG_BAD_LABEL_CHAR_1
+                	w.proofTextTokenizer.getCurrentPosition(),
+                	PaConstants.ERRMSG_BAD_LABEL_CHAR_1
                     + theoremLabel
                     + PaConstants.ERRMSG_BAD_LABEL_CHAR_2);
                 headerInvalid     = true;
@@ -268,6 +272,7 @@ public class HeaderStmt extends ProofWorkStmt {
             if (Statementizer.isLabelOnProhibitedList(
                     theoremLabel)) {
                 w.messageHandler.accumErrorMessage(
+                   	w.proofTextTokenizer.getCurrentPosition(),
                     PaConstants.ERRMSG_PROHIB_LABEL_1
                     + theoremLabel
                     + PaConstants.ERRMSG_PROHIB_LABEL_2);
@@ -277,6 +282,7 @@ public class HeaderStmt extends ProofWorkStmt {
             if (w.logicalSystem.getSymTbl().
                     containsKey(theoremLabel)) {
                 w.messageHandler.accumErrorMessage(
+                   	w.proofTextTokenizer.getCurrentPosition(),
                     PaConstants.
                         ERRMSG_STMT_LABEL_DUP_OF_SYM_ID_1_1
                     + theoremLabel
@@ -291,6 +297,7 @@ public class HeaderStmt extends ProofWorkStmt {
         if (stmt instanceof Theorem) {
             if (stmt.getTyp() != w.getProvableLogicStmtTyp()) {
                 w.messageHandler.accumErrorMessage(
+                   	w.proofTextTokenizer.getCurrentPosition(),
                     PaConstants.ERRMSG_BAD_TYP_CD_1
                     + theoremLabel
                     + PaConstants.ERRMSG_BAD_TYP_CD_2
@@ -309,6 +316,7 @@ public class HeaderStmt extends ProofWorkStmt {
         }
 
         w.messageHandler.accumErrorMessage(
+           	w.proofTextTokenizer.getCurrentPosition(),
             PaConstants.ERRMSG_NOT_A_THRM_1
             + theoremLabel
             + PaConstants.ERRMSG_NOT_A_THRM_2);
@@ -335,6 +343,7 @@ public class HeaderStmt extends ProofWorkStmt {
                 locAfterLabel));
         if (stmt == null) {
             w.messageHandler.accumErrorMessage(
+               	w.proofTextTokenizer.getCurrentPosition(),
                 PaConstants.ERRMSG_LOC_NOTFND_1
                 + w.getErrorLabelIfPossible()
                 + PaConstants.ERRMSG_LOC_NOTFND_2

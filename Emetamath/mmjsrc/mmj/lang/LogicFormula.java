@@ -16,7 +16,9 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.ListIterator;
+import java.util.Map;
 
 /**
  *  LogicFormula is a convenience class for LogHyp.

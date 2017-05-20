@@ -18,7 +18,8 @@
 
 package mmj.mmio;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
 
 /**
  * Parse a Metamath .mm file into Metamath tokens.

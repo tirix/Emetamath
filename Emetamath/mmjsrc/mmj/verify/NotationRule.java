@@ -10,8 +10,12 @@
  */
 
 package mmj.verify;
-import mmj.lang.*;
-import java.util.*;
+import java.util.Iterator;
+
+import mmj.lang.Axiom;
+import mmj.lang.Cnst;
+import mmj.lang.ParseNode;
+import mmj.lang.ParseTree;
 
 /**
  *  Notation Grammar Rules are the main Grammar Rules used

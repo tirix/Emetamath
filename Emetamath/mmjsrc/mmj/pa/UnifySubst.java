@@ -13,7 +13,8 @@
  */
 
 package mmj.pa;
-import mmj.lang.*;
+import mmj.lang.ParseNode;
+import mmj.lang.VarHyp;
 
 /**
  *  UnifySubst is a data structure for use in proof

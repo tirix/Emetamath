@@ -11,7 +11,7 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  *  This is just a simple data structure

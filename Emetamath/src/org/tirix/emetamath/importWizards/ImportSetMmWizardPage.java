@@ -10,7 +10,6 @@ import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
@@ -19,13 +18,10 @@ import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.preference.FileFieldEditor;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.WorkspaceModifyOperation;
 import org.eclipse.ui.dialogs.WizardResourceImportPage;
 import org.eclipse.ui.internal.wizards.datatransfer.DataTransferMessages;
-import org.eclipse.ui.internal.wizards.datatransfer.TarLeveledStructureProvider;
 import org.tirix.emetamath.Activator;
 
 
@@ -96,7 +92,13 @@ public class ImportSetMmWizardPage extends WizardResourceImportPage {
     public boolean finish() {
         saveWidgetValues();
 
-		try {
+//        ErrorDialog
+//        .openError(getContainer().getShell(), DataTransferMessages.FileImport_importProblems,
+//                null, // no special message
+//                new Status(Status.ERROR, Activator.PLUGIN_ID, "Could not open set.mm from the web"));
+//        return false;
+
+        try {
 			InputStream webFileInputStream = getWebFileInputStream();
 	        BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(webFileInputStream); 
 			ImportFromInputStreamOperation operation = new ImportFromInputStreamOperation(getSpecifiedContainer(), "set.mm", bzIn);

@@ -15,9 +15,10 @@
 
 package mmj.pa;
 
-import  java.util.LinkedList;
-import  java.util.ListIterator;
-import  mmj.lang.Assrt;
+import java.util.LinkedList;
+import java.util.ListIterator;
+
+import mmj.lang.Assrt;
 
 /**
  *  StepSelectorStore accumulates StepSelector results.
@@ -37,8 +38,10 @@ public class StepSelectorStore {
 
     private int                   totalNbrLines;
 
-    private LinkedList            storeList;
+    private LinkedList<StepSelectorItem> storeList;
 
+	private String                step;
+    
     /**
      *  Simple factory to hide constructor details.
      *
@@ -46,9 +49,10 @@ public class StepSelectorStore {
      *             needed by StepSelector and friends.
      */
     public static StepSelectorStore createStepSelectorStore(
-                ProofAsstPreferences proofAsstPreferences) {
+                ProofAsstPreferences proofAsstPreferences, 
+                String step) {
 
-        return new StepSelectorStore(proofAsstPreferences);
+        return new StepSelectorStore(proofAsstPreferences, step);
 
     }
 
@@ -59,14 +63,16 @@ public class StepSelectorStore {
      *             needed by StepSelector and friends.
      */
     public StepSelectorStore(
-                ProofAsstPreferences proofAsstPreferences) {
+                ProofAsstPreferences proofAsstPreferences, 
+                String step) {
 
         this.proofAsstPreferences = proofAsstPreferences;
+        this.step = step;
 
         maxResults                =
             proofAsstPreferences.getStepSelectorMaxResults();
 
-        storeList                 = new LinkedList();
+        storeList                 = new LinkedList<StepSelectorItem>();
         cntResults                = 0;
         totalNbrLines             = 0;
     }
@@ -95,11 +101,9 @@ public class StepSelectorStore {
      *  @return StepSelectorResults object for display on the
      *          StepSelectorDialog.
      */
-    public StepSelectorResults createStepSelectorResults(
-                                    String  step,
-                                    boolean storeOverflow) {
+    public StepSelectorResults createStepSelectorResults() {
         String[] endLiteral       = new String[1];
-        if (storeOverflow) {
+        if (isFull()) {
             endLiteral[0]         =
                 PaConstants.STEP_SELECTOR_LIST_MORE_LITERAL;
         }
@@ -125,7 +129,7 @@ public class StepSelectorStore {
                 ++n;
             }
         }
-        return new StepSelectorResults(step,
+        return new StepSelectorResults(getStep(),
                                        refArray,
                                        selectionArray);
     }
@@ -170,4 +174,33 @@ public class StepSelectorStore {
             return true;
         }
     }
+
+    /** 
+     * Checks to see is more items can be fetched
+     * @return true if this store proposes more items.
+     */
+    public boolean hasMore() {
+    	return isFull();
+    }
+    
+    /**
+	 * @return the storeList, except the last "null" item
+	 */
+	public StepSelectorItem[] getStoreItems() {
+		return (StepSelectorItem[]) storeList.subList(0, storeList.size()-1).toArray(new StepSelectorItem[storeList.size() - 1]);
+	}
+
+    /**
+	 * @return the storeList, except the last "null" item
+	 */
+	public boolean isEmpty() {
+		return storeList.size() == 1;
+	}
+
+	/**
+	 * @return the step
+	 */
+	public String getStep() {
+		return step;
+	}
 }

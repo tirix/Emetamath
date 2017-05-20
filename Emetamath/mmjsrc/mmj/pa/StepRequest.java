@@ -14,7 +14,6 @@
  */
 
 package mmj.pa;
-import mmj.lang.Assrt;
 
 /**
  *  StepRequest contains the StepSelector search results

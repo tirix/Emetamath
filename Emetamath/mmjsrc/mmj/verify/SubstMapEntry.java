@@ -11,7 +11,7 @@
 
 package mmj.verify;
 
-import mmj.lang.*;
+import mmj.lang.Sym;
 
 /**
  *  SubstMapEntry is a data structure used in an array in

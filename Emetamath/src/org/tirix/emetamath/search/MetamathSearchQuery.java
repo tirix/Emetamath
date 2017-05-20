@@ -9,9 +9,7 @@ import mmj.lang.MObj;
 import mmj.lang.Stmt;
 import mmj.lang.Sym;
 import mmj.lang.Theorem;
-import mmj.mmio.SourcePosition;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
@@ -26,7 +24,16 @@ public class MetamathSearchQuery implements ISearchQuery {
 	private MetamathProjectNature nature;
 	private MObj obj;
 	private ISearchResult fResult;
-	
+	public static final int ALL_OCCURRENCES = 0xFFFFFFFF;
+	public static final int PROOFS = 1;
+	public static final int HYPOTHESIS = 2;
+	public static final int AXIOMS = 4;
+	public static final int DEFINITIONS = 8;
+	public static final int THEOREMS = 16;
+
+	public static final int MM_FILES = 1;
+	public static final int MMP_FILES = 2;
+
 	public MetamathSearchQuery(MetamathProjectNature nature, MObj obj) {
 		this.obj = obj;
 		this.nature = nature;
@@ -67,13 +74,20 @@ public class MetamathSearchQuery implements ISearchQuery {
 		final MetamathSearchResult result= (MetamathSearchResult) getSearchResult();
 		result.removeAll();
 
+		int count = 0;
+		int max = Integer.MAX_VALUE; // TODO store this as a Metamath preference !
+		
 		if(obj instanceof Sym) {
 			Map<String, Stmt> stmtTbl = nature.getLogicalSystem().getStmtTbl();
 			monitor.beginTask("Searching "+obj, stmtTbl.size());
 			
+			symLoop:
 			for(Stmt stmt:stmtTbl.values()) {
 				for(Sym sym:stmt.getFormula().getExpr()) {
-					if(sym.equals(obj)) result.addMatch(new MetamathMatch(stmt)); 
+					if(sym.equals(obj)) {
+						result.addMatch(new MetamathMatch(stmt));
+						if(count++ == max) break symLoop;
+					}
 				}
 				monitor.worked(1);
 			}
@@ -83,11 +97,14 @@ public class MetamathSearchQuery implements ISearchQuery {
 			Map<String, Stmt> stmtTbl = nature.getLogicalSystem().getStmtTbl();
 			monitor.beginTask("Searching "+obj, stmtTbl.size());
 			
+			stmtLoop:
 			for(Stmt stmt:stmtTbl.values()) {
 				if(stmt instanceof Theorem) {
 					for(Stmt proofStep:((Theorem)stmt).getProof()) {
-						if(proofStep.equals(obj)) 
+						if(proofStep != null && proofStep.equals(obj)) {
 							result.addMatch(new MetamathMatch(stmt)); 
+							if(count++ == max) break stmtLoop;
+						}
 					}
 				}
 				monitor.worked(1);

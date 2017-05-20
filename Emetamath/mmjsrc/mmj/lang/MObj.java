@@ -26,7 +26,7 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.Comparator;
 
 import mmj.mmio.SourceElement;
 import mmj.mmio.SourcePosition;

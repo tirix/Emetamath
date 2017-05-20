@@ -1,0 +1,7 @@
+Help
+Software Updates
+Add site
+http://downloads.zend.com/atf/
+Choose XCOM + XulRunner
+Install
+"Agree" Moz SW License

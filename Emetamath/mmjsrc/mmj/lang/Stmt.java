@@ -41,9 +41,10 @@
  */
 package mmj.lang;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.Map;
 
-import mmj.mmio.SourcePosition;
+import mmj.verify.SubstMapEntry;
 
 /**
  *  Stmt is the parent class of all Metamath <code>Hyp</code>s

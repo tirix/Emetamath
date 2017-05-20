@@ -1,0 +1,28 @@
+v0.1.0.v201101XX
+* Added a Project Properties page, including "Main File" and "Proof Explorer Web Base URL" properties
+* Added a tool bar to the Proof Browser View, with current theorem name, back and forward button. 
+* "Type" constants (wff, |-, set, class) are now colored in gray, like in Metamath web pages
+
+v0.1.0.v20110122
+* Added a Proof Browser view, similar to the Proof Assistant, but in tabular format, and not editable (still to be polished). 
+* Added the "Internal Web Browser View" in the "Show In" context menu: this enables to browse the (www)  
+* Filled in the "Show In" menu of the "Proof Explorer View"
+* Completed the information provided when hovering on a Metamath element: added element icon, name, hypothesis (for assertions), formula (for statements)
+* Hover information now also appears in Metamath Proof Assistant editors 
+* Added two new contextual commands "Add Block Comment" and "Remove Block Comment" to (un)comment a section of Metamath language ($ replaced by @)
+* Added an acknowledgement message (and conformed to GPL) by adding an "about" message. It can be accessed through Help/About Eclipse/Plug-in Details, selecting "Metamath" plugin, and pressing "Legal Info". 
+* Corrected: A proof opened from a Memamath file using the contextual menu "Open in Proof Assistant", modified and saved as .mmp now does not loose anymore the modifications and cursor position.
+
+v0.1.0.v20110117
+* Improved speed by replacing the Syntax Colorer (PresentationReconciler) by a faster one, which colors only the current viewed text 
+* Started a "Metamath Search Page" (accessible through the "Search/Search..." menu), though it is not functional yet
+* Checked compatibility with Eclipse 3.2 : 
+	would have to remove references to WizardNewProjectCreationPage.getSelectedWorkingSets, StyledString, IStyledLabelProvider, and ITextHoverExtension2
+* "Metamath" Menu now appears only when a Proof Assistant editor is active.
+	(the corresponding toolbar buttons "Unify" / "Step Selection" will stay because of https://bugs.eclipse.org/bugs/show_bug.cgi?id=201589)
+* Hover hints are now also available on proofs.
+* Replaced "Outline" by "Proof Explorer" in the "Show In" menu of the Metamath Search page (indeed, the Metamath plugin does not provide any outline) 
+* Removed the "Console" view from the perspective, as it is currently not used. (You can reset your perspective to default using "Window/Reset Perspective")
+
+v0.1.0.v20110114
+* Initial release

@@ -17,6 +17,7 @@ public class MMDocumentProvider extends FileDocumentProvider {
 					new String[] {
 						MMPartitionScanner.MM_FILEINCLUSION,
 						MMPartitionScanner.MM_COMMENT,
+						MMPartitionScanner.MM_PROOF,
 						MMPartitionScanner.MM_TYPESETTING,
 						IDocument.DEFAULT_CONTENT_TYPE
 						});

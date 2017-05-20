@@ -72,15 +72,19 @@
 
 package mmj.pa;
 
-import  java.io.IOException;
-import  java.util.ArrayList;
-import  java.util.Iterator;
-import  java.util.HashMap;
-import  mmj.util.DelimitedTextParser;
-import  mmj.lang.*;
-import  mmj.mmio.*;
-import  mmj.tmff.*;
-import  mmj.verify.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import mmj.lang.Assrt;
+import mmj.lang.DjVars;
+import mmj.lang.Formula;
+import mmj.lang.ParseNode;
+import mmj.lang.ParseTree;
+import mmj.lang.Stmt;
+import mmj.mmio.MMIOError;
+import mmj.util.DelimitedTextParser;
 
 public class DerivationStep extends ProofStepStmt {
 
@@ -446,7 +450,8 @@ public class DerivationStep extends ProofStepStmt {
         //update ProofStepStmt fields
         step                  = stepField;
         refLabel              = refField;
-
+        posCharNbr			  = lineStartCharNbr;
+        
         boolean isQedStep     =
             step.equals(PaConstants.QED_STEP_NBR);
 
@@ -635,6 +640,8 @@ public class DerivationStep extends ProofStepStmt {
                 localRefField.length());
         }
 
+        posCharNbr = lineStartCharNbr;
+        
         //note: load formula to get it out of the way
         //      and we know that this is NOT a qed step,
         //      so pass false in the next call
@@ -886,6 +893,10 @@ public class DerivationStep extends ProofStepStmt {
      */
     public ProofStepStmt[] getHyp() {
         return hyp;
+    }
+
+    public String[] getHypSteps() {
+        return hypStep;
     }
 
     private boolean getValidDerivationRefField(

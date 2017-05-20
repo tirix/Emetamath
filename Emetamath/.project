@@ -3,7 +3,7 @@
 	<name>Emetamath</name>
 	<comment></comment>
 	<projects>
-		<project>Mmj2</project>
+		<project>commons-compress</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

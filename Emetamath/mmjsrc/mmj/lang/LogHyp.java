@@ -33,7 +33,8 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
 
 /**
  *  LogHyp -- Logical Hypothesis -- corresponds to

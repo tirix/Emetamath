@@ -24,7 +24,7 @@ import mmj.lang.Assrt;
 public class StepSelectorResults {
 
     /* friendly */ String         step;
-    /* friendly */ Assrt[]        refArray;
+	/* friendly */ Assrt[]        refArray;
     /* friendly */ String[]       selectionArray;
 
 
@@ -46,5 +46,26 @@ public class StepSelectorResults {
         this.refArray             = refArray;
         this.selectionArray       = selectionArray;
     }
+
+	/**
+	 * @return the step
+	 */
+	public String getStep() {
+		return step;
+	}
+
+	/**
+	 * @return the refArray
+	 */
+	public Assrt[] getRefArray() {
+		return refArray;
+	}
+
+	/**
+	 * @return the selectionArray
+	 */
+	public String[] getSelectionArray() {
+		return selectionArray;
+	}
 }
 

@@ -1,55 +1,66 @@
 package org.tirix.emetamath.editors;
 
-import java.util.Iterator;
-
 import mmj.lang.MObj;
 
-import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jface.action.ToolBarManager;
+import org.eclipse.jface.internal.text.html.BrowserInformationControl;
+import org.eclipse.jface.resource.FontRegistry;
+import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.text.AbstractReusableInformationControlCreator;
 import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.DefaultTextHover;
+import org.eclipse.jface.text.DefaultInformationControl;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IInformationControl;
+import org.eclipse.jface.text.IInformationControlCreator;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextDoubleClickStrategy;
 import org.eclipse.jface.text.ITextHover;
+import org.eclipse.jface.text.ITextHoverExtension;
 import org.eclipse.jface.text.ITextHoverExtension2;
 import org.eclipse.jface.text.ITextViewer;
-import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.TextAttribute;
+import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.text.presentation.IPresentationReconciler;
-import org.eclipse.jface.text.presentation.PresentationReconciler;
-import org.eclipse.jface.text.reconciler.IReconciler;
-import org.eclipse.jface.text.reconciler.IReconcilingStrategy;
-import org.eclipse.jface.text.reconciler.MonoReconciler;
 import org.eclipse.jface.text.rules.BufferedRuleBasedScanner;
 import org.eclipse.jface.text.rules.DefaultDamagerRepairer;
 import org.eclipse.jface.text.rules.ITokenScanner;
 import org.eclipse.jface.text.rules.Token;
-import org.eclipse.jface.text.source.Annotation;
-import org.eclipse.jface.text.source.IAnnotationModel;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.text.source.SourceViewerConfiguration;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.editors.text.EditorsUI;
 import org.eclipse.ui.texteditor.ITextEditor;
-import org.tirix.emetamath.MetamathUI;
+import org.tirix.eclipse.FastPresentationReconciler;
+import org.tirix.emetamath.editors.MMScanner.MMProofScanner;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
+import org.tirix.emetamath.views.MMHTMLPrinter;
 
 public class MMSourceViewerConfiguration extends SourceViewerConfiguration implements SystemLoadListener {
+	public static String EDITOR_FONT_REGISTRY_NAME = "org.tirix.emetamath.preferences.editorFont";
 	protected MMDoubleClickStrategy doubleClickStrategy;
 	protected MMScanner mmScanner;
+	protected MMProofScanner mmProofScanner;
 	protected MMCommentScanner mmCommentScanner;
 	protected BufferedRuleBasedScanner mmFileInclusionScanner;
 	protected ColorManager colorManager;
 	protected ITextEditor fTextEditor;
+	protected static Font fEditorFont;
 	
 	public MMSourceViewerConfiguration(ITextEditor textEditor, ColorManager colorManager) {
 		this.colorManager = colorManager;
 		this.fTextEditor = textEditor;
+		FontRegistry fontRegistry = PlatformUI.getWorkbench().getThemeManager().getCurrentTheme().getFontRegistry();
+		this.fEditorFont = fontRegistry.get(EDITOR_FONT_REGISTRY_NAME);
 	}
 
 	public String[] getConfiguredContentTypes(ISourceViewer sourceViewer) {
 		return new String[] {
 			IDocument.DEFAULT_CONTENT_TYPE,
 			MMPartitionScanner.MM_COMMENT,
+			MMPartitionScanner.MM_PROOF,
 			MMPartitionScanner.MM_TYPESETTING,
 			MMPartitionScanner.MM_FILEINCLUSION,
 			};
@@ -79,6 +90,13 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 		return mmScanner;
 	}
 
+	protected MMScanner getMMProofScanner() {
+		if (mmProofScanner == null) {
+			mmProofScanner = new MMProofScanner(colorManager);
+		}
+		return mmProofScanner;
+	}
+
 	protected MMCommentScanner getMMCommentScanner() {
 		if (mmCommentScanner == null) {
 			mmCommentScanner = new MMCommentScanner(colorManager);
@@ -95,7 +113,7 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 	}
 
 	public IPresentationReconciler getPresentationReconciler(ISourceViewer sourceViewer) {
-		PresentationReconciler reconciler = new PresentationReconciler();
+		FastPresentationReconciler reconciler = new FastPresentationReconciler();
 		DefaultDamagerRepairer dr;
 
 		dr= new DefaultDamagerRepairer(getMMScanner());
@@ -105,6 +123,10 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 		dr = new DefaultDamagerRepairer(getMMFileInclusionScanner());
 		reconciler.setDamager(dr, MMPartitionScanner.MM_FILEINCLUSION);
 		reconciler.setRepairer(dr, MMPartitionScanner.MM_FILEINCLUSION);
+
+		dr = new DefaultDamagerRepairer(getMMProofScanner());
+		reconciler.setDamager(dr, MMPartitionScanner.MM_PROOF);
+		reconciler.setRepairer(dr, MMPartitionScanner.MM_PROOF);
 
 		NonRuleBasedDamagerRepairer ndr =
 			new NonRuleBasedDamagerRepairer(
@@ -116,16 +138,16 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 		return reconciler;
 	}
 	
-	/*
-	 * @see org.eclipse.jface.text.source.SourceViewerConfiguration#getReconciler(org.eclipse.jface.text.source.ISourceViewer)
-	 */
-	public IReconciler getReconciler(ISourceViewer sourceViewer) {
-		IReconcilingStrategy reconcilingStrategy = new MMReconcilingStrategy(sourceViewer, fTextEditor);
-		MonoReconciler reconciler = new MonoReconciler(reconcilingStrategy, false);
-		reconciler.setProgressMonitor(new NullProgressMonitor());
-		reconciler.setDelay(500);
-		return reconciler;
-	}
+//	/*
+//	 * @see org.eclipse.jface.text.source.SourceViewerConfiguration#getReconciler(org.eclipse.jface.text.source.ISourceViewer)
+//	 */
+//	public IReconciler getReconciler(ISourceViewer sourceViewer) {
+//		IReconcilingStrategy reconcilingStrategy = new MMReconcilingStrategy(sourceViewer, fTextEditor);
+//		MonoReconciler reconciler = new MonoReconciler(reconcilingStrategy, false);
+//		reconciler.setProgressMonitor(new NullProgressMonitor());
+//		reconciler.setDelay(500);
+//		return reconciler;
+//	}
 	
 	@Override
 	public int getTabWidth(ISourceViewer sourceViewer) {
@@ -134,7 +156,7 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 	
 	@Override
 	public ITextHover getTextHover(ISourceViewer sourceViewer, String contentType) {
-		if(contentType.equals(IDocument.DEFAULT_CONTENT_TYPE)) {
+		if(!contentType.equals(MMPartitionScanner.MM_COMMENT)) {
 			return new MetamathTextHover(MetamathProjectNature.getNature(fTextEditor.getEditorInput()));
 			}
 		return null;
@@ -146,8 +168,9 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 		
 	}
 
-	private static final class MetamathTextHover implements ITextHover, ITextHoverExtension2 {
+	public static class MetamathTextHover implements ITextHover, ITextHoverExtension, ITextHoverExtension2 {
 		private MetamathProjectNature nature;
+		private IInformationControlCreator creator;
 
 		
 		public MetamathTextHover(MetamathProjectNature nature2) {
@@ -162,7 +185,7 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 				MObj mobj = nature.getMObj(text);
 				if(mobj == null) return null;
 				// TODO find a way to store the comment immediately following a constant as the constant's description (provided there is no line feed) 
-				return mobj.getDescription();
+				return MMHTMLPrinter.printMObj(nature, mobj);
 			} catch (BadLocationException e) {
 				return null;
 			}
@@ -170,12 +193,35 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 
 		@Override
 		public IRegion getHoverRegion(ITextViewer textViewer, int offset) {
-			return MMRegionProvider.getWord(textViewer, offset);
+			return MMRegionProvider.getWord(textViewer.getDocument(), offset);
+		}
+
+		public Object getHoverInfo2(ITextViewer textViewer, IRegion hoverRegion) {
+			return getHoverInfo(textViewer, hoverRegion);
 		}
 
 		@Override
-		public Object getHoverInfo2(ITextViewer textViewer, IRegion hoverRegion) {
-			return getHoverInfo(textViewer, hoverRegion);
+		public IInformationControlCreator getHoverControlCreator() {
+			if(creator == null) creator = new AbstractReusableInformationControlCreator() {
+				@Override
+				protected IInformationControl doCreateInformationControl(Shell parent) {
+					if(BrowserInformationControl.isAvailable(parent)) { 
+						// see also the variant with tool bar
+						BrowserInformationControl iControl = new BrowserInformationControl(parent, EDITOR_FONT_REGISTRY_NAME, true) {
+							@Override
+							public IInformationControlCreator getInformationPresenterControlCreator() {
+								return creator;
+								}
+							};
+							// cannot access the methods that would allow us to set the hover information size constraints (protected or private access)
+							// TextViewer.getTextHoveringController().setSizeConstraints(widthInChar, heightInChar, enforceAsMinimalSize, enforceAsMaximalSize);
+							// AbstractTextEditor.fInformationPresenter.setSizeConstraints(widthInChar, heightInChar, enforceAsMinimalSize, enforceAsMaximalSize);
+							return iControl;
+						}
+					return new DefaultInformationControl(parent, EditorsUI.getTooltipAffordanceString());
+				}
+			};
+			return creator;
 		}
 	}
 }

@@ -23,7 +23,7 @@
  */
 
 package mmj.lang;
-import java.util.*;
+import java.util.ArrayList;
 
 import mmj.mmio.SourcePosition;
 

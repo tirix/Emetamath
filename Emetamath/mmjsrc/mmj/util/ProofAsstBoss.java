@@ -61,15 +61,34 @@
  */
 
 package mmj.util;
-import java.io.*;
-import java.util.Map;
-import java.util.ArrayList;
 import java.awt.Color;
-import mmj.mmio.*;
-import mmj.lang.*;
-import mmj.verify.*;
-import mmj.pa.*;
-import mmj.tl.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Map;
+
+import mmj.lang.Assrt;
+import mmj.lang.Cnst;
+import mmj.lang.LogicalSystem;
+import mmj.lang.Messages;
+import mmj.lang.Stmt;
+import mmj.lang.Theorem;
+import mmj.lang.VerifyException;
+import mmj.lang.WorkVarManager;
+import mmj.mmio.MMIOException;
+import mmj.pa.EraseWffsPreprocessRequest;
+import mmj.pa.PaConstants;
+import mmj.pa.PreprocessRequest;
+import mmj.pa.ProofAsst;
+import mmj.pa.ProofAsstPreferences;
+import mmj.tl.TheoremLoader;
+import mmj.verify.Grammar;
+import mmj.verify.VerifyProofs;
 
 /**
  *  Responsible for building and triggering ProofAsst.

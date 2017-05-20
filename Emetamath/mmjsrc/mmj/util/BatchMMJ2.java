@@ -20,7 +20,7 @@
 
 package mmj.util;
 
-import mmj.svc.*;
+import mmj.svc.SvcCallback;
 
 
 /**

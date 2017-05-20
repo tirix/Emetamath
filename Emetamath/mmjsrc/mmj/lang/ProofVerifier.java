@@ -10,7 +10,7 @@
  */
 
 package mmj.lang;
-import java.util.*;
+import java.util.Map;
 
 /**
  *  Interface to proof verification.

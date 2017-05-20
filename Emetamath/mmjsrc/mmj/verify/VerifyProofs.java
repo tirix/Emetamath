@@ -55,9 +55,33 @@
 
 package mmj.verify;
 
-import mmj.lang.*;
-import java.util.*;
-import java.io.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Random;
+import java.util.Stack;
+
+import mmj.lang.Assrt;
+import mmj.lang.Axiom;
+import mmj.lang.Cnst;
+import mmj.lang.DjVars;
+import mmj.lang.Formula;
+import mmj.lang.Hyp;
+import mmj.lang.LangException;
+import mmj.lang.LogHyp;
+import mmj.lang.MandFrame;
+import mmj.lang.MessageHandler;
+import mmj.lang.OptFrame;
+import mmj.lang.ParseNode;
+import mmj.lang.ParseTree;
+import mmj.lang.ProofVerifier;
+import mmj.lang.Stmt;
+import mmj.lang.Sym;
+import mmj.lang.Theorem;
+import mmj.lang.Var;
+import mmj.lang.VarHyp;
+import mmj.lang.VerifyException;
 
 /**
  *  VerifyProofs implements the proof verification process

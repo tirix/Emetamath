@@ -11,9 +11,9 @@ import org.tirix.emetamath.editors.MMScanner.MMTokenDetector;
 public class MMRegionProvider {
 	final static MMTokenDetector DETECTOR = new MMTokenDetector();
 	final static MMLabelDetector LABEL_DETECTOR = new MMLabelDetector();
+	final static MMWhitespaceDetector WHITESPACE_DETECTOR = new MMWhitespaceDetector();
 	
-	public static IRegion getComment(ITextViewer textViewer, int offset) {
-		IDocument doc = textViewer.getDocument();
+	public static IRegion getComment(IDocument doc, int offset) {
 		int startPos, endPos;
 
 		try {
@@ -57,8 +57,7 @@ public class MMRegionProvider {
 		return null;
 	}
 
-	public static IRegion getWord(ITextViewer textViewer, int offset) {
-		IDocument doc = textViewer.getDocument();
+	public static IRegion getWord(IDocument doc, int offset) {
 		int startPos, endPos;
 
 		try {
@@ -94,8 +93,7 @@ public class MMRegionProvider {
 		return null;
 	}
 
-	public static IRegion getLabel(ITextViewer textViewer, int offset) {
-		IDocument doc = textViewer.getDocument();
+	public static IRegion getLabel(IDocument doc, int offset) {
 		int startPos, endPos;
 
 		try {
@@ -128,6 +126,48 @@ public class MMRegionProvider {
 		} catch (BadLocationException x) {
 		}
 
+		return null;
+	}
+
+	public static IRegion getMMPComment(IDocument doc, int offset) {
+		int startPos, endPos;
+	
+		try {
+			int pos = offset;
+			char c1 = ' ';
+			char c2 = ' ';
+	
+			while (pos >= 0) {
+				c2 = c1;
+				c1 = doc.getChar(pos);
+				if (c1 == '\n' && c2 == '*') {
+					break;
+				}
+				if (c1 == '\n' && !WHITESPACE_DETECTOR.isWhitespace(c2)) {
+					return null;
+				}
+				--pos;
+			}
+			startPos = pos - 1;
+			if(startPos == -2) return null;
+			
+			pos = offset;
+			int length = doc.getLength();
+			c1 = ' ';
+			c2 = ' ';
+	
+			while (pos < length) {
+				c1 = c2;
+				c2 = doc.getChar(pos);
+				if (c1 == '\n' && !WHITESPACE_DETECTOR.isWhitespace(c2))
+					break;
+				++pos;
+			}
+			endPos = pos - 1;
+			return new Region(startPos + 1, endPos - startPos - 1);
+		} catch (BadLocationException x) {
+		}
+	
 		return null;
 	}
 }

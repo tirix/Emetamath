@@ -1,10 +1,9 @@
 package org.tirix.emetamath.properties;
 
-import java.awt.Checkbox;
-
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.QualifiedName;
+import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -15,7 +14,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.dialogs.PropertyPage;
 import org.tirix.emetamath.nature.MetamathProjectNature;
-import org.tirix.emetamath.popup.actions.SetMainFileAction;
 
 public class MetamathPropertyPage extends PropertyPage {
 
@@ -79,26 +77,26 @@ public class MetamathPropertyPage extends PropertyPage {
 			mainFileButton.setSelection(false);
 		}
 
-		//////////////
-		// Label for owner field
-		Label ownerLabel = new Label(composite, SWT.NONE);
-		ownerLabel.setText(OWNER_TITLE);
-
-		// Owner text field
-		ownerText = new Text(composite, SWT.SINGLE | SWT.BORDER);
-		GridData gd = new GridData();
-		gd.widthHint = convertWidthInCharsToPixels(TEXT_FIELD_WIDTH);
-		ownerText.setLayoutData(gd);
-
-		// Populate owner text field
-		try {
-			String owner =
-				((IResource) getElement()).getPersistentProperty(
-					new QualifiedName("", OWNER_PROPERTY));
-			ownerText.setText((owner != null) ? owner : DEFAULT_OWNER);
-		} catch (CoreException e) {
-			ownerText.setText(DEFAULT_OWNER);
-		}
+//		//////////////
+//		// Label for owner field
+//		Label ownerLabel = new Label(composite, SWT.NONE);
+//		ownerLabel.setText(OWNER_TITLE);
+//
+//		// Owner text field
+//		ownerText = new Text(composite, SWT.SINGLE | SWT.BORDER);
+//		GridData gd = new GridData();
+//		gd.widthHint = convertWidthInCharsToPixels(TEXT_FIELD_WIDTH);
+//		ownerText.setLayoutData(gd);
+//
+//		// Populate owner text field
+//		try {
+//			String owner =
+//				((IResource) getElement()).getPersistentProperty(
+//					new QualifiedName("", OWNER_PROPERTY));
+//			ownerText.setText((owner != null) ? owner : DEFAULT_OWNER);
+//		} catch (CoreException e) {
+//			ownerText.setText(DEFAULT_OWNER);
+//		}
 	}
 
 	/**
@@ -133,19 +131,19 @@ public class MetamathPropertyPage extends PropertyPage {
 	}
 
 	protected void performDefaults() {
-		// Populate the owner text field with the default value
-		ownerText.setText(DEFAULT_OWNER);
+//		// Populate the owner text field with the default value
+//		ownerText.setText(DEFAULT_OWNER);
 	}
 	
 	public boolean performOk() {
-		// store the value in the owner text field
-		try {
-			((IResource) getElement()).setPersistentProperty(
-				new QualifiedName("", OWNER_PROPERTY),
-				ownerText.getText());
-		} catch (CoreException e) {
-			return false;
-		}
+//		// store the value in the owner text field
+//		try {
+//			((IResource) getElement()).setPersistentProperty(
+//				new QualifiedName("", OWNER_PROPERTY),
+//				ownerText.getText());
+//		} catch (CoreException e) {
+//			return false;
+//		}
 		return true;
 	}
 

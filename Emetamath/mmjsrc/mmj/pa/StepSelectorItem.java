@@ -15,7 +15,7 @@
 
 package mmj.pa;
 
-import  mmj.lang.Assrt;
+import mmj.lang.Assrt;
 
 /**
  *  StepSelectorItem contains a single result obtained from
@@ -23,8 +23,8 @@ import  mmj.lang.Assrt;
  */
 public class StepSelectorItem {
 
-    /* friendly */ Assrt    assrt;
-    /* friendly */ String[] selection;
+    public Assrt    assrt;
+    public String[] selection;
 
     /**
      *  Constructor for StepSelectorItem

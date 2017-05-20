@@ -23,9 +23,10 @@
  */
 
 package mmj.verify;
+import java.util.ArrayList;
+
 import mmj.lang.Formula;
 import mmj.lang.ParseTree;
-import java.util.ArrayList;
 
 
 /**

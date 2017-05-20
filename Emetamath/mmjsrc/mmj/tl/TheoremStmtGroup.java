@@ -14,10 +14,32 @@
  */
 
 package mmj.tl;
-import java.util.*;
-import java.io.*;
-import mmj.lang.*;
-import mmj.mmio.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import mmj.lang.DjVars;
+import mmj.lang.LangException;
+import mmj.lang.LogHyp;
+import mmj.lang.LogicalSystem;
+import mmj.lang.MObj;
+import mmj.lang.MessageHandler;
+import mmj.lang.ParseTree;
+import mmj.lang.ProofVerifier;
+import mmj.lang.SeqAssigner;
+import mmj.lang.Stmt;
+import mmj.lang.Sym;
+import mmj.lang.SyntaxVerifier;
+import mmj.lang.Theorem;
+import mmj.lang.TheoremLoaderException;
+import mmj.mmio.MMIOConstants;
+import mmj.mmio.MMIOException;
+import mmj.mmio.SrcStmt;
+import mmj.mmio.Statementizer;
 import mmj.pa.PaConstants;
 
 /**

@@ -14,10 +14,22 @@
  */
 
 package mmj.tl;
-import java.util.*;
-import mmj.lang.*;
-import mmj.pa.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+
+import mmj.lang.DjVars;
+import mmj.lang.Formula;
+import mmj.lang.LogHyp;
+import mmj.lang.Stmt;
+import mmj.lang.Theorem;
+import mmj.lang.TheoremLoaderException;
 import mmj.mmio.MMIOConstants;
+import mmj.pa.CommentStmt;
+import mmj.pa.DistinctVariablesStmt;
+import mmj.pa.HypothesisStep;
+import mmj.pa.ProofStepStmt;
+import mmj.pa.ProofWorkStmt;
+import mmj.pa.ProofWorksheet;
 
 /**
  *  Converts a thing into a list Metamath-formatted file lines.

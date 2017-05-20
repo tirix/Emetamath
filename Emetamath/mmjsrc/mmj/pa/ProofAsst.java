@@ -58,19 +58,35 @@
 
 package mmj.pa;
 
-import  mmj.lang.*;
-import  mmj.verify.*;
-import  mmj.mmio.*;
-import  mmj.util.OutputBoss;
-import  mmj.tl.*;
-import  java.io.File;
-import  java.io.Writer;
-import  java.io.Reader;
-import  java.io.IOException;
-import  java.util.Iterator;
-import  java.util.ArrayList;
-import  java.util.Collection;
-import  java.util.Collections;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+
+import mmj.lang.Assrt;
+import mmj.lang.Cnst;
+import mmj.lang.DjVars;
+import mmj.lang.LogicalSystem;
+import mmj.lang.MObj;
+import mmj.lang.MandFrame;
+import mmj.lang.MessageHandler;
+import mmj.lang.Messages;
+import mmj.lang.Stmt;
+import mmj.lang.Theorem;
+import mmj.lang.TheoremLoaderException;
+import mmj.lang.VerifyException;
+import mmj.mmio.MMIOError;
+import mmj.mmio.SourcePosition;
+import mmj.tl.MMTTheoremSet;
+import mmj.tl.TLRequest;
+import mmj.tl.TheoremLoader;
+import mmj.tl.TheoremLoaderCommitListener;
+import mmj.util.OutputBoss;
+import mmj.verify.Grammar;
+import mmj.verify.VerifyProofs;
 
 /**
  * The <code>ProofAsst</code>, along with the rest of the
@@ -98,7 +114,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
     private     LogicalSystem        logicalSystem;
     private     Grammar              grammar;
     private     VerifyProofs         verifyProofs;
-    private     Messages             messages;
+    private     MessageHandler       messages;
     private     TheoremLoader        theoremLoader;
 
     private     int                  newProofCaretCharNbr
@@ -181,7 +197,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
      *                  error and informational messages.
      *  @return initializedOK flag.
      */
-    public boolean initializeLookupTables(Messages messages) {
+    public boolean initializeLookupTables(MessageHandler messages) {
         this.messages             = messages;
 
         initializedOK             =
@@ -225,7 +241,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
      *  <p>
      *  @return Messages object.
      */
-    public Messages verifyAllProofs() {
+    public MessageHandler verifyAllProofs() {
         verifyProofs.
             verifyAllProofs(
                 messages,
@@ -243,7 +259,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
      *  <p>
      *  @return Messages object.
      */
-    public Messages loadTheoremsFromMMTFolder() {
+    public MessageHandler loadTheoremsFromMMTFolder() {
         try {
             theoremLoader.
                 loadTheoremsFromMMTFolder(
@@ -265,7 +281,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
      *  <p>
      *  @return Messages object.
      */
-    public Messages extractTheoremToMMTFolder(Theorem theorem) {
+    public MessageHandler extractTheoremToMMTFolder(Theorem theorem) {
         try {
             theoremLoader.
                 extractTheoremToMMTFolder(
@@ -629,7 +645,17 @@ public class ProofAsst implements TheoremLoaderCommitListener {
      *  @return ProofWorksheet unified.
      */
     public ProofWorksheet unify(boolean           renumReq,
+            String            proofText,
+            PreprocessRequest preprocessRequest,
+            StepRequest       stepRequest,
+            TLRequest         tlRequest,
+            int               inputCursorPos) {
+    	return unify(renumReq, proofText, "Proof Text", preprocessRequest, stepRequest, tlRequest, inputCursorPos);
+    }
+    
+    public ProofWorksheet unify(boolean           renumReq,
                                 String            proofText,
+                                Object			  sourceId,
                                 PreprocessRequest preprocessRequest,
                                 StepRequest       stepRequest,
                                 TLRequest         tlRequest,
@@ -646,7 +672,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
             }
             catch (ProofAsstException e) {
                 messages.accumErrorMessage(
-                    e.getMessage());
+                    e.position, e.getMessage());
                 return updateWorksheetWithException(null,new SourcePosition(null, -1, -1, -1, -1));
             }
         }
@@ -655,6 +681,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
         ProofWorksheet proofWorksheet
                                   =
             getParsedProofWorksheet(proofTextEdited,
+            						sourceId,
                                     errorFound,
                                     inputCursorPos,
                                     stepRequest);
@@ -710,6 +737,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
     public ProofWorksheet tmffReformat(
                                 boolean         inputCursorStep,
                                 String          proofText,
+                                Object 			sourceId,
                                 int             inputCursorPos) {
 
         boolean[] errorFound      = new boolean[1];
@@ -717,6 +745,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
         ProofWorksheet proofWorksheet
                                   =
             getParsedProofWorksheet(proofText,
+            						sourceId,
                                     errorFound,
                                     inputCursorPos,
                                     null);
@@ -988,7 +1017,8 @@ public class ProofAsst implements TheoremLoaderCommitListener {
 
                 if (proofWorksheet.hasStructuralErrors()) {
                     messages.accumErrorMessage(
-                        PaConstants.ERRMSG_PA_IMPORT_STRUCT_ERROR_1
+                    	proofWorksheet.proofTextTokenizer.getCurrentPosition(),
+                    	PaConstants.ERRMSG_PA_IMPORT_STRUCT_ERROR_1
                         + PaConstants.ERRMSG_THEOREM_CAPTION
                         + getErrorLabelIfPossible(proofWorksheet)
                         + PaConstants.ERRMSG_PA_IMPORT_STRUCT_ERROR_2
@@ -1587,11 +1617,12 @@ public class ProofAsst implements TheoremLoaderCommitListener {
      *  @return ProofWorksheet unified.
      */
     private ProofWorksheet getParsedProofWorksheet(
-                                        String      proofText,
-                                        boolean[]   errorFound,
-                                        int         inputCursorPos,
-                                        StepRequest stepRequest) {
-
+            String      proofText,
+            Object		sourceId,		
+            boolean[]   errorFound,
+            int         inputCursorPos,
+            StepRequest stepRequest) {
+    
         ProofWorksheetParser proofWorksheetParser
                                   = null;
         ProofWorksheet       proofWorksheet
@@ -1600,7 +1631,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
         try {
             proofWorksheetParser  = new ProofWorksheetParser(
                                             proofText,
-                                            "Proof Text",
+                                            sourceId,
                                             proofAsstPreferences,
                                             logicalSystem,
                                             grammar,
@@ -1615,13 +1646,14 @@ public class ProofAsst implements TheoremLoaderCommitListener {
 
         }
         catch (ProofAsstException e) {
-            messages.accumErrorMessage(e.getMessage());
+            messages.accumErrorMessage(e.position, e.getMessage());
             proofWorksheet        =
                  updateWorksheetWithException(proofWorksheet,
                                               e.position);
         }
         catch (MMIOError e) {
             messages.accumErrorMessage(
+            	e.getPosition(),
                 PaConstants.ERRMSG_PA_UNIFY_IO_ERROR_1
                 + PaConstants.ERRMSG_THEOREM_CAPTION
                 + getErrorLabelIfPossible(proofWorksheet)
@@ -1634,6 +1666,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
         catch (IOException e) {
             e.printStackTrace();
             messages.accumErrorMessage(
+                proofWorksheet!=null ? proofWorksheet.proofTextTokenizer.getCurrentPosition() : null,
                 PaConstants.ERRMSG_PA_UNIFY_SEVERE_ERROR_1
                 + PaConstants.ERRMSG_THEOREM_CAPTION
                 + getErrorLabelIfPossible(proofWorksheet)
@@ -1941,6 +1974,7 @@ public class ProofAsst implements TheoremLoaderCommitListener {
         }
         catch (VerifyException e) {
             messages.accumErrorMessage(
+                proofWorksheet!=null ? proofWorksheet.proofTextTokenizer.getCurrentPosition() : null,
                 PaConstants.ERRMSG_PA_EXPORT_PV_ERROR_1
                 + PaConstants.ERRMSG_THEOREM_CAPTION
                 + " "

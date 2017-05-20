@@ -20,14 +20,16 @@
  */
 
 package mmj.util;
-import java.io.*;
-import java.util.Map;
-import java.util.ArrayList;
-import mmj.mmio.*;
-import mmj.lang.*;
-import mmj.verify.*;
-import mmj.pa.*;
-import mmj.tmff.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import mmj.lang.VerifyException;
+import mmj.mmio.MMIOException;
+import mmj.tmff.TMFFConstants;
+import mmj.tmff.TMFFFormat;
+import mmj.tmff.TMFFPreferences;
+import mmj.tmff.TMFFScheme;
+import mmj.verify.Grammar;
 
 /**
  *  Responsible for building a TMFFPreferences object,

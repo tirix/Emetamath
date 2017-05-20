@@ -15,9 +15,9 @@
  */
 
 package mmj.tmff;
+import mmj.lang.Formula;
 import mmj.lang.ParseNode;
 import mmj.lang.ParseTree;
-import mmj.lang.Formula;
 
 /**
  *  TMFFMethod is the base class for text mode formula

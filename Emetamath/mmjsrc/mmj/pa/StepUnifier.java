@@ -13,7 +13,14 @@
  */
 
 package mmj.pa;
-import mmj.lang.*;
+import mmj.lang.Hyp;
+import mmj.lang.LangConstants;
+import mmj.lang.LogHyp;
+import mmj.lang.ParseNode;
+import mmj.lang.VarHyp;
+import mmj.lang.VerifyException;
+import mmj.lang.WorkVarHyp;
+import mmj.lang.WorkVarManager;
 
 /**
  *  StepUnifier implements an algorithm based on Robinson's

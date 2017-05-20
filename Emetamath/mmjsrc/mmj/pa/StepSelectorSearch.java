@@ -23,12 +23,20 @@
 
 package mmj.pa;
 
-import  java.util.ArrayList;
-import  java.util.Iterator;
-import  java.util.Collections;
-import  mmj.lang.*;
-import  mmj.verify.*;
-import  mmj.util.MergeSortedArrayLists;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+
+import mmj.lang.Assrt;
+import mmj.lang.Cnst;
+import mmj.lang.Formula;
+import mmj.lang.Hyp;
+import mmj.lang.LogHyp;
+import mmj.lang.ParseNode;
+import mmj.lang.ParseTree;
+import mmj.lang.VerifyException;
+import mmj.util.MergeSortedArrayLists;
+import mmj.verify.VerifyProofs;
 
 /**
  *  StepSelectorSearch builds StepSelectorResults for
@@ -141,15 +149,13 @@ public class StepSelectorSearch {
      *  "***END***" with Assrt = null (or n items + "***MORE***").
      *  <p>
      *  @param derivStep DerivationStep from ProofWorksheet
-     *  @return StepSelectorResults containing unifying assertions
+     *  @return StepSelectorStore containing unifying assertions
      *          and corresponding formulas.
      *  @throws VerifyException if not enough allocatable WorkVars.
      */
-    public StepSelectorResults loadStepSelectorResults(
+    public StepSelectorStore loadStepSelectorResults(
                                        DerivationStep derivStep)
                                  throws VerifyException {
-
-        boolean storeOverflow     = false;
 
         this.derivStep            = derivStep;
 
@@ -158,7 +164,8 @@ public class StepSelectorSearch {
         StepSelectorStore store   =
             StepSelectorStore.
                 createStepSelectorStore(
-                    proofAsstPreferences);
+                    proofAsstPreferences,
+                    derivStep.step);
 
         /* count and double-check input
          */
@@ -233,8 +240,6 @@ public class StepSelectorSearch {
                     }
                     if (isAssrtUnifiable()) {
                         if (addAssrtToStore(store)) { //isFull()
-                            storeOverflow
-                                  = true;
                             break hypLoop;
                         }
                     }
@@ -254,11 +259,7 @@ public class StepSelectorSearch {
             }
             break hypLoop;
         }
-
-        return store.
-                   createStepSelectorResults(
-                       derivStep.step,
-                       storeOverflow);
+        return store;
     }
 
     /**

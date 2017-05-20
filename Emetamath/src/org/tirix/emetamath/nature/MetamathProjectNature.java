@@ -6,9 +6,12 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 
 import mmj.lang.Axiom;
 import mmj.lang.BookManager;
@@ -17,21 +20,26 @@ import mmj.lang.LangConstants;
 import mmj.lang.LogicalSystem;
 import mmj.lang.MObj;
 import mmj.lang.MessageHandler;
-import mmj.lang.Messages;
 import mmj.lang.SeqAssigner;
 import mmj.lang.Stmt;
 import mmj.lang.Sym;
 import mmj.lang.Var;
-import mmj.mmio.IncludeFile;
+import mmj.lang.VerifyException;
+import mmj.lang.WorkVarManager;
 import mmj.mmio.MMIOConstants;
 import mmj.mmio.MMIOException;
 import mmj.mmio.SourcePosition;
 import mmj.mmio.Systemizer;
 import mmj.mmio.IncludeFile.ReaderProvider;
-import mmj.util.RunParmArrayEntry;
+import mmj.mmio.Systemizer.DependencyListener;
+import mmj.pa.ProofAsst;
+import mmj.pa.ProofAsstPreferences;
+import mmj.tl.TheoremLoader;
+import mmj.tl.TlPreferences;
 import mmj.util.UtilConstants;
 import mmj.verify.Grammar;
 import mmj.verify.GrammarConstants;
+import mmj.verify.VerifyProofs;
 
 import org.eclipse.core.resources.ICommand;
 import org.eclipse.core.resources.IContainer;
@@ -41,7 +49,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IProjectNature;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -50,8 +57,14 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.QualifiedName;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.ui.part.FileEditorInput;
-import org.tirix.emetamath.popup.actions.SetMainFileAction;
+import org.eclipse.jface.viewers.ILabelProvider;
+import org.eclipse.swt.graphics.RGB;
+import org.eclipse.ui.IFileEditorInput;
+import org.tirix.emetamath.Activator;
+import org.tirix.emetamath.editors.proofassistant.ProofWorksheetDocumentProvider.ProofWorksheetInput;
+import org.tirix.emetamath.views.MMLabelProvider;
+import org.tirix.mmj.MathMLTypeSetting;
+import org.tirix.mmj.TypeSetting;
 
 /**
  * Metamath Project Nature
@@ -67,7 +80,7 @@ import org.tirix.emetamath.popup.actions.SetMainFileAction;
  * @author Thierry
  *
  */
-public class MetamathProjectNature implements IProjectNature {
+public class MetamathProjectNature implements IProjectNature, DependencyListener {
 
 	public static final String MARKER_TYPE = "org.tirix.emetamath.MMProblem";
 
@@ -77,17 +90,28 @@ public class MetamathProjectNature implements IProjectNature {
 	public static final String NATURE_ID = "org.tirix.emetamath.metamathNature";
 	public static final QualifiedName MAINFILE_PROPERTY = new QualifiedName("org.tirix.emetamath", "mainFile");
 	public static final QualifiedName ISMAINFILE_PROPERTY = new QualifiedName("org.tirix.emetamath", "isMainFile");
+	public static final QualifiedName PROVABLE_TYPE_PROPERTY = new QualifiedName("org.tirix.emetamath", "provableType");
+	public static final QualifiedName TYPES_PROPERTY = new QualifiedName("org.tirix.emetamath", "types");
+	public static final QualifiedName COLORS_PROPERTY = new QualifiedName("org.tirix.emetamath", "typeColors");
 	
-	public static final String DEFINITION_PREFIX = "df-";
-	
+	private static final QualifiedName EXPLORER_BASE_URL_PROPERTY = new QualifiedName("org.tirix.emetamath", "explorerBaseUrl");
+
+	public static final String EXPLORER_BASE_URL_DEFAULT_VALUE = "http://us.metamath.org/mpegif/";
+	public static final String PROVABLE_TYPE_DEFAULT_VALUE = "|-";
+	public static final String TYPES_DEFAULT_VALUE = "wff$set$class";
+	public static final String COLORS_DEFAULT_VALUE = "0,0,255$255,0,0$255,0,255";
+	public static final String DEFINITION_PREFIX_DEFAULT_VALUE = "df-";
+
 	private IProject project;
 	
 	/**
-	 * set.mm specific : 
 	 * A table enabling to find the type of each variable
 	 */
+	private Cnst provableType;
+	private List<Cnst> types;
+	private Hashtable<Cnst, RGB> typeColors;
 	private Hashtable<Sym,Stmt> notations;
-	private Cnst provableType, wffType, classType, setType;
+	//private Cnst wffType, classType, setType;
 	
 	/**
 	 * The main file, with which parsing/verification shall start
@@ -100,6 +124,22 @@ public class MetamathProjectNature implements IProjectNature {
 	 */
 	protected MetamathMessageHandler messageHandler = new MetamathMessageHandler();
 
+	/**
+	 * The dependency map : contains the set of files depending on a given file
+	 */
+	protected Map<IFile, Set<IFile>> dependencies = new HashMap<IFile, Set<IFile>>();
+	
+	/**
+	 * A label provider for this nature
+	 */
+	protected MMLabelProvider labelProvider;
+	
+	/**
+	 * The different typesettings
+	 */
+	protected TypeSetting mathMLTypeSetting = new MathMLTypeSetting();
+	
+	
 	/*
 	 * Parameters
 	 */
@@ -109,6 +149,7 @@ public class MetamathProjectNature implements IProjectNature {
     protected boolean        bookManagerEnabledParm;
     protected BookManager    bookManager;
 
+    // TODO move this into (project) preferences
     protected int            seqAssignerIntervalSizeParm;
     protected int            seqAssignerIntervalTblInitialSizeParm;
     protected SeqAssigner    seqAssigner;
@@ -121,6 +162,9 @@ public class MetamathProjectNature implements IProjectNature {
     protected boolean        loadComments;
     protected boolean        loadProofs;
 
+    protected MetamathPreferences preferences;
+    
+    
     protected LogicalSystem  logicalSystem;
 
     protected Systemizer     systemizer;
@@ -129,12 +173,22 @@ public class MetamathProjectNature implements IProjectNature {
 
 	protected boolean        logicalSystemLoaded;
 	private ArrayList<SystemLoadListener> listeners;
-	
-	protected ReaderProvider readerProvider;
-	
+
+	protected WorkVarManager workVarManager;
+	protected VerifyProofs	 verifyProofs;
+	protected boolean		 allProofsVerifiedSuccessfully;
+	protected boolean		 allStatementsParsedSuccessfully;
+	protected ProofAsst      proofAsst;
+
+    protected ReaderProvider readerProvider;
+
+	private TheoremLoader theoremLoader;
+
     public MetamathProjectNature() {
     	listeners = new ArrayList<SystemLoadListener>();
-   	}
+    	types = new ArrayList<Cnst>();
+		typeColors = new Hashtable<Cnst, RGB>();
+ 	}
     
 	/*
 	 * (non-Javadoc)
@@ -197,6 +251,7 @@ public class MetamathProjectNature implements IProjectNature {
 	public void setProject(IProject project) {
 		this.project = project;
     	readerProvider = new EclipseReaderProvider(project);
+    	preferences = new MetamathPreferences();
     	messageHandler.setDefaultResource(project);
     	initStateVariables();
 		try {
@@ -298,6 +353,7 @@ public class MetamathProjectNature implements IProjectNature {
 	        systemizer        =
 	        new Systemizer(messageHandler,
 	                       logicalSystem);
+	        systemizer.setDependencyListener(this);
 	    }
 	    else {
 	    	systemizer.clearFilesAlreadyLoaded(); // TODO remove only the specified file
@@ -388,9 +444,147 @@ public class MetamathProjectNature implements IProjectNature {
     public void clearGrammar() {
     	grammar.clear();
     }
-    
+
+
+    /**
+     *  Return initialized VerifyProofs object
+     *
+     *  @return VerifyProofs object
+     */
+    public VerifyProofs getVerifyProofs() {
+        if (verifyProofs == null) {
+            verifyProofs          = new VerifyProofs();
+            allProofsVerifiedSuccessfully
+                                  = false;
+//            allStatementsParsedSuccessfully
+//                                  = false;
+        }
+        return verifyProofs;
+    }
+
+
+    /**
+     *  Fetch a WorkVarManager object.
+     *  <p>
+     *  Requires that a LogicalSystem be loaded with a .mm
+     *  file and that an initialized Grammar object be
+     *  available.
+     *  <p>
+     *  @return WorkVarManager object, ready to go, or null.
+     */
+    public WorkVarManager getWorkVarManager() {
+
+        if (workVarManager != null) {
+            return workVarManager;
+        }
+
+        if (grammar.getGrammarInitialized()) {
+            workVarManager        = new WorkVarManager(grammar);
+        }
+        else {
+            messageHandler.accumErrorMessage(
+                UtilConstants.ERRMSG_WV_MGR_REQUIRES_GRAMMAR_INIT);
+        }
+
+        return workVarManager;
+    }
+
+
+    /**
+     *  Fetch a TheoremLoader object.
+     *  <p>
+     *
+     *  @return TheoremLoader object, ready to go, or null;.
+     */
+    public TheoremLoader getTheoremLoader() {
+
+        if (theoremLoader != null) {
+            return theoremLoader;
+        }
+
+        TlPreferences tlPreferences
+                                  = preferences.getTlPreferences(logicalSystem);
+
+        theoremLoader             =
+            new TheoremLoader(tlPreferences);
+
+        return theoremLoader;
+    }
+
+    /**
+     *  Fetch a ProofAsst object.
+     *  <p>
+     *
+     *  @return ProofAsst object, ready to go, or null;.
+     */
+    public ProofAsst getProofAsst() {
+
+        if (proofAsst != null) {
+            return proofAsst;
+        }
+
+        getLogicalSystem();
+        getVerifyProofs();
+        getGrammar();
+
+        try {
+	        if (grammar.getGrammarInitialized() &&
+	        	allStatementsParsedSuccessfully) {
+	
+	            ProofAsstPreferences proofAsstPreferences
+	                                  = preferences.getProofAsstPreferences();
+	
+	            WorkVarManager workVarManager = getWorkVarManager();
+	
+	            if (!workVarManager.areWorkVarsDeclared()) {
+						workVarManager.
+						    declareWorkVars(grammar,
+						                    logicalSystem);
+	            }
+	
+	            proofAsstPreferences.
+	                setWorkVarManager(
+	                    workVarManager);
+	
+	            TheoremLoader theoremLoader = getTheoremLoader();
+	
+	            proofAsst             =
+	                new ProofAsst(proofAsstPreferences,
+	                              logicalSystem,
+	                              grammar,
+	                              verifyProofs,
+	                              theoremLoader);
+	
+	            if (!proofAsst.getInitializedOK()) {
+	                proofAsst.initializeLookupTables(messageHandler);
+	            }
+	
+	            logicalSystem.
+	                accumTheoremLoaderCommitListener(
+	                    proofAsst);
+	
+	        }
+	        else {
+	            proofAsst             = null;
+	            messageHandler.accumErrorMessage(
+	                UtilConstants.ERRMSG_PA_GUI_REQUIRES_GRAMMAR_INIT);
+	        }
+	
+	        return proofAsst;
+
+        } catch (VerifyException e) {
+			messageHandler.accumErrorMessage(e.getMessage());
+			return null;
+		}
+    }
+
+
     public BookManager getBookManager() {
 		return bookManager;
+	}
+
+	public TypeSetting getMathMLTypeSetting() {
+		return mathMLTypeSetting;
 	}
 
 	public void addSystemLoadListener(SystemLoadListener l) {
@@ -407,30 +601,73 @@ public class MetamathProjectNature implements IProjectNature {
 	
 	private void initializeTypes() {
 		notations = new Hashtable<Sym, Stmt>();
-		wffType = (Cnst)logicalSystem.getSymTbl().get("wff");
-		provableType = (Cnst)logicalSystem.getSymTbl().get("|-"); // TODO replace by correct default value
-		setType = (Cnst)logicalSystem.getSymTbl().get("set");
-		classType = (Cnst)logicalSystem.getSymTbl().get("class");
+		
+		String provableTypeProperty = null;
+		String typesProperty = null;
+		String colorsProperty = null;
+		try {
+			provableTypeProperty = getProvableTypeString();
+			typesProperty = getProject().getPersistentProperty(TYPES_PROPERTY);
+			colorsProperty = getProject().getPersistentProperty(COLORS_PROPERTY);
+		}
+		catch(CoreException e) {}
+		if(provableTypeProperty == null) provableTypeProperty = PROVABLE_TYPE_DEFAULT_VALUE;
+		if(typesProperty == null) typesProperty = TYPES_DEFAULT_VALUE;
+		if(colorsProperty == null) colorsProperty = COLORS_DEFAULT_VALUE;
+
+		// get the 'provable' type
+		provableType = (Cnst)logicalSystem.getSymTbl().get(provableTypeProperty);
+
+		// get the other types
+		for(String type:typesProperty.split("\\$")) types.add((Cnst)logicalSystem.getSymTbl().get(type));
+
+		// get the coloring attributes for the other types
+		String[] colors = colorsProperty.split("\\$");
+		for(int i=0;i<colors.length && i<types.size();i++) {
+			String[] rgb = colors[i].split(",");
+			RGB color = new RGB(Integer.parseInt(rgb[0]), Integer.parseInt(rgb[1]), Integer.parseInt(rgb[2]));
+			typeColors.put(types.get(i), color);
+		}
+		if(colors.length != types.size()) System.out.println("Project "+getProject()+": "+types.size()+" types ("+types+") but "+colors.length+" colors ("+colors+") defined!\n");
+		
+//		wffType = (Cnst)logicalSystem.getSymTbl().get("wff");
+//		setType = (Cnst)logicalSystem.getSymTbl().get("set");
+//		classType = (Cnst)logicalSystem.getSymTbl().get("class");
 		
 		grammar = getGrammar();
 		initializeGrammar(messageHandler);
 	}
 	
-	public boolean isWff(Var var) {
-		if(!logicalSystemLoaded) return false;
-		return getType(var).equals(wffType);
+	public Map<Cnst, RGB> getTypeColors() {
+		return typeColors;
 	}
 	
-	public boolean isSet(Var var) {
+	public boolean isType(Sym sym) {
+		if(!(sym instanceof Cnst)) return false;
 		if(!logicalSystemLoaded) return false;
-		return getType(var).equals(setType);
+		if(sym.equals(provableType)) return true;
+		for(Cnst type:types) if(type.equals(sym)) return true;
+//		if(sym.equals(wffType)) return true;
+//		if(sym.equals(setType)) return true;
+//		if(sym.equals(classType)) return true;
+		return false;
 	}
 	
-	public boolean isClass(Var var) {
-		if(!logicalSystemLoaded) return false;
-		return getType(var).equals(classType);
-	}
-	
+//	public boolean isWff(Var var) {
+//		if(!logicalSystemLoaded) return false;
+//		return getType(var).equals(wffType);
+//	}
+//	
+//	public boolean isSet(Var var) {
+//		if(!logicalSystemLoaded) return false;
+//		return getType(var).equals(setType);
+//	}
+//	
+//	public boolean isClass(Var var) {
+//		if(!logicalSystemLoaded) return false;
+//		return getType(var).equals(classType);
+//	}
+
 	/**
 	 * Return the type of a symbol sym.
 	 * @param sym
@@ -441,7 +678,7 @@ public class MetamathProjectNature implements IProjectNature {
 		if(notation != null) return notation.getTyp();
 		else return null;
 	}
-	
+
 	/**
 	 * Return the notation statement for a symbol sym.
 	 * Search for the first Axiom or Logical Hypothesis ($f) where "sym" is the complete formula. 
@@ -472,7 +709,7 @@ public class MetamathProjectNature implements IProjectNature {
 	public Axiom getDefinition(Sym sym) {
 		Collection<Stmt> statements = logicalSystem.getStmtTbl().values();
 		for(Stmt stmt:statements) {
-			if(stmt instanceof Axiom && stmt.getLabel().startsWith(DEFINITION_PREFIX)) {
+			if(stmt instanceof Axiom && stmt.getLabel().startsWith(DEFINITION_PREFIX_DEFAULT_VALUE)) {
 				Sym[] expr = stmt.getFormula().getExpr();
 				if(expr[0].equals(sym)) {
 					return (Axiom)stmt;
@@ -482,18 +719,50 @@ public class MetamathProjectNature implements IProjectNature {
 		return null;
 	}
 
-	public static MetamathProjectNature getNature(Object inputElement) {
+	public Cnst getProvableType() {
+		return provableType;
+	}
+
+	public String getProvableTypeString() throws CoreException {
+		String provableTypeString =  getProject().getPersistentProperty(PROVABLE_TYPE_PROPERTY);
+		if(provableTypeString == null) provableTypeString = PROVABLE_TYPE_DEFAULT_VALUE;
+		return provableTypeString;
+	}
+
+	public void setProvableType(Cnst provableType) throws CoreException {
+		this.provableType = provableType;
+		getProject().setPersistentProperty(PROVABLE_TYPE_PROPERTY, provableType.getId());
+	}
+
+	// TODO - generalize...
+	public static MetamathProjectNature getNature(IResource resource) {
 		try {
-			FileEditorInput input = (FileEditorInput)inputElement;
-			return (MetamathProjectNature)input.getFile().getProject().getNature(MetamathProjectNature.NATURE_ID);
+			return (MetamathProjectNature)resource.getProject().getNature(MetamathProjectNature.NATURE_ID);
 		} catch (CoreException e) {
-			//e.printStackTrace();
+			e.printStackTrace();
 			return null;
 		}
 	}
 
+	public static MetamathProjectNature getNature(Object inputElement) {
+		if(inputElement instanceof IFileEditorInput) return getNature(((IFileEditorInput)inputElement).getFile());
+		if(inputElement instanceof ProofWorksheetInput) return ((ProofWorksheetInput)inputElement).getNature();
+		if(inputElement instanceof MetamathProjectNature) return (MetamathProjectNature)inputElement;
+		Exception e = new CoreException(new Status(Status.ERROR, Activator.PLUGIN_ID, "Cannot adapt to Metamath nature from "+inputElement));
+		e.printStackTrace();
+		return null;
+	}
+
 	public MessageHandler getMessageHandler() {
 		return messageHandler;
+	}
+
+	public MMLabelProvider getLabelProvider() {
+		if(labelProvider == null) {
+			labelProvider = new MMLabelProvider();
+			labelProvider.setNature(this);
+		}
+		return labelProvider;
 	}
 	
 	public IResource getMainFile() throws CoreException {
@@ -526,6 +795,39 @@ public class MetamathProjectNature implements IProjectNature {
 		buildJob.schedule();
 	}
 
+	public String getWebExplorerURL() {
+		String webExplorerURL = null;
+		try {
+			webExplorerURL = getProject().getPersistentProperty(EXPLORER_BASE_URL_PROPERTY);
+		} catch (CoreException e) {
+		}
+		if(webExplorerURL == null) webExplorerURL = EXPLORER_BASE_URL_DEFAULT_VALUE;
+		return webExplorerURL;
+	}
+
+	public void setWebExplorerURL(String baseURL) throws CoreException {
+		getProject().setPersistentProperty(EXPLORER_BASE_URL_PROPERTY, baseURL);
+	}
+
+	@Override
+	public void addDependency(Object includerSourceId, Object includedSourceId) {
+		Set<IFile> dependentList = dependencies.get((IFile)includedSourceId);
+		if(dependentList == null) {
+			dependentList = new HashSet<IFile>();
+			dependencies.put((IFile)includedSourceId, dependentList);
+		}
+		dependentList.add((IFile)includerSourceId);
+	}
+	
+	/**
+	 * Returns the set of files depending of the given file
+	 * @param fromSourceId
+	 * @return
+	 */
+	public Set<IFile> getDependencies(IFile fromFile) {
+		return dependencies.get((IFile)fromFile);
+	}
+
 	public static interface SystemLoadListener {
 		public void systemLoaded();
 	}
@@ -540,6 +842,15 @@ public class MetamathProjectNature implements IProjectNature {
 		Sym sym = (Sym)logicalSystem.getSymTbl().get(objectName);
 		if(sym != null) return sym;
 
+		Stmt stmt = (Stmt)logicalSystem.getStmtTbl().get(objectName);
+		if(stmt != null) return stmt;
+
+		return null;
+	}
+	
+	public Stmt getStmt(String objectName) {
+		if(logicalSystem == null) return null;
+		
 		Stmt stmt = (Stmt)logicalSystem.getStmtTbl().get(objectName);
 		if(stmt != null) return stmt;
 
@@ -639,9 +950,17 @@ public class MetamathProjectNature implements IProjectNature {
 		public String getOutputMessageText() {
 			throw new RuntimeException("This implementation does not provide consolidated text output.");
 		}
+
+		public void clearMessages(IResource resource) {
+			try {
+				resource.deleteMarkers(MetamathProjectNature.MARKER_TYPE, false, IResource.DEPTH_ZERO);
+			} catch (CoreException ce) {
+			}
+		}
 	}
 
 	protected static void addMarker(SourcePosition position, String message, int severity) {
+		if(position == null) { System.out.println("Skipped marker for "+message); return; }
 		try {
 			IResource res = (IResource)position.sourceId;
 			refinePosition(position);

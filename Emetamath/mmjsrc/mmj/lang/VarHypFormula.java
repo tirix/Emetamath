@@ -11,7 +11,7 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.Map;
 
 /**
  *  VarHypFormula is a convenience class for VarHyp.

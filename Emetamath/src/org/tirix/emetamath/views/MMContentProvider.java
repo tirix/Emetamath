@@ -1,4 +1,4 @@
-package org.tirix.emetamath.editors;
+package org.tirix.emetamath.views;
 
 
 import java.util.ArrayList;
@@ -6,42 +6,42 @@ import java.util.ArrayList;
 import mmj.lang.BookManager;
 import mmj.lang.Chapter;
 import mmj.lang.LangConstants;
-import mmj.lang.LogicalSystem;
 import mmj.lang.MObj;
 import mmj.lang.Section;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.ui.part.FileEditorInput;
 import org.tirix.emetamath.Activator;
-import org.tirix.emetamath.MetamathUI;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
 
 public class MMContentProvider implements ITreeContentProvider, SystemLoadListener {
 	MetamathProjectNature nature;
 	MObj[][] sectionMObjArray;
-
+	
 	public void setNature(MetamathProjectNature nature) {
 		this.nature = nature;
 	}
 	
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-		if(newInput != null) {
+		if(newInput instanceof FileEditorInput) {
 			nature = MetamathProjectNature.getNature(newInput);
+			if(nature != null) nature.addSystemLoadListener(this);
+		}
+		if(newInput instanceof MetamathProjectNature) {
+			nature = (MetamathProjectNature)newInput;
 			if(nature != null) nature.addSystemLoadListener(this);
 		}
 	}
 
 	public Object[] getElements(Object inputElement) {
-		if(nature == null) {
-			MetamathProjectNature nature = MetamathProjectNature.getNature(inputElement);
-			if(nature == null) return new Object[] { "Could not load nature" };
-		}
+		if(nature == null && inputElement instanceof FileEditorInput) nature = MetamathProjectNature.getNature(inputElement);
+		if(nature == null && inputElement instanceof MetamathProjectNature) nature = (MetamathProjectNature)inputElement;
+		if(nature == null) return new Object[] { "Could not load nature" };
 		BookManager bookManager = nature.getBookManager();
 		if(bookManager == null) return new Object[] { "File not parsed yet" }; 
 		return bookManager.getChapterList().toArray();

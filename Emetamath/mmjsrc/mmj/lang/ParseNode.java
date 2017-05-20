@@ -47,7 +47,7 @@
  */
 
 package mmj.lang;
-import  java.util.ArrayList;
+import java.util.ArrayList;
 
 /**
  *  Parse Node is an n-way tree node for Metamath Stmt trees.

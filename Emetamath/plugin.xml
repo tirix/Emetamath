@@ -25,6 +25,23 @@
             id="org.tirix.emetamath.metamathBuilder">
       </builder>
    </extension>
+   <extension
+         point="org.eclipse.core.expressions.propertyTesters">
+      <propertyTester
+            class="org.tirix.emetamath.nature.BuildStatusTester"
+            id="org.tirix.emetamath.buildStatusTester"
+            namespace="org.tirix.emetamath"
+            properties="isLogicalSystemLoaded"
+            type="org.tirix.emetamath.nature.MetamathProjectNature">
+      </propertyTester>
+      <propertyTester
+            class="org.tirix.emetamath.nature.StepSelectorStoreTester"
+            id="org.tirix.emetamath.hasMoreItemsTest"
+            namespace="org.tirix.emetamath"
+            properties="hasMoreItems"
+            type="mmj.pa.StepSelectorStore">
+      </propertyTester>
+   </extension>
    <extension point="org.eclipse.ui.ide.projectNatureImages">
 	  <image 
 	    id="org.eclipse.ui.javaNatureImage"
@@ -47,11 +64,13 @@
             </separator>
          </menu>
          <action
-               label="Set as Main metamath file"
                class="org.tirix.emetamath.popup.actions.SetMainFileAction"
-               menubarPath="org.tirix.emetamath.menu1/group1"
                enablesFor="1"
-               id="org.tirix.emetamath.SetMainFileAction">
+               icon="icons/setMain.gif"
+               id="org.tirix.emetamath.SetMainFileAction"
+               label="Set as Main metamath file"
+               menubarPath="additions">
+			 <!-- menubarPath was ="org.tirix.emetamath.menu1/group1" -->
 	         <enablement>
 	           <and>
 		           <objectState
@@ -70,7 +89,7 @@
    </extension>
    <extension
          id="org.tirix.emetamath.MMProblem"
-         name="MM Problem"
+         name="Metamath Problem"
          point="org.eclipse.core.resources.markers">
       <super
             type="org.eclipse.core.resources.problemmarker">
@@ -115,19 +134,20 @@
     </extension>
    <extension point="org.eclipse.ui.editors">
       <editor
-            name="Metamath Editor"
+            class="org.tirix.emetamath.editors.MetamathEditor"
+            contributorClass="org.eclipse.ui.texteditor.BasicTextEditorActionContributor"
             extensions="mm"
             icon="icons/mmFile.gif"
-            contributorClass="org.tirix.emetamath.editors.MetamathEditorContributor"
-            class="org.tirix.emetamath.editors.MetamathEditor"
-            id="org.tirix.emetamath.MetamathEditor">
+            id="org.tirix.emetamath.MetamathEditor"
+            name="Metamath Editor">
       </editor>
       <editor
-            name="Metamath Proof Assistant"
+            class="org.tirix.emetamath.editors.proofassistant.ProofAssistantEditor"
+            contributorClass="org.eclipse.ui.texteditor.BasicTextEditorActionContributor"
             extensions="mmp"
             icon="icons/mmpFile.gif"
-            class="org.tirix.emetamath.editors.proofassistant.ProofAssistantEditor"
-            id="org.tirix.emetamath.ProofAssistant">
+            id="org.tirix.emetamath.ProofAssistant"
+            name="Metamath Proof Assistant">
       </editor>
    </extension>
    <extension point="org.eclipse.ui.editors.documentProviders">
@@ -138,8 +158,13 @@
       </provider>
       <provider
       		extensions="mmp"
-            class="org.tirix.emetamath.editors.proofassistant.ProofDocumentProvider"
-            id="org.tirix.emetamath.ProofDocumentProvider">
+            class="org.tirix.emetamath.editors.proofassistant.ProofFileDocumentProvider"
+            id="org.tirix.emetamath.ProofFileDocumentProvider">
+      </provider>
+      <provider
+            class="org.tirix.emetamath.editors.proofassistant.ProofWorksheetDocumentProvider"
+            id="org.tirix.emetamath.ProofWorksheetDocumentProvider"
+            inputTypes="org.tirix.emetamath.editors.proofassistant.ProofWorksheetDocumentProvider$ProofWorksheetInput">
       </provider>
    </extension>
    <extension
@@ -166,6 +191,12 @@
        id="org.tirix.emetamath.openDefinitionCommand"
        name="Open Definition">
 	</command>
+ <command
+       categoryId="org.tirix.emetamath.commandCategory"
+       description="Open the proof of the selected Metamath theorem in a Proof Assistant Editor"
+       id="org.tirix.emetamath.openInProofAsstCommand"
+       name="Open In Proof Assistant">
+ </command>
 	<command
 	    name="Search References"
 	    categoryId="org.tirix.emetamath.commandCategory"
@@ -178,9 +209,52 @@
             id="org.tirix.emetamath.unifyCommand">
       </command>
       <command
-            name="StepSelector"
             categoryId="org.tirix.emetamath.commandCategory"
-            id="org.tirix.emetamath.stepSelectorCommand">
+            description="Search for unification steps and open the step selector view"
+            id="org.tirix.emetamath.searchStepSelectionCommand"
+            name="Step Selector">
+      </command>
+      <command
+            categoryId="org.tirix.emetamath.commandCategory"
+            description="Show more steps"
+            id="org.tirix.emetamath.showMoreStepsCommand"
+            name="ShowMoreSteps">
+      </command>
+      <command
+            categoryId="org.tirix.emetamath.commandCategory"
+            description="Apply selection to step and unify proof"
+            id="org.tirix.emetamath.applyStepSelectionCommand"
+            name="ApplyStepSelection">
+      </command>
+      <command
+            categoryId="org.tirix.emetamath.commandCategory"
+            description="Clear step selection view"
+            id="org.tirix.emetamath.clearStepSelectionCommand"
+            name="ClearStepSelection">
+      </command>
+      <command
+            categoryId="org.tirix.emetamath.commandCategory"
+            description="Opens the Search Page at the Metamath tab"
+            id="org.tirix.emetamath.search.openMetamathSearchPage"
+            name="Open Metamath Search Page">
+      </command>
+      <command
+            categoryId="org.tirix.emetamath.commandCategory"
+            description="Back to last proof"
+            id="org.tirix.emetamath.browseBackCommand"
+            name="Back to last proof">
+      </command>
+      <command
+            categoryId="org.tirix.emetamath.commandCategory"
+            description="Add a comment around the current selection"
+            id="org.tirix.emetamath.addBlockComment"
+            name="Add Block Comment">
+      </command>
+      <command
+            categoryId="org.tirix.emetamath.commandCategory"
+            description="Remove a comment around the current selection"
+            id="org.tirix.emetamath.removeBlockComment"
+            name="Remove Block Comment">
       </command>
    </extension>
    <extension
@@ -188,74 +262,198 @@
       <handler
             commandId="org.tirix.emetamath.openDeclarationCommand"
             class="org.tirix.emetamath.handlers.OpenDeclarationHandler">
-	    <activeWhen>
-	      <with variable="activePartId">
-		    <equals value="org.tirix.emetamath.MetamathEditor"/>
-		  </with>
-	    </activeWhen>
+         <enabledWhen>
+            <with
+                  variable="activePart">
+               <adapt
+                     type="org.tirix.emetamath.nature.MetamathProjectNature">
+                  <test
+                        property="org.tirix.emetamath.isLogicalSystemLoaded">
+                  </test>
+               </adapt>
+            </with>
+         </enabledWhen>
       </handler>
       <handler
             class="org.tirix.emetamath.handlers.OpenNotationHandler"
             commandId="org.tirix.emetamath.openNotationCommand">
-         <activeWhen>
+         <enabledWhen>
             <with
-                  variable="activePartId">
-               <equals
-                     value="org.tirix.emetamath.MetamathEditor">
-               </equals>
+                  variable="activePart">
+               <adapt
+                     type="org.tirix.emetamath.nature.MetamathProjectNature">
+                  <test
+                        property="org.tirix.emetamath.isLogicalSystemLoaded">
+                  </test>
+               </adapt>
             </with>
-         </activeWhen>
+         </enabledWhen>
       </handler>
       <handler
             class="org.tirix.emetamath.handlers.OpenDefinitionHandler"
             commandId="org.tirix.emetamath.openDefinitionCommand">
-         <activeWhen>
+         <enabledWhen>
             <with
-                  variable="activePartId">
-               <equals
-                     value="org.tirix.emetamath.MetamathEditor">
-               </equals>
+                  variable="activePart">
+               <adapt
+                     type="org.tirix.emetamath.nature.MetamathProjectNature">
+                  <test
+                        property="org.tirix.emetamath.isLogicalSystemLoaded">
+                  </test>
+               </adapt>
             </with>
-         </activeWhen>
+         </enabledWhen>
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.OpenInProofAsstHandler"
+            commandId="org.tirix.emetamath.openInProofAsstCommand">
+         <enabledWhen>
+            <with
+                  variable="activePart">
+               <adapt
+                     type="org.tirix.emetamath.nature.MetamathProjectNature">
+                  <test
+                        property="org.tirix.emetamath.isLogicalSystemLoaded">
+                  </test>
+               </adapt>
+            </with>
+         </enabledWhen>
       </handler>
       <handler
             commandId="org.tirix.emetamath.SearchReferencesCommand"
             class="org.tirix.emetamath.handlers.SearchReferencesHandler">
-	    <activeWhen>
-	      <with variable="activePartId">
-		    <equals value="org.tirix.emetamath.MetamathEditor"/>
-		  </with>
-	    </activeWhen>
+     <enabledWhen>
+        <with
+              variable="activePart">
+           <adapt
+                 type="org.tirix.emetamath.nature.MetamathProjectNature">
+              <test
+                    property="org.tirix.emetamath.isLogicalSystemLoaded">
+              </test>
+           </adapt>
+        </with>
+     </enabledWhen>
       </handler>
       <handler
             commandId="org.tirix.emetamath.unifyCommand"
-            class="org.tirix.emetamath.handlers.Unifier">
+            class="org.tirix.emetamath.handlers.UnifyHandler">
+         <enabledWhen>
+            <with
+                  variable="activePart">
+               <instanceof
+                     value="org.tirix.emetamath.editors.proofassistant.ProofAssistantEditor">
+               </instanceof>
+               <adapt
+                     type="org.tirix.emetamath.nature.MetamathProjectNature">
+                  <test
+                        property="org.tirix.emetamath.isLogicalSystemLoaded">
+                  </test>
+               </adapt>
+            </with>
+         </enabledWhen>
+      </handler>
+      <handler
+            commandId="org.tirix.emetamath.searchStepSelectionCommand"
+            class="org.tirix.emetamath.handlers.SearchStepSelectionHandler">
+         <enabledWhen>
+            <with
+                  variable="activePart">
+               <instanceof
+                     value="org.tirix.emetamath.editors.proofassistant.ProofAssistantEditor">
+               </instanceof>
+               <adapt
+                     type="org.tirix.emetamath.nature.MetamathProjectNature">
+                  <test
+                        property="org.tirix.emetamath.isLogicalSystemLoaded">
+                  </test>
+               </adapt>
+            </with>
+         </enabledWhen>
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.ShowMoreStepsHandler"
+            commandId="org.tirix.emetamath.showMoreStepsCommand">
+         <enabledWhen>
+            <with
+                  variable="activePart">
+               <adapt
+                     type="mmj.pa.StepSelectorStore">
+                  <test
+                        property="org.tirix.emetamath.hasMoreItems">
+                  </test>
+               </adapt>
+            </with>
+         </enabledWhen>
+      </handler>
+      <handler
+            commandId="org.tirix.emetamath.applyStepSelectionCommand"
+            class="org.tirix.emetamath.handlers.ApplyStepSelectionHandler">
+         <!-- enabledWhen>
+            <with
+                  variable="selection">
+               <count
+                     value="1">
+               </count>
+               <iterate
+                     ifEmpty="false"
+                     operator="and">
+                  <instanceof
+                        value="mmj.pa.StepSelectorItem">
+                  </instanceof></iterate>
+            </with>
+         </enabledWhen -->
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.ClearStepSelectionHandler"
+            commandId="org.tirix.emetamath.clearStepSelectionCommand">
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.OpenSearchPageHandler"
+            commandId="org.tirix.emetamath.search.openMetamathSearchPage">
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.BrowseBackHandler"
+            commandId="org.tirix.emetamath.browseBackCommand">
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.AddBlockComment"
+            commandId="org.tirix.emetamath.addBlockComment">
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.RemoveBlockComment"
+            commandId="org.tirix.emetamath.removeBlockComment">
       </handler>
    </extension>
    <extension
          point="org.eclipse.ui.bindings">
+      <scheme
+            description="Overrides the Ctrl+U and Ctrl+M keys to provide dedicated metamath shortcuts"
+            id="org.tirix.emetamath.keybindingScheme"
+            name="Metamath"
+            parentId="org.eclipse.ui.defaultAcceleratorConfiguration">
+      </scheme>
       <key
             commandId="org.tirix.emetamath.openDeclarationCommand"
             contextId="org.eclipse.ui.contexts.window"
             sequence="F3"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
+            schemeId="org.tirix.emetamath.keybindingScheme">
       </key>
       <key
             commandId="org.tirix.emetamath.SearchReferencesCommand"
             contextId="org.eclipse.ui.contexts.window"
             sequence="M1+M2+G"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
+            schemeId="org.tirix.emetamath.keybindingScheme">
       </key>
       <key
             commandId="org.tirix.emetamath.unifyCommand"
             contextId="org.eclipse.ui.contexts.window"
             sequence="M1+U"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
+            schemeId="org.tirix.emetamath.keybindingScheme">
       </key>
    </extension>
 <extension point="org.eclipse.ui.menus">
 	<menuContribution
-			locationURI="popup:#TextEditorContext?after=group.open">
+			locationURI="popup:org.tirix.emetamath.MetamathEditor?after=group.open">
 		<command
 	         commandId="org.tirix.emetamath.openDeclarationCommand"
 	         id="openDeclaration"
@@ -263,33 +461,134 @@
 	         style="push"
 	         tooltip="Open Declaration">
 		</command>
+  <command
+        commandId="org.tirix.emetamath.openNotationCommand"
+        id="openNotation"
+        style="push"
+        tooltip="Open Notation">
+  </command>
+  <command
+        commandId="org.tirix.emetamath.openDefinitionCommand"
+        id="openDefinition"
+        style="push"
+        tooltip="Open Definition">
+  </command>
+  <command
+        commandId="org.tirix.emetamath.openInProofAsstCommand"
+        id="openInProofAsst"
+        style="push"
+        tooltip="Open In Proof Assistant">
+  </command>
 	</menuContribution>
-  	<menuContribution
-        locationURI="popup:#TextEditorContext?after=group.open">
-     	<command
-			commandId="org.tirix.emetamath.openNotationCommand"
-			id="openNotation"
-			style="push"
-			tooltip="Open Notation">
-     	</command>
-  	</menuContribution>
-  	<menuContribution
-        locationURI="popup:#TextEditorContext?after=group.open">
-     	<command
-			commandId="org.tirix.emetamath.openDefinitionCommand"
-			id="openDefinition"
-			style="push"
-			tooltip="Open Definition">
-     	</command>
-  	</menuContribution>
-		<menuContribution locationURI="popup:#TextEditorContext?after=group.edit">
+		<menuContribution locationURI="popup:org.tirix.emetamath.MetamathEditor?after=group.edit">
+     <menu
+           label="Source"
+           mnemonic="M1+M2+S">
+        <command
+              commandId="org.tirix.emetamath.addBlockComment"
+              id="addBlockComment"
+              style="push">
+        </command>
+        <command
+              commandId="org.tirix.emetamath.removeBlockComment"
+              id="removeBlockComment"
+              style="push">
+        </command>
+     </menu>
 			<command
-				commandId="org.tirix.emetamath.SearchReferencesCommand"
-				mnemonic="M1+M2+G"
-				style="push"
-				tooltip="References">
+         commandId="org.tirix.emetamath.SearchReferencesCommand"
+         icon="icons/mmSearch.gif"
+         mnemonic="M1+M2+G"
+         style="push">
 			</command>
 		</menuContribution>
+  <menuContribution
+        locationURI="popup:org.tirix.emetamath.ProofAssistant?after=group.open">
+     <command
+           commandId="org.tirix.emetamath.openDeclarationCommand"
+           id="openDeclaration"
+           mnemonic="F3"
+           style="push"
+           tooltip="Open Declaration">
+     </command>
+     <command
+           commandId="org.tirix.emetamath.openNotationCommand"
+           id="openNotation"
+           style="push"
+           tooltip="Open Notation">
+     </command>
+     <command
+           commandId="org.tirix.emetamath.openDefinitionCommand"
+           id="openDefinition"
+           style="push"
+           tooltip="Open Definition">
+     </command>
+     <command
+           commandId="org.tirix.emetamath.openInProofAsstCommand"
+           id="openInProofAsst"
+           style="push"
+           tooltip="Open In Proof Assistant">
+     </command>
+  </menuContribution>
+  <menuContribution
+        locationURI="popup:org.tirix.emetamath.ProofAssistant?after=group.edit">
+     <command
+           commandId="org.tirix.emetamath.SearchReferencesCommand"
+           icon="icons/mmSearch.gif"
+           mnemonic="M1+M2+G"
+           style="push">
+     </command>
+  </menuContribution>
+  <menuContribution
+        locationURI="popup:org.tirix.emetamath.ProofAssistant?after=group.edit">
+     <command
+           commandId="org.tirix.emetamath.unifyCommand"
+           icon="icons/mmUnify.gif"
+           style="push">
+     </command>
+     <command
+           commandId="org.tirix.emetamath.searchStepSelectionCommand"
+           icon="icons/mmStep.gif"
+           style="push">
+     </command>
+  </menuContribution>
+  <menuContribution
+        locationURI="popup:org.tirix.emetamath.views.ProofExplorerView?after=open">
+     <command
+           commandId="org.tirix.emetamath.openDeclarationCommand"
+           id="openDeclaration"
+           mnemonic="F3"
+           style="push"
+           tooltip="Open Declaration">
+     </command>
+     <command
+           commandId="org.tirix.emetamath.openDefinitionCommand"
+           id="openDefinition"
+           style="push"
+           tooltip="Open Definition">
+     </command>
+     <command
+           commandId="org.tirix.emetamath.openNotationCommand"
+           id="openNotation"
+           style="push"
+           tooltip="Open Notation">
+     </command>
+     <command
+           commandId="org.tirix.emetamath.openInProofAsstCommand"
+           id="openInProofAsst"
+           style="push"
+           tooltip="Open In Proof Assistant">
+     </command>
+  </menuContribution>
+  <menuContribution
+        locationURI="popup:org.tirix.emetamath.views.ProofExplorerView?after=additions">
+     <command
+           commandId="org.tirix.emetamath.SearchReferencesCommand"
+           icon="icons/mmSearch.gif"
+           mnemonic="M1+M2+G"
+           style="push">
+     </command>
+  </menuContribution>
 		<!-- menuContribution locationURI="menu:org.eclipse.ui.main.menu?after=navigate">
 			<command
 				commandId="org.tirix.emetamath.SearchReferencesCommand"
@@ -301,14 +600,30 @@
 		<menuContribution
             locationURI="menu:org.eclipse.ui.main.menu?after=additions">
          <menu
+               id="org.tirix.emetamath.metamathMenu"
                label="Metamath"
-               mnemonic="M"
-               id="org.tirix.emetamath.metamathMenu">
+               mnemonic="M">
             <command
                   commandId="org.tirix.emetamath.unifyCommand"
-                  mnemonic="U"
-                  id="org.tirix.emetamath.unifyMenu">
+                  icon="icons/mmUnify.gif"
+                  id="org.tirix.emetamath.unifyMenu"
+                  mnemonic="U">
             </command>
+            <command
+                  commandId="org.tirix.emetamath.searchStepSelectionCommand"
+                  icon="icons/mmStep.gif"
+                  id="org.tirix.emetamath.stepSelectorMenu"
+                  mnemonic="S">
+            </command>
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeEditor">
+                  <instanceof
+                        value="org.tirix.emetamath.editors.MetamathEditor">
+                  </instanceof>
+               </with>
+            </visibleWhen>
          </menu>
       </menuContribution>
       <menuContribution
@@ -317,17 +632,105 @@
                id="org.tirix.emetamath.metamathToolbar">
             <command
                   commandId="org.tirix.emetamath.unifyCommand"
-                  icon="icons/aleph0.gif"
+                  icon="icons/mmUnify.gif"
                   tooltip="Unify this proof step"
                   id="org.tirix.emetamath.toolbar.unifyCommand">
             </command>
             <command
-                  commandId="org.tirix.emetamath.stepSelectorCommand"
-                  icon="icons/aleph0.gif"
+                  commandId="org.tirix.emetamath.searchStepSelectionCommand"
+                  icon="icons/mmStep.gif"
                   tooltip="Show Step Selector"
-                  id="org.tirix.emetamath.toolbar.stepSelectorCommand">
+                  id="org.tirix.emetamath.toolbar.searchStepSelectionCommand">
             </command>
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeEditor">
+                  <instanceof
+                        value="org.tirix.emetamath.editors.proofassistant.ProofAssistantEditor">
+                  </instanceof>
+               </with>
+            </visibleWhen>
          </toolbar>
+      </menuContribution>
+      <menuContribution
+            locationURI="toolbar:org.tirix.emetamath.views.StepSelectorView">
+         <command
+               commandId="org.tirix.emetamath.showMoreStepsCommand"
+               icon="icons/mmStepMore.gif"
+               id="org.tirix.emetamath.toolbar.showMoreStepsCommand"
+               tooltip="Show more unifications for this step">
+         </command>
+         <command
+               commandId="org.tirix.emetamath.applyStepSelectionCommand"
+               icon="icons/mmStepApply.gif"
+               id="org.tirix.emetamath.toolbar.applyStepSelectionCommand"
+               tooltip="Apply selection on this step">
+         </command>
+         <command
+               commandId="org.tirix.emetamath.clearStepSelectionCommand"
+               icon="icons/delete.gif"
+               id="org.tirix.emetamath.toolbar.clearStepSelectionCommand"
+               tooltip="Clear step selection view">
+         </command>
+      </menuContribution>
+      <menuContribution
+            locationURI="popup:org.tirix.emetamath.views.StepSelectorView">
+         <command
+               commandId="org.tirix.emetamath.openDeclarationCommand"
+               id="openDeclaration"
+               mnemonic="F3"
+               style="push"
+               tooltip="Open Declaration">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="selection">
+                  <instanceof
+                        value="mmj.lang.Assrt">
+                  </instanceof>
+               </with>
+            </visibleWhen>
+         </command>
+         <command
+               commandId="org.tirix.emetamath.openInProofAsstCommand"
+               id="openInProofAsst"
+               style="push"
+               tooltip="Open In Proof Assistant">
+         </command>
+         <command
+               commandId="org.tirix.emetamath.applyStepSelectionCommand"
+               icon="icons/mmStepApply.gif"
+               id="org.tirix.emetamath.toolbar.applyStepSelectionCommand">
+         </command>
+         <command
+               commandId="org.tirix.emetamath.clearStepSelectionCommand"
+               icon="icons/delete.gif"
+               id="org.tirix.emetamath.toolbar.clearStepSelectionCommand">
+         </command>
+      </menuContribution>
+      <menuContribution locationURI="menu:org.eclipse.search.menu?after=dialogGroup">
+         <command commandId="org.tirix.emetamath.search.openMetamathSearchPage"
+                 label="Metamath..."
+                 icon="icons/mmSearch.gif">
+            <visibleWhen>
+               <with variable="activeContexts">
+                   <iterate operator="or">
+                    <equals value="org.eclipse.jdt.ui.SearchActionSet">
+                    </equals>
+                 </iterate>
+              </with>
+           </visibleWhen>
+         </command>
+      </menuContribution>
+      <menuContribution
+            locationURI="toolbar:org.tirix.emetamath.views.ProofBrowserView">
+         <command
+               commandId="org.tirix.emetamath.browseBackCommand"
+               icon="icons/back_highlighted.gif"
+               id="org.tirix.emetamath.toolbar.browseBackCommand"
+               tooltip="Back to last proof">
+         </command>
       </menuContribution>
 	</extension>
 	<extension
@@ -339,16 +742,44 @@
 			class="org.tirix.emetamath.search.MetamathSearchResultViewPage">
 		</viewPage>
 	</extension>
+ <extension
+       point="org.eclipse.ui.newWizards">
+    <category
+          id="org.tirix.emetamath.categoty.wizards"
+          name="Metamath">
+    </category>
+    <wizard
+          category="org.tirix.emetamath.categoty.wizards"
+          class="org.tirix.emetamath.wizards.MetamathNewFileWizard"
+          icon="icons/mmNewFile.gif"
+          id="org.tirix.emetamath.wizards.MetamathNewFileWizard"
+          name="Metamath File">
+    </wizard>
+    <wizard
+          category="org.tirix.emetamath.categoty.wizards"
+          class="org.tirix.emetamath.wizards.ProofNewFileWizard"
+          icon="icons/mmpNewFile.gif"
+          id="org.tirix.emetamath.wizards.ProofNewFileWizard"
+          name="Metamath Proof File">
+    </wizard>
+    <wizard
+          category="org.tirix.emetamath.categoty.wizards"
+          class="org.tirix.emetamath.wizards.MetamathNewProjectWizard"
+          icon="icons/mmNewProject.gif"
+          id="org.tirix.emetamath.wizards.MetamathNewProjectWizard"
+          name="Metamath Project">
+    </wizard>
+ </extension>
    <extension
          point="org.eclipse.ui.importWizards">
       <category
-            name="Metamath File Import"
-            id="org.tirix.emetamath.importWizards.sampleCategory">
+            name="Metamath"
+            id="org.tirix.emetamath.importWizards.metamathCategory">
       </category>
       <wizard
             name="Metamath File from Local File System"
             icon="icons/aleph0.gif"
-            category="org.tirix.emetamath.importWizards.sampleCategory"
+            category="org.tirix.emetamath.importWizards.metamathCategory"
             class="org.tirix.emetamath.importWizards.ImportFileWizard"
             id="org.tirix.emetamath.importWizards.ImportFileWizard">
          <description>
@@ -356,7 +787,7 @@
          </description>
       </wizard>
       <wizard
-            category="org.tirix.emetamath.importWizards.sampleCategory"
+            category="org.tirix.emetamath.importWizards.metamathCategory"
             class="org.tirix.emetamath.importWizards.ImportSetMmWizard"
             icon="icons/aleph0.gif"
             id="org.tirix.emetamath.importWizards.ImportSetMmWizard"
@@ -367,31 +798,19 @@
       </wizard>
    </extension>
    <extension
-         point="org.eclipse.ui.newWizards">
+         point="org.eclipse.ui.exportWizards">
       <category
-            name="Metamath"
-            id="org.tirix.emetamath.categoty.wizards">
+            id="org.tirix.emetamath.exportWizards.metamathCategory"
+            name="Metamath">
       </category>
       <wizard
-            name="Metamath File"
-            icon="icons/mmNewFile.gif"
-            category="org.tirix.emetamath.categoty.wizards"
-            class="org.tirix.emetamath.wizards.MetamathNewFileWizard"
-            id="org.tirix.emetamath.wizards.MetamathNewFileWizard">
-      </wizard>
-      <wizard
-            name="Metamath Proof File"
-            icon="icons/mmpNewFile.gif"
-            category="org.tirix.emetamath.categoty.wizards"
-            class="org.tirix.emetamath.wizards.ProofNewFileWizard"
-            id="org.tirix.emetamath.wizards.ProofNewFileWizard">
-      </wizard>
-      <wizard
-            category="org.tirix.emetamath.categoty.wizards"
-            class="org.tirix.emetamath.wizards.MetamathNewProjectWizard"
-            icon="icons/mmNewProject.gif"
-            id="org.tirix.emetamath.wizards.MetamathNewProjectWizard"
-            name="Metamath Project">
+            category="org.tirix.emetamath.exportWizards.metamathCategory"
+            class="org.tirix.emetamath.exportWizards.ExportMathMLWizard"
+            id="org.tirix.emetamath.exportWizards.ExportMathMLWizard"
+            name="as MathML File">
+         <description>
+            Export selection as an HTML file containing MathML.
+         </description>
       </wizard>
    </extension>
    <extension
@@ -420,11 +839,30 @@
    <extension
          point="org.eclipse.ui.propertyPages">
       <page
-            objectClass="org.eclipse.core.resources.IFile"
             name="Metamath Properties"
             nameFilter="*.mm"
             class="org.tirix.emetamath.properties.MetamathPropertyPage"
             id="org.tirix.emetamath.properties.samplePropertyPage">
+         <enabledWhen>
+            <instanceof
+                  value="org.eclipse.core.resources.IFile">
+            </instanceof>
+         </enabledWhen>
+      </page>
+      <page
+            class="org.tirix.emetamath.properties.MetamathProjectPropertyPage"
+            id="org.tirix.emetamath.properties.samplePropertyPage"
+            name="Metamath Properties">
+         <enabledWhen>
+            <and>
+               <instanceof
+                     value="org.eclipse.core.resources.IProject">
+               </instanceof>
+               <adapt
+                     type="org.tirix.emetamath.nature.MetamathProjectNature">
+               </adapt>
+            </and>
+         </enabledWhen>
       </page>
    </extension>
    <extension
@@ -434,11 +872,34 @@
             id="org.tirix.emetamath.ViewCategory">
       </category>
       <view
-            name="Metamath File View"
-            icon="icons/aleph0.gif"
+            name="Proof Explorer View"
+            icon="icons/ProofExplorer.gif"
             category="org.tirix.emetamath.ViewCategory"
-            class="org.tirix.emetamath.views.MetamathView"
-            id="org.tirix.emetamath.views.MetamathView">
+            class="org.tirix.emetamath.views.ProofExplorerView"
+            id="org.tirix.emetamath.views.ProofExplorerView">
+      </view>
+      <view
+            category="org.tirix.emetamath.ViewCategory"
+            class="org.tirix.emetamath.views.StepSelectorView"
+            icon="icons/mmStepSelector.gif"
+            id="org.tirix.emetamath.views.StepSelectorView"
+            name="Step Selector View">
+      </view>
+      <view
+            category="org.tirix.emetamath.ViewCategory"
+            class="org.tirix.emetamath.views.ProofBrowserView"
+            icon="icons/mmBrowser.gif"
+            id="org.tirix.emetamath.views.ProofBrowserView"
+            name="Proof Browser View"
+            restorable="true">
+      </view>
+      <view
+            category="org.tirix.emetamath.ViewCategory"
+            class="org.tirix.emetamath.views.MathView"
+            icon="icons/pi.gif"
+            id="org.tirix.emetamath.views.MathView"
+            name="Math View"
+            restorable="true">
       </view>
    </extension>
    <extension
@@ -480,5 +941,42 @@
          </enablement>
       </commonWizard>
    </extension>
-
+	<extension point="org.eclipse.ui.themes">
+		<themeElementCategory
+			id="org.tirix.emetamath.preferences.themeElementCategory" 
+			label="Metamath">
+			<description>Fonts and Colors for the Metamath Editors and Views</description>
+		</themeElementCategory>
+	
+		<colorDefinition
+			categoryId="org.tirix.emetamath.preferences.themeElementCategory"
+			id="org.tirix.emetamath.preferences.labelColor" 
+			label="Labels"
+			value="COLOR_DARK_BLUE">
+			<description>
+				Your description goes here
+	        </description>
+		</colorDefinition>
+	
+		<fontDefinition
+			categoryId="org.tirix.emetamath.preferences.themeElementCategory"
+			id="org.tirix.emetamath.preferences.editorFont" 
+			label="Metamath Editor Font"
+			value="Courier New-regular-10">
+			<description>Font to be used in the Metamath Editor and Step Selector View</description>
+		</fontDefinition>
+	</extension>
+ <extension
+       point="org.eclipse.search.searchPages">
+    <page
+          canSearchEnclosingProjects="false"
+          class="org.tirix.emetamath.search.MetamathSearchPage"
+          enabled="true"
+          extensions="mm:1, mmp:1"
+          icon="icons/mmSearch.gif"
+          id="org.tirix.emetamath.search.metamathSearchPage"
+          label="Metamath Search"
+          showScopeSection="false">
+    </page>
+ </extension>
 </plugin>

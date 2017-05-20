@@ -32,7 +32,8 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
 
 /**
  *  VarHyp -- Variable Hypothesis -- corresponds to

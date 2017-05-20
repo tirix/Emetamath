@@ -15,10 +15,16 @@
  */
 
 package mmj.lang;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+
 import mmj.mmio.MMIOConstants;
 import mmj.mmio.SourcePosition;
-import mmj.tl.*;
+import mmj.tl.MMTTheoremSet;
+import mmj.tl.TheoremLoaderCommitListener;
+import mmj.tl.TheoremStmtGroup;
 
 /**
  *  BookManager is a "helper" class that is used to
@@ -792,5 +798,8 @@ public class BookManager implements TheoremLoaderCommitListener {
         currVarHypSection = null;
         currSyntaxSection = null;
         currLogicSection = null;
-    }
+
+        nextChapterTitle = MMIOConstants.DEFAULT_TITLE;
+		nextSectionTitle = MMIOConstants.DEFAULT_TITLE;
+	}
 }

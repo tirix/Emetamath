@@ -11,7 +11,8 @@
 
 package mmj.util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  *   RunParmArrayEntry holds a RunParm "name" string

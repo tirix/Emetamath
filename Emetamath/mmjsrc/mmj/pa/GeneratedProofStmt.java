@@ -39,7 +39,7 @@
 
 package mmj.pa;
 
-import  mmj.lang.*;
+import mmj.lang.Stmt;
 
 public class GeneratedProofStmt extends ProofWorkStmt {
   //boolean           dummyField?

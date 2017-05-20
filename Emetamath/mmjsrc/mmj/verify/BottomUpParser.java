@@ -11,8 +11,13 @@
 
 package mmj.verify;
 
-import mmj.lang.*;
-import java.util.*;
+import java.util.List;
+
+import mmj.lang.Cnst;
+import mmj.lang.ParseNodeHolder;
+import mmj.lang.ParseTree;
+import mmj.lang.VarHyp;
+import mmj.lang.VerifyException;
 
 /**
  *  Bottom Up Parser, too slow and stupid for set.mm use.

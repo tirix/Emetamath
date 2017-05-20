@@ -14,10 +14,14 @@
  */
 
 package mmj.tl;
-import java.io.*;
-import java.util.*;
-import mmj.lang.*;
-import mmj.pa.*;
+import java.util.LinkedList;
+
+import mmj.lang.LogicalSystem;
+import mmj.lang.MessageHandler;
+import mmj.lang.Theorem;
+import mmj.lang.TheoremLoaderException;
+import mmj.pa.ProofAsst;
+import mmj.pa.ProofWorksheet;
 
 /**
  *  The Theorem Loader facility's main control module.

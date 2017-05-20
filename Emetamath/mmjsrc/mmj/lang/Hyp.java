@@ -31,7 +31,7 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.Map;
 
 /**
  *  Hyp unifies VarHyp (Variable Hypothesis) and LogHyp

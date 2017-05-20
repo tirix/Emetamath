@@ -18,9 +18,8 @@
 
 package mmj.lang;
 
-import java.util.*;
-
-import mmj.mmio.SourcePosition;
+import java.util.Comparator;
+import java.util.Map;
 
 /**
  *  Sym holds a declared Metamath symbol and is the base

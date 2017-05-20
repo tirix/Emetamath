@@ -14,13 +14,19 @@
  */
 
 package mmj.svc;
-import  java.io.File;
-import  java.util.Map;
-import  mmj.lang.*;
-import  mmj.pa.*;
-import  mmj.util.*;
-import  mmj.verify.*;
-import  mmj.tl.*;
+import java.io.File;
+import java.util.Map;
+
+import mmj.lang.LogicalSystem;
+import mmj.lang.MessageHandler;
+import mmj.lang.WorkVarManager;
+import mmj.pa.ProofAsst;
+import mmj.pa.ProofAsstPreferences;
+import mmj.tl.TheoremLoader;
+import mmj.tl.TlPreferences;
+import mmj.util.OutputBoss;
+import mmj.verify.Grammar;
+import mmj.verify.VerifyProofs;
 
 
 /**

@@ -14,14 +14,21 @@
  */
 
 package mmj.util;
-import java.io.*;
-import java.util.*;
-import mmj.lang.*;
-import mmj.verify.*;
-import mmj.pa.*;
-import mmj.tmff.*;
-import mmj.svc.*;
-import mmj.tl.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import mmj.lang.LogicalSystem;
+import mmj.lang.Messages;
+import mmj.lang.VerifyException;
+import mmj.lang.WorkVarManager;
+import mmj.pa.ProofAsst;
+import mmj.pa.ProofAsstPreferences;
+import mmj.svc.SvcCallback;
+import mmj.tl.TheoremLoader;
+import mmj.tl.TlPreferences;
+import mmj.verify.Grammar;
+import mmj.verify.VerifyProofs;
 
 /**
  *  Manages access to the facilities which allow use

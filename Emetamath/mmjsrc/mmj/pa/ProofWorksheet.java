@@ -108,18 +108,35 @@
 
 package mmj.pa;
 
-import  java.io.File;
-import  java.io.IOException;
-import  java.util.ArrayList;
-import  java.util.LinkedList;
-import  java.util.Iterator;
-import  java.util.HashMap;
-import  java.util.NoSuchElementException;
-import  mmj.util.DelimitedTextParser;
-import  mmj.lang.*;
-import  mmj.verify.*;
-import  mmj.mmio.*;
-import  mmj.tmff.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+
+import mmj.lang.Assrt;
+import mmj.lang.Cnst;
+import mmj.lang.DjVars;
+import mmj.lang.Formula;
+import mmj.lang.Hyp;
+import mmj.lang.LogHyp;
+import mmj.lang.LogicalSystem;
+import mmj.lang.MandFrame;
+import mmj.lang.MessageHandler;
+import mmj.lang.ParseTree;
+import mmj.lang.ScopeDef;
+import mmj.lang.Stmt;
+import mmj.lang.Theorem;
+import mmj.lang.Var;
+import mmj.lang.VarHyp;
+import mmj.mmio.MMIOError;
+import mmj.mmio.SourcePosition;
+import mmj.mmio.Tokenizer;
+import mmj.tmff.TMFFPreferences;
+import mmj.tmff.TMFFStateParams;
+import mmj.util.DelimitedTextParser;
+import mmj.verify.Grammar;
+import mmj.verify.ProofDerivationStepEntry;
 
 /**
  *  ProofWorksheet is generated from a text area (String)
@@ -201,6 +218,7 @@ public class ProofWorksheet {
     StringBuffer                tmffFormulaSB;
 
 
+	StepSelectorStore			stepSelectorStore   = null;
     StepSelectorResults         stepSelectorResults = null;
     StepRequest                 stepRequest         = null;
 
@@ -262,7 +280,7 @@ public class ProofWorksheet {
 
                     //this is an an ArrayList of ArrayLists
     /* friendly */  ArrayList proofSoftDjVarsErrorList;
-
+	
     /**
      *  Constructor for skeletal ProofWorksheet.
      *
@@ -654,6 +672,16 @@ public class ProofWorksheet {
     }
 
     /**
+     *  Returns an List of ProofWorkStmt.
+     *  <p>
+     *
+     *  @return Iterator over ProofWorkStmtList.
+     */
+    public List<ProofWorkStmt> getProofWorkStmtList() {
+        return proofWorkStmtList;
+    }
+
+    /**
      *  Returns the count of items in the ProofWorksheet
      *  ProofWorkStmt ArrayList.
      *  <p>
@@ -897,6 +925,10 @@ public class ProofWorksheet {
         }
     }
 
+    public SourcePosition getCursorPosition() {
+    	return proofCursor.getPositionIn(this);
+    }
+    
     public String getErrorLabelIfPossible() {
         String label              = getTheoremLabel();
         if (label == null) {
@@ -2464,4 +2496,11 @@ public class ProofWorksheet {
             }
         }
     }
+
+	/**
+	 * @return the stepSelectorResults
+	 */
+	public StepSelectorStore getStepSelectorStore() {
+		return stepSelectorStore;
+	}
 }

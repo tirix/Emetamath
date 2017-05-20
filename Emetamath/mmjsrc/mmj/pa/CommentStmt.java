@@ -40,9 +40,9 @@
  */
 
 package mmj.pa;
-import  java.io.IOException;
-import  java.io.LineNumberReader;
-import  java.io.StringReader;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.StringReader;
 
 public class CommentStmt extends ProofWorkStmt {
 

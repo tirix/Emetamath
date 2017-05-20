@@ -28,7 +28,11 @@
 
 package mmj.lang;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 /**
  *  Theorem corresponds to a Metamath "$p" statement,
@@ -607,5 +611,12 @@ public class Theorem extends Assrt {
         return false;
     }
 
-
+    /**
+     * Returns true if this theorem has unknown '?' proof steps
+     * @return
+     */
+	public boolean hasUnknownSteps() {
+		for(Stmt proofStep:proof) if(proofStep == null) return true;
+		return false;
+	}
 }

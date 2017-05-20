@@ -14,8 +14,11 @@
  */
 
 package mmj.tl;
-import mmj.lang.*;
-import mmj.pa.*;
+import mmj.lang.LogicalSystem;
+import mmj.lang.MessageHandler;
+import mmj.lang.TheoremLoaderException;
+import mmj.pa.ProofAsst;
+import mmj.pa.ProofWorksheet;
 
 /**
  *  StoreInLogSysAndMMTFolderTLRequest implements a user request for a

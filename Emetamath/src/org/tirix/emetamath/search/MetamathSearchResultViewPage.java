@@ -12,7 +12,6 @@ import java.util.TreeSet;
 
 import mmj.lang.MObj;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jface.viewers.AbstractTreeViewer;
 import org.eclipse.jface.viewers.ContentViewer;
@@ -24,15 +23,14 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.search.ui.text.AbstractTextSearchResult;
 import org.eclipse.search.ui.text.AbstractTextSearchViewPage;
 import org.eclipse.search.ui.text.Match;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.ui.IEditorPart;
-import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.IShowInTargetList;
 import org.tirix.emetamath.MetamathUI;
-import org.tirix.emetamath.editors.MMContentProvider;
-import org.tirix.emetamath.editors.MMLabelProvider;
 import org.tirix.emetamath.nature.MetamathProjectNature;
+import org.tirix.emetamath.views.MMContentProvider;
+import org.tirix.emetamath.views.MMLabelProvider;
+import org.tirix.emetamath.views.ProofBrowserView;
+import org.tirix.emetamath.views.ProofExplorerView;
 
 public class MetamathSearchResultViewPage extends AbstractTextSearchViewPage implements IAdaptable {
 	private MetamathSearchContentProvider fContentProvider;
@@ -81,7 +79,11 @@ public class MetamathSearchResultViewPage extends AbstractTextSearchViewPage imp
 			fContentProvider.elementsChanged(objects);
 	}
 
-	private static final String[] SHOW_IN_TARGETS= new String[] { IPageLayout.ID_OUTLINE };
+	private static final String[] SHOW_IN_TARGETS= new String[] { 
+		ProofExplorerView.VIEW_ID, 
+		ProofBrowserView.VIEW_ID,
+		//IPageLayout.ID_OUTLINE 
+		};
 	public static final IShowInTargetList SHOW_IN_TARGET_LIST= new IShowInTargetList() {
 		public String[] getShowInTargetIds() {
 			return SHOW_IN_TARGETS;

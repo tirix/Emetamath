@@ -1,15 +1,25 @@
 package org.tirix.emetamath.editors;
 
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
 
 import mmj.lang.Cnst;
 import mmj.lang.Sym;
 import mmj.lang.Var;
 
-import org.eclipse.jface.text.rules.*;
-import org.eclipse.jface.text.*;
+import org.eclipse.jface.text.TextAttribute;
+import org.eclipse.jface.text.rules.ICharacterScanner;
+import org.eclipse.jface.text.rules.IRule;
+import org.eclipse.jface.text.rules.IToken;
+import org.eclipse.jface.text.rules.IWordDetector;
+import org.eclipse.jface.text.rules.RuleBasedScanner;
+import org.eclipse.jface.text.rules.Token;
+import org.eclipse.jface.text.rules.WordRule;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.RGB;
 import org.tirix.emetamath.nature.MetamathProjectNature;
+import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
 
 /**
  * Scanner for Metamath text
@@ -29,19 +39,22 @@ public class MMScanner extends RuleBasedScanner {
 	public final static String MM_THEOREM = "__mm_theorem";
 
 	final static String[] mmKeywords = new String[] { "$c", "$v", "$d", "$f", "$e", "$a", "$p", "$=", "${", "$}", "$." };
-
+	
 	protected MMScanner() {
 		
 	}
 	
-	public MMScanner(MetamathProjectNature nature, ColorManager manager) {
+	public MMScanner(final MetamathProjectNature nature, final ColorManager manager) {
 		IToken mmLabel = new Token( new TextAttribute( manager.getColor(IMMColorConstants.LABEL)));
 		IToken mmKeyword = new Token( new TextAttribute( manager.getColor(IMMColorConstants.KEYWORD)));
 		IToken mmSymbol = new Token( new TextAttribute( manager.getColor(IMMColorConstants.SYMBOL)));
 		IToken mmConstant = new Token( new TextAttribute( manager.getColor(IMMColorConstants.CONSTANT)));
-		IToken mmWffVariable = new Token( new TextAttribute( manager.getColor(IMMColorConstants.WFF), null, SWT.ITALIC));
-		IToken mmSetVariable = new Token( new TextAttribute( manager.getColor(IMMColorConstants.SET), null, SWT.ITALIC));
-		IToken mmClassVariable = new Token( new TextAttribute( manager.getColor(IMMColorConstants.CLASS), null, SWT.ITALIC));
+//		IToken mmWffVariable = new Token( new TextAttribute( manager.getColor(IMMColorConstants.WFF), null, SWT.ITALIC));
+//		IToken mmSetVariable = new Token( new TextAttribute( manager.getColor(IMMColorConstants.SET), null, SWT.ITALIC));
+//		IToken mmClassVariable = new Token( new TextAttribute( manager.getColor(IMMColorConstants.CLASS), null, SWT.ITALIC));
+		IToken mmTypeConstant = new Token( new TextAttribute( manager.getColor(IMMColorConstants.TYPE)));
+
+		setDefaultReturnToken(mmLabel);
 		
 		IToken mmVariable = new Token(MM_VARIABLE);
 		IToken mmDisjoint = new Token(MM_DISJOINT);
@@ -50,12 +63,16 @@ public class MMScanner extends RuleBasedScanner {
 		IToken mmAxiom = new Token(MM_AXIOM);
 		IToken mmTheorem = new Token(MM_THEOREM);
 
-		setDefaultReturnToken(mmLabel);
-		
 		WordRule keywordRule = new WordRule(new MMTokenDetector());
 		for(int i=0;i<mmKeywords.length;i++) keywordRule.addWord(mmKeywords[i], mmKeyword);
 
-		IRule symbolRule = new MMSymbolRule(new MMTokenDetector(), nature, mmConstant, mmWffVariable, mmSetVariable, mmClassVariable);
+		final MMSymbolRule symbolRule = new MMSymbolRule(new MMTokenDetector(), nature, mmConstant, mmTypeConstant, new Hashtable<Cnst, IToken>());
+
+		nature.addSystemLoadListener(new SystemLoadListener() {
+			@Override
+			public void systemLoaded() {
+				symbolRule.setVariableTokens(createVariableTokens(nature, manager));
+			}});
 		
 		IRule[] rules = new IRule[2];
 		//Add rule for processing instructions
@@ -72,12 +89,44 @@ public class MMScanner extends RuleBasedScanner {
 
 		setRules(rules);
 	}
+
+	public static Map<Cnst, IToken> createVariableTokens(MetamathProjectNature nature, ColorManager manager) {
+		Map<Cnst, RGB> typeColors = nature.getTypeColors();
+		Hashtable<Cnst, IToken> tokens = new Hashtable<Cnst, IToken>();
+		for(Cnst type:typeColors.keySet()) {
+			IToken typeToken = new Token( new TextAttribute( manager.getColor(typeColors.get(type)), null, SWT.ITALIC));
+			tokens.put(type, typeToken);
+		}
+		return tokens;
+	}
 	
 //	public IToken nextToken() {
 //		IToken token = super.nextToken();
 //		
 //		return token;
 //		}
+	public static IRule createSymbolRule(MetamathProjectNature nature, ColorManager manager) {
+		IToken mmConstant = new Token( new TextAttribute( manager.getColor(IMMColorConstants.CONSTANT)));
+//		IToken mmWffVariable = new Token( new TextAttribute( manager.getColor(IMMColorConstants.WFF), null, SWT.ITALIC));
+//		IToken mmSetVariable = new Token( new TextAttribute( manager.getColor(IMMColorConstants.SET), null, SWT.ITALIC));
+//		IToken mmClassVariable = new Token( new TextAttribute( manager.getColor(IMMColorConstants.CLASS), null, SWT.ITALIC));
+		IToken mmTypeConstant = new Token( new TextAttribute( manager.getColor(IMMColorConstants.TYPE)));
+		return new MMSymbolRule(new MMTokenDetector(), nature, mmConstant, mmTypeConstant, createVariableTokens(nature, manager));
+	}
+	
+	public static class MMProofScanner extends MMScanner {
+		public MMProofScanner(ColorManager manager) {
+			IToken mmKeyword = new Token( new TextAttribute( manager.getColor(IMMColorConstants.KEYWORD)));
+			IToken mmProof = new Token( new TextAttribute( manager.getColor(IMMColorConstants.PROOF)));
+
+			setDefaultReturnToken(mmProof);
+			
+			WordRule keywordRule = new WordRule(new MMTokenDetector());
+			for(int i=0;i<mmKeywords.length;i++) keywordRule.addWord(mmKeywords[i], mmKeyword);
+
+			setRules(new IRule[] { keywordRule });
+		}
+	}
 	
 	/**
 	 * @author Thierry Arnoux
@@ -92,18 +141,25 @@ public class MMScanner extends RuleBasedScanner {
 		/** The Project Nature which provides us the logical system */
 		MetamathProjectNature nature;
 		
-		IToken constantToken, wffToken, setToken, classToken;
-
-		public MMSymbolRule(MMTokenDetector tokenDetector, MetamathProjectNature nature, IToken mmConstant,
-				IToken mmWffVariable, IToken mmSetVariable, IToken mmClassVariable) {
+		IToken constantToken, typeToken;
+		protected Map<Cnst, IToken> variableTokens;
+		
+		public MMSymbolRule(MMTokenDetector tokenDetector, MetamathProjectNature nature, IToken mmConstant, IToken mmTypeConstant, Map<Cnst, IToken> mmVariableTokens) {
+				// IToken mmWffVariable, IToken mmSetVariable, IToken mmClassVariable, 
 			this.fDetector = tokenDetector;
 			this.constantToken = mmConstant;
-			this.wffToken = mmWffVariable;
-			this.setToken = mmSetVariable;
-			this.classToken = mmClassVariable;
+			this.typeToken = mmTypeConstant;
+			this.variableTokens = mmVariableTokens;
+//			this.wffToken = mmWffVariable;
+//			this.setToken = mmSetVariable;
+//			this.classToken = mmClassVariable;
 			this.nature = nature;
 			}
 
+		public void setVariableTokens(Map<Cnst, IToken> mmVariableTokens) {
+			this.variableTokens = mmVariableTokens;
+			}
+		
 		@Override
 		public IToken evaluate(ICharacterScanner scanner) {
 			int c= scanner.read();
@@ -113,11 +169,11 @@ public class MMScanner extends RuleBasedScanner {
 					fBuffer.append((char) c);
 					c= scanner.read();
 				} while (c != ICharacterScanner.EOF && fDetector.isWordPart((char) c));
-				scanner.unread();
+				if(c != ICharacterScanner.EOF) scanner.unread();
 
 				return getTokenFor(fBuffer.toString());
 			}
-			scanner.unread();
+			if(c != ICharacterScanner.EOF) scanner.unread();
 			return Token.UNDEFINED;
 		}
 
@@ -125,11 +181,19 @@ public class MMScanner extends RuleBasedScanner {
 			if(!nature.isLogicalSystemLoaded()) return Token.UNDEFINED;
 			Sym sym = (Sym)nature.getLogicalSystem().getSymTbl().get(tokenStr);
 			if(sym == null) return Token.UNDEFINED;
-			if(sym instanceof Cnst) return constantToken;
-			if(nature.isSet((Var)sym)) return setToken;
-			if(nature.isClass((Var)sym)) return classToken;
-			if(nature.isWff((Var)sym)) return wffToken;
-			return Token.UNDEFINED;
+			if(sym instanceof Cnst) {
+				if(nature.isType((Cnst)sym)) return typeToken;
+				return constantToken;
+			}
+			Cnst type = nature.getType(sym);
+			if(type == null) return Token.UNDEFINED;
+			IToken token = variableTokens.get(type);
+			if(token == null) return Token.UNDEFINED;
+			return token;
+//			if(nature.isSet((Var)sym)) return setToken;
+//			if(nature.isClass((Var)sym)) return classToken;
+//			if(nature.isWff((Var)sym)) return wffToken;
+//			return Token.UNDEFINED;
 		}
 	}
 
