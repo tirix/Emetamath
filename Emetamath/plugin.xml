@@ -210,6 +210,11 @@
       </command>
       <command
             categoryId="org.tirix.emetamath.commandCategory"
+            id="org.tirix.emetamath.unifyRenumberCommand"
+            name="Unify and Renumber">
+      </command>
+      <command
+            categoryId="org.tirix.emetamath.commandCategory"
             description="Search for unification steps and open the step selector view"
             id="org.tirix.emetamath.searchStepSelectionCommand"
             name="Step Selector">
@@ -320,23 +325,8 @@
          </enabledWhen>
       </handler>
       <handler
-            commandId="org.tirix.emetamath.SearchReferencesCommand"
-            class="org.tirix.emetamath.handlers.SearchReferencesHandler">
-     <enabledWhen>
-        <with
-              variable="activePart">
-           <adapt
-                 type="org.tirix.emetamath.nature.MetamathProjectNature">
-              <test
-                    property="org.tirix.emetamath.isLogicalSystemLoaded">
-              </test>
-           </adapt>
-        </with>
-     </enabledWhen>
-      </handler>
-      <handler
-            commandId="org.tirix.emetamath.unifyCommand"
-            class="org.tirix.emetamath.handlers.UnifyHandler">
+            class="org.tirix.emetamath.handlers.UnifyHandler"
+            commandId="org.tirix.emetamath.unifyCommand">
          <enabledWhen>
             <with
                   variable="activePart">
@@ -351,6 +341,39 @@
                </adapt>
             </with>
          </enabledWhen>
+      </handler>
+      <handler
+            class="org.tirix.emetamath.handlers.UnifyRenumberHandler"
+            commandId="org.tirix.emetamath.unifyRenumberCommand">
+         <enabledWhen>
+            <with
+                  variable="activePart">
+               <instanceof
+                     value="org.tirix.emetamath.editors.proofassistant.ProofAssistantEditor">
+               </instanceof>
+               <adapt
+                     type="org.tirix.emetamath.nature.MetamathProjectNature">
+                  <test
+                        property="org.tirix.emetamath.isLogicalSystemLoaded">
+                  </test>
+               </adapt>
+            </with>
+         </enabledWhen>
+      </handler>
+      <handler
+            commandId="org.tirix.emetamath.SearchReferencesCommand"
+            class="org.tirix.emetamath.handlers.SearchReferencesHandler">
+     <enabledWhen>
+        <with
+              variable="activePart">
+           <adapt
+                 type="org.tirix.emetamath.nature.MetamathProjectNature">
+              <test
+                    property="org.tirix.emetamath.isLogicalSystemLoaded">
+              </test>
+           </adapt>
+        </with>
+     </enabledWhen>
       </handler>
       <handler
             commandId="org.tirix.emetamath.searchStepSelectionCommand"
@@ -547,6 +570,11 @@
            style="push">
      </command>
      <command
+           commandId="org.tirix.emetamath.unifyRenumberCommand"
+           icon="icons/mmUnifyRenumber.gif"
+           style="push">
+     </command>
+     <command
            commandId="org.tirix.emetamath.searchStepSelectionCommand"
            icon="icons/mmStep.gif"
            style="push">
@@ -610,6 +638,13 @@
                   mnemonic="U">
             </command>
             <command
+                  commandId="org.tirix.emetamath.unifyRenumberCommand"
+                  icon="icons/mmUnifyRenumber.gif"
+                  id="org.tirix.emetamath.unifyRenumberMenu"
+                  mnemonic="R"
+                  style="push">
+            </command>
+            <command
                   commandId="org.tirix.emetamath.searchStepSelectionCommand"
                   icon="icons/mmStep.gif"
                   id="org.tirix.emetamath.stepSelectorMenu"
@@ -635,6 +670,12 @@
                   icon="icons/mmUnify.gif"
                   tooltip="Unify this proof step"
                   id="org.tirix.emetamath.toolbar.unifyCommand">
+            </command>
+            <command
+                  commandId="org.tirix.emetamath.unifyRenumberCommand"
+                  icon="icons/mmUnifyRenumber.gif"
+                  id="org.tirix.emetamath.toolbar.unifyRenumberCommand"
+                  tooltip="Unify and Renumber this proof">
             </command>
             <command
                   commandId="org.tirix.emetamath.searchStepSelectionCommand"

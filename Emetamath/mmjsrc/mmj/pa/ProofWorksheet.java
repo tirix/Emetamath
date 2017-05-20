@@ -256,7 +256,7 @@ public class ProofWorksheet {
         return null;
     }
 
-    /* friendly */  ArrayList          proofWorkStmtList;
+    /* friendly */  ArrayList<ProofWorkStmt> proofWorkStmtList;
     /* friendly */  HeaderStmt         headerStmt;
 
     /* friendly */  FooterStmt         footerStmt;
@@ -1359,6 +1359,7 @@ public class ProofWorksheet {
                 break;
             }
 
+            // TODO also parse compressed proof statements!
             if (nextToken.equals(
                     PaConstants.GENERATED_PROOF_STMT_TOKEN)) {
                 GeneratedProofStmt x
@@ -1960,8 +1961,8 @@ public class ProofWorksheet {
      *  @param rpnProof Proof Stmt array.
      */
     public void addGeneratedProofStmt(Stmt[] rpnProof) {
-        GeneratedProofStmt x =
-            new GeneratedProofStmt(this,
+    	GeneratedProofStmt x =
+            new CompressedProofStmt(this,
                                    rpnProof);
         //add just before footer
         proofWorkStmtList.add((proofWorkStmtList.size() - 1),

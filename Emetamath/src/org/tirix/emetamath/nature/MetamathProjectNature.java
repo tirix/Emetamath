@@ -41,6 +41,7 @@ import mmj.verify.Grammar;
 import mmj.verify.GrammarConstants;
 import mmj.verify.VerifyProofs;
 
+import org.eclipse.core.internal.resources.ResourceException;
 import org.eclipse.core.resources.ICommand;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
@@ -58,6 +59,7 @@ import org.eclipse.core.runtime.QualifiedName;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.viewers.ILabelProvider;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.ui.IFileEditorInput;
 import org.tirix.emetamath.Activator;
@@ -93,6 +95,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	public static final QualifiedName PROVABLE_TYPE_PROPERTY = new QualifiedName("org.tirix.emetamath", "provableType");
 	public static final QualifiedName TYPES_PROPERTY = new QualifiedName("org.tirix.emetamath", "types");
 	public static final QualifiedName COLORS_PROPERTY = new QualifiedName("org.tirix.emetamath", "typeColors");
+	public static final QualifiedName ICONS_PROPERTY = new QualifiedName("org.tirix.emetamath", "typeIcons");
 	
 	private static final QualifiedName EXPLORER_BASE_URL_PROPERTY = new QualifiedName("org.tirix.emetamath", "explorerBaseUrl");
 
@@ -100,6 +103,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	public static final String PROVABLE_TYPE_DEFAULT_VALUE = "|-";
 	public static final String TYPES_DEFAULT_VALUE = "wff$set$class";
 	public static final String COLORS_DEFAULT_VALUE = "0,0,255$255,0,0$255,0,255";
+	public static final String ICONS_DEFAULT_VALUE = "mmWff.gif$mmSet.gif$mmClass.gif";
 	public static final String DEFINITION_PREFIX_DEFAULT_VALUE = "df-";
 
 	private IProject project;
@@ -110,6 +114,8 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	private Cnst provableType;
 	private List<Cnst> types;
 	private Hashtable<Cnst, RGB> typeColors;
+	private Hashtable<Cnst, Image> typeIcons;
+	private Hashtable<Cnst, String> typeIconURLs;
 	private Hashtable<Sym,Stmt> notations;
 	//private Cnst wffType, classType, setType;
 	
@@ -188,6 +194,8 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
     	listeners = new ArrayList<SystemLoadListener>();
     	types = new ArrayList<Cnst>();
 		typeColors = new Hashtable<Cnst, RGB>();
+		typeIcons = new Hashtable<Cnst, Image>();
+		typeIconURLs = new Hashtable<Cnst, String>();
  	}
     
 	/*
@@ -605,15 +613,18 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		String provableTypeProperty = null;
 		String typesProperty = null;
 		String colorsProperty = null;
+		String iconsProperty = null;
 		try {
 			provableTypeProperty = getProvableTypeString();
 			typesProperty = getProject().getPersistentProperty(TYPES_PROPERTY);
 			colorsProperty = getProject().getPersistentProperty(COLORS_PROPERTY);
+			iconsProperty = getProject().getPersistentProperty(ICONS_PROPERTY);
 		}
 		catch(CoreException e) {}
 		if(provableTypeProperty == null) provableTypeProperty = PROVABLE_TYPE_DEFAULT_VALUE;
 		if(typesProperty == null) typesProperty = TYPES_DEFAULT_VALUE;
 		if(colorsProperty == null) colorsProperty = COLORS_DEFAULT_VALUE;
+		if(iconsProperty == null) iconsProperty = ICONS_DEFAULT_VALUE;
 
 		// get the 'provable' type
 		provableType = (Cnst)logicalSystem.getSymTbl().get(provableTypeProperty);
@@ -630,6 +641,14 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		}
 		if(colors.length != types.size()) System.out.println("Project "+getProject()+": "+types.size()+" types ("+types+") but "+colors.length+" colors ("+colors+") defined!\n");
 		
+		// get the icons for the other types
+		String[] icons = iconsProperty.split("\\$");
+		for(int i=0;i<icons.length && i<types.size();i++) {
+			typeIcons.put(types.get(i), Activator.getImage("icons/"+icons[i]));
+			typeIconURLs.put(types.get(i), "icons/"+icons[i]);
+		}
+		if(icons.length != types.size()) System.out.println("Project "+getProject()+": "+types.size()+" types ("+types+") but "+icons.length+" icons ("+icons+") defined!\n");
+
 //		wffType = (Cnst)logicalSystem.getSymTbl().get("wff");
 //		setType = (Cnst)logicalSystem.getSymTbl().get("set");
 //		classType = (Cnst)logicalSystem.getSymTbl().get("class");
@@ -640,6 +659,14 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	
 	public Map<Cnst, RGB> getTypeColors() {
 		return typeColors;
+	}
+	
+	public Map<Cnst, Image> getTypeIcons() {
+		return typeIcons;
+	}
+	
+	public Map<Cnst, String> getTypeIconURLs() {
+		return typeIconURLs;
 	}
 	
 	public boolean isType(Sym sym) {
@@ -739,7 +766,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		try {
 			return (MetamathProjectNature)resource.getProject().getNature(MetamathProjectNature.NATURE_ID);
 		} catch (CoreException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			return null;
 		}
 	}

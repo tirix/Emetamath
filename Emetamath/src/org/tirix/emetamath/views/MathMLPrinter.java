@@ -22,7 +22,7 @@ public class MathMLPrinter {
 	}
 
 	public static void printTest(StringBuffer sb) {
-		sb.append("And here is a test:\n");
+		sb.append("This should display the root of the quadratic formula in math format:\n");
 		sb.append("<math mode=\"display\" xmlns=\"http://www.w3.org/1998/Math/MathML\">\n");
 		sb.append("<mrow>\n");
 		sb.append("  <mi>x</mi>\n");

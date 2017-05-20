@@ -76,7 +76,7 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
 //    private final static MMStyler fWffStyler = new MMStyler(IMMColorConstants.WFF, false);
 //    private final static MMStyler fSetStyler = new MMStyler(IMMColorConstants.SET, false);
 //    private final static MMStyler fClassStyler = new MMStyler(IMMColorConstants.CLASS, false);
-    private final static Map<Cnst, MMStyler> fVarStylers = new Hashtable<Cnst, MMStyler>();
+    private static Map<Cnst, MMStyler> fVarStylers;
 	private final static MMStyler fTypeConstantStyler = new MMStyler(IMMColorConstants.TYPE, false);
     private final static MMStyler fConstantStyler = new MMStyler(IMMColorConstants.CONSTANT, false);
     private final static MMStyler fStatementStyler = new MMStyler(IMMColorConstants.LABEL, false);
@@ -93,6 +93,11 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
 		
     public void setNature(MetamathProjectNature nature) {
     	this.nature = nature;
+    	fVarStylers = new Hashtable<Cnst, MMStyler>();
+    	Map<Cnst, RGB> typeColors = nature.getTypeColors();
+    	for(Cnst type:typeColors.keySet()) {
+    		fVarStylers.put(type, new MMStyler(typeColors.get(type), false));
+    	}
     }
     
     @Override
@@ -106,11 +111,11 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
 		if(element instanceof VarHyp)  return  floatingImage;
 		if(element instanceof Cnst)    return  constantImage;
 		if(element instanceof Var) {
-			// TODO reintroduce different images, per element!
+			return nature.getTypeIcons().get(nature.getType((Var)element));
 //			if(nature != null && nature.isSet((Var)element)) return setImage;
 //			if(nature != null && nature.isClass((Var)element)) return classImage;
 //			if(nature != null && nature.isWff((Var)element)) return wffImage;
-			return setImage;
+//			return setImage;
 		}
 
 		if(element instanceof StepSelectorLine) return ((StepSelectorLine)element).lastLine ? stepLastImage : stepItemImage;
@@ -127,11 +132,11 @@ public class MMLabelProvider extends LabelProvider implements IStyledLabelProvid
 		if(element instanceof VarHyp)  path =   IMG_PATH_FLOATING;
 		if(element instanceof Cnst)    path =   IMG_PATH_CONSTANT;
 		if(element instanceof Var) {
-			// TODO reintroduce different images, per element!
+			path = nature.getTypeIconURLs().get(nature.getType((Var)element));
 //			if(nature != null && nature.isSet((Var)element)) path =  IMG_PATH_SET;
 //			if(nature != null && nature.isClass((Var)element)) path =  IMG_PATH_CLASS;
 //			if(nature != null && nature.isWff((Var)element)) path =  IMG_PATH_WFF;
-			if(path == null) path = IMG_PATH_SET;
+//			if(path == null) path = IMG_PATH_SET;
 		}
 		return Activator.getImageURL(path);
 	}

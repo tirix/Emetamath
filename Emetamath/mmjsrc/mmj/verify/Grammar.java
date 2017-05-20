@@ -947,7 +947,7 @@ public class Grammar implements SyntaxVerifier {
 //          System.out.println("$$$$$$$$$$$$$ "
 //                             + defaultStmtLabel);
 // */
-        	boolean debug = defaultStmtLabel.equals("df-mlim");
+        	boolean debug = false; //defaultStmtLabel.equals("df-mlim");
 
         	parseTreeCnt = grammaticalParser.parseExpr(
                         parseTreeArray,

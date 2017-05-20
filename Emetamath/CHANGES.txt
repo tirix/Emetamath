@@ -2,6 +2,9 @@ v0.1.0.v201101XX
 * Added a Project Properties page, including "Main File" and "Proof Explorer Web Base URL" properties
 * Added a tool bar to the Proof Browser View, with current theorem name, back and forward button. 
 * "Type" constants (wff, |-, set, class) are now colored in gray, like in Metamath web pages
+* Added project properties for defining the "type" constants (in set.mm, these are "wff", "set" and "class"), and their colors
+* Added the "unify & renumber" action (in menu, context menu and toolbar)
+* The Proof Browser view now also shows syntax breakdown for axioms. 
 
 v0.1.0.v20110122
 * Added a Proof Browser view, similar to the Proof Assistant, but in tabular format, and not editable (still to be polished). 
