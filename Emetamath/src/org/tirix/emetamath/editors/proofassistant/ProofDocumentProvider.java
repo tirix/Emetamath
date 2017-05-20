@@ -48,6 +48,7 @@ public class ProofDocumentProvider extends FileDocumentProvider {
 					new MMPPartitionScanner(),
 					new String[] {
 						MMPPartitionScanner.MM_COMMENT,
+						MMPPartitionScanner.MM_LABEL_LIST,
 						IDocument.DEFAULT_CONTENT_TYPE
 						});
 			partitioner.connect(document);

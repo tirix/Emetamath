@@ -70,9 +70,10 @@ public class MMPScanner extends MMScanner {
 			if(c == EOF) return Token.EOF;
 			switch(currentStatus) {
 			case LABEL:
+				currentStatus = LABEL_SEPARATOR;
+				if(!labelDetector.isWordPart((char) c)) return TOKEN_ERROR;
 				while(labelDetector.isWordPart((char)c)) c = scanner.read();
 				scanner.unread();
-				currentStatus = LABEL_SEPARATOR;
 				return labelToken;
 
 			case LABEL_SEPARATOR:
@@ -81,9 +82,10 @@ public class MMPScanner extends MMScanner {
 				return TOKEN_ERROR;
 
 			case HYPOTHESIS:
+				currentStatus = HYPOTHESIS_SEPARATOR;
+				if(c == '?') return labelToken;
 				while(labelDetector.isWordPart((char)c)) c = scanner.read();
 				scanner.unread();
-				currentStatus = HYPOTHESIS_SEPARATOR;
 				return labelToken;
 			
 			case HYPOTHESIS_SEPARATOR:
@@ -93,9 +95,9 @@ public class MMPScanner extends MMScanner {
 				return TOKEN_ERROR;
 
 			case APPLIED_STATEMENT:
+				currentStatus = RESULTING_FORMULA;
 				while(labelDetector.isWordPart((char)c)) c = scanner.read();
 				scanner.unread();
-				currentStatus = RESULTING_FORMULA;
 				return labelToken;
 
 			case RESULTING_FORMULA:

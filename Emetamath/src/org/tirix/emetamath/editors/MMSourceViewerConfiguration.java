@@ -52,14 +52,6 @@ public class MMSourceViewerConfiguration extends SourceViewerConfiguration imple
 			MMPartitionScanner.MM_COMMENT,
 			MMPartitionScanner.MM_TYPESETTING,
 			MMPartitionScanner.MM_FILEINCLUSION,
-			MMScanner.MM_KEYWORD,
-			MMScanner.MM_CONSTANT, 
-			MMScanner.MM_VARIABLE,
-			MMScanner.MM_DISJOINT,
-			MMScanner.MM_VARHYP,
-			MMScanner.MM_LOGHYP,
-			MMScanner.MM_AXIOM,
-			MMScanner.MM_THEOREM
 			};
 	}
 

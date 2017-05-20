@@ -33,7 +33,8 @@ public class MMRegionProvider {
 				--pos;
 			}
 			startPos = pos - 1;
-
+			if(startPos == -2) return null;
+			
 			pos = offset;
 			int length = doc.getLength();
 			c1 = ' ';
@@ -47,6 +48,7 @@ public class MMRegionProvider {
 				++pos;
 			}
 			endPos = pos + 1;
+			if(endPos == length + 1) return null;
 
 			return new Region(startPos + 1, endPos - startPos - 1);
 		} catch (BadLocationException x) {
