@@ -54,7 +54,8 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 
 	private static final int TYPE_COLUMN = 0;
 	private static final int COLOR_COLUMN = 1;
-	private static final int STMT_TYPE_COLUMN = 2;
+	private static final int WORKVAR_COLUMN = 2;
+	private static final int STMT_TYPE_COLUMN = 3;
 //	private static final String PATH_TITLE = "Path:";
 	private static final String BASE_EXPLORER_URL_TITLE = "Web Explorer Base &URL:";
 //	private static final String MAINFILE_TITLE = "Main File:";
@@ -127,8 +128,6 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 			mainFileName = getNature().getMainFile().getName();
 			provableTypeString = getNature().getProvableTypeString();
 			logicStmtTypeString = getNature().getLogicStmtTypeString();
-			System.out.println("Got provableType="+provableTypeString);
-			System.out.println("Got logicStmtType="+logicStmtTypeString);
 		} catch (CoreException e1) {
 		} catch (NullPointerException e1) {
 		}
@@ -189,16 +188,20 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		otherTypesTable.setLayoutData(gridData);
 	    TableColumn typeColumn = new TableColumn(otherTypesTable, SWT.LEFT);
 	    typeColumn.setText("Type");
-	    typeColumn.setWidth(100);
+	    typeColumn.setWidth(200);
 	    typeColumn.pack();
 	    TableColumn colorColumn = new TableColumn(otherTypesTable, SWT.CENTER);
 	    colorColumn.setText("Color");
-	    typeColumn.setWidth(50);
+	    colorColumn.setWidth(100);
 	    colorColumn.pack();
+	    TableColumn workVarColumn = new TableColumn(otherTypesTable, SWT.LEFT);
+	    workVarColumn.setText("WorkVar Prefix");
+	    workVarColumn.setWidth(100);
+	    workVarColumn.pack();
 	    TableColumn stmtTypeColumn = new TableColumn(otherTypesTable, SWT.LEFT);
 	    stmtTypeColumn.setText("Statement");
 	    stmtTypeColumn.pack();
-	    fillTypesTable(otherTypesTable, getNature().getTypeColors());
+	    fillTypesTable(otherTypesTable, getNature().getTypeColors(), getNature().getTypeWorkVars());
 		addTableEditor(otherTypesTable);
 
 		createAddRemoveTypeButtons(composite);
@@ -226,7 +229,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		
 	}
 
-	private void fillTypesTable(Table table, Map<Cnst, RGB> typeColors) {
+	private void fillTypesTable(Table table, Map<Cnst, RGB> typeColors, Map<Cnst, String> typeWorkVars) {
 		table.setItemCount(typeColors.size()+1);
 		table.removeAll();
 		
@@ -240,14 +243,16 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 
 		// Create the table items
 		for(Cnst type:typeColors.keySet()) {
-			createTypeTableItem(table, type.getId(), typeColors.get(type));
+			createTypeTableItem(table, type.getId(), typeColors.get(type), typeWorkVars.get(type));
 		}
 	}
 
-	private void createTypeTableItem(Table table, String symbol, RGB rgb) {
+	private void createTypeTableItem(Table table, String symbol, RGB rgb, String workVar) {
+		if(workVar == null) workVar = "&"+symbol.toUpperCase().charAt(0);
 		Color color = new Color(table.getDisplay(), rgb);
 		TableItem item = new TableItem(otherTypesTable, SWT.NONE);
 		item.setText(TYPE_COLUMN, symbol);
+		item.setText(WORKVAR_COLUMN, workVar);
 		//Button button = new Button(table, SWT.PUSH);
 		//button.computeSize(SWT.DEFAULT, table.getItemHeight());
 		//button.setBackground(color);
@@ -318,6 +323,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 						break;
 
 					case TYPE_COLUMN:
+					case WORKVAR_COLUMN:
 						// Create the Text object for our editor
 						final Text text = new Text(table, SWT.NONE);
 						text.setForeground(item.getForeground());
@@ -341,7 +347,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 						final int col = column;
 						text.addModifyListener(new ModifyListener() {
 							public void modifyText(ModifyEvent event) {
-								// TODO need to an a valiator here, value shall not be empty, and shall not contain space, at least
+								// TODO need to an a validator here, value shall not be empty, and shall not contain space, at least
 								// Set the text of the editor's control back into the cell
 								item.setText(col, text.getText());
 							}
@@ -392,7 +398,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 				if (dialog.open() == ContainerSelectionDialog.OK) {
 					int itemCount = otherTypesTable.getItemCount();
 					String newTypeSymbol = dialog.getValue();
-					createTypeTableItem(otherTypesTable, newTypeSymbol, new RGB(0, 0, 0));
+					createTypeTableItem(otherTypesTable, newTypeSymbol, new RGB(0, 0, 0), null);
 					otherTypesTable.setItemCount(itemCount+1);
 					otherTypesTable.pack(true);
 					otherTypesTable.getParent().layout(true);
@@ -444,13 +450,25 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		return typeColors;
 	}
 	
+	private Map<Cnst,String> getTypeWorkVars() {
+		Hashtable<Cnst, String> typeWorkVars = new Hashtable<Cnst, String>();
+		for(int i=0;i<otherTypesTable.getItemCount();i++) {
+			TableItem item = otherTypesTable.getItem(i);
+			String typeSymbol = item.getText(TYPE_COLUMN);
+			Cnst type = (Cnst)getNature().getLogicalSystem().getSymTbl().get(typeSymbol);
+			String workVar = item.getText(WORKVAR_COLUMN);
+			typeWorkVars.put(type, workVar);
+		}
+		return typeWorkVars;
+	}
+	
 	protected void performDefaults() {
 		// Populate the explorer URL text field with the default value
 		logicStmtType = MetamathProjectNature.LOGIC_STMT_TYPE_DEFAULT_VALUE;
 		baseExplorerUrlText.setText(MetamathProjectNature.EXPLORER_BASE_URL_DEFAULT_VALUE);
 		provableTypeText.setText(MetamathProjectNature.PROVABLE_TYPE_DEFAULT_VALUE);
 		autoTransformCheckbox.setSelection(MetamathProjectNature.AUTO_TRANSFORMATIONS_ENABLED_DEFAULT_VALUE);
-		fillTypesTable(otherTypesTable, getNature().getDefaultTypeColors());
+		fillTypesTable(otherTypesTable, getNature().getDefaultTypeColors(), getNature().getTypeWorkVars());
 	}
 
 	public boolean performOk() {
@@ -468,6 +486,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 			getNature().setProvableType((Cnst)(getNature().getMObj(provableTypeText.getText())));
 			getNature().setLogicStmtType((Cnst)(getNature().getMObj(logicStmtType)));
 			getNature().setTypeColors(getTypeColors());
+			getNature().setTypeWorkVars(getTypeWorkVars());
 			getNature().setMainFile(newMainFile);
 			getNature().setAutoTransformationsEnabled(autoTransformCheckbox.getSelection());
 		} catch (CoreException e) {

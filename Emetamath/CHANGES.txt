@@ -1,5 +1,9 @@
+v0.1.5.v20170521
+* Added support for setting custom working variable prefix in the Project Property page
+* Added support for setting "statement type" in the Project Property page
+
 v0.1.5.v20170515
-* Added ability to add/remove types, and change their colors in the Project Property file
+* Added ability to add/remove types, and change their colors in the Project Property page
 * Fixed exception when changing Project main file
 
 v0.1.4.v201610XX

@@ -109,6 +109,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	public static final QualifiedName TYPES_PROPERTY = new QualifiedName("org.tirix.emetamath", "types");
 	public static final QualifiedName COLORS_PROPERTY = new QualifiedName("org.tirix.emetamath", "typeColors");
 	public static final QualifiedName ICONS_PROPERTY = new QualifiedName("org.tirix.emetamath", "typeIcons");
+	public static final QualifiedName WORKVARS_PROPERTY = new QualifiedName("org.tirix.emetamath", "typeWorkVars");
 	public static final QualifiedName AUTO_TRANSFORMATIONS_ENABLED_PROPERTY = new QualifiedName("org.tirix.emetamath", "autoTransformationsEnabled");
 	public static final QualifiedName LAST_FLAT_EXPORT_PROPERTY = new QualifiedName("org.tirix.emetamath", "lastFlatExport");
 	
@@ -120,6 +121,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	public static final String TYPES_DEFAULT_VALUE = "wff$set$class";
 	public static final String COLORS_DEFAULT_VALUE = "0,0,255$255,0,0$255,0,255";
 	public static final String ICONS_DEFAULT_VALUE = "mmWff.gif$mmSet.gif$mmClass.gif";
+	public static final String WORKVARS_DEFAULT_VALUE = "&W$&S$&C";
 	public static final String DEFINITION_PREFIX_DEFAULT_VALUE = "df-";
 	public static final Boolean AUTO_TRANSFORMATIONS_ENABLED_DEFAULT_VALUE = true;
 	private IProject project;
@@ -132,6 +134,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	private Map<Cnst, RGB> typeColors;
 	private Map<Cnst, Image> typeIcons;
 	private Map<Cnst, String> typeIconURLs;
+	private Map<Cnst, String> typeWorkVars;
 	private Map<Sym,Stmt> notations;
 	//private Cnst wffType, classType, setType;
 	
@@ -213,6 +216,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		typeColors = new Hashtable<Cnst, RGB>();
 		typeIcons = new Hashtable<Cnst, Image>();
 		typeIconURLs = new Hashtable<Cnst, String>();
+		typeWorkVars = new Hashtable<Cnst, String>();
  	}
     
 	/*
@@ -682,17 +686,20 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		String typesProperty = null;
 		String colorsProperty = null;
 		String iconsProperty = null;
+		String workvarsProperty = null;
 		try {
 			provableTypeProperty = getProvableTypeString();
 			typesProperty = getProject().getPersistentProperty(TYPES_PROPERTY);
 			colorsProperty = getProject().getPersistentProperty(COLORS_PROPERTY);
 			iconsProperty = getProject().getPersistentProperty(ICONS_PROPERTY);
+			workvarsProperty = getProject().getPersistentProperty(WORKVARS_PROPERTY);
 		}
 		catch(CoreException e) {}
 		if(provableTypeProperty == null) provableTypeProperty = PROVABLE_TYPE_DEFAULT_VALUE;
 		if(typesProperty == null) typesProperty = TYPES_DEFAULT_VALUE;
 		if(colorsProperty == null) colorsProperty = COLORS_DEFAULT_VALUE;
 		if(iconsProperty == null) iconsProperty = ICONS_DEFAULT_VALUE;
+		if(workvarsProperty == null) workvarsProperty = WORKVARS_DEFAULT_VALUE;
 
 		// get the 'provable' type
 		provableType = (Cnst)logicalSystem.getSymTbl().get(provableTypeProperty);
@@ -706,12 +713,23 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		// get the icons for the other types
 		typeIcons = parseIconsString(iconsProperty, types);
 		
+		// get the workvars prefix for the other types
+		typeWorkVars = parseWorkVars(workvarsProperty, types);
+		
 //		wffType = (Cnst)logicalSystem.getSymTbl().get("wff");
 //		setType = (Cnst)logicalSystem.getSymTbl().get("set");
 //		classType = (Cnst)logicalSystem.getSymTbl().get("class");
 		
 		grammar = getGrammar();
 		initializeGrammar(messageHandler);
+		
+		// Configure the Working Variables manager
+		for(Cnst type:typeWorkVars.keySet())
+			try {
+				getWorkVarManager().defineWorkVarType(grammar, type.getId(), typeWorkVars.get(type), 200);
+			} catch (VerifyException e) {
+				messageHandler.accumException(e);
+			}
 	}
 	
 	private List<Cnst> parseTypesString(String input) {
@@ -747,6 +765,16 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		return typeIcons;
 	}
 
+	private Map<Cnst, String> parseWorkVars(String workVarsProperty, List<Cnst> types) {
+		Hashtable<Cnst, String> typeWorkVars = new Hashtable<Cnst, String>();
+		String[] workvars = workVarsProperty.split("\\$");
+		for(int i=0;i<workvars.length && i<types.size();i++) {
+			typeWorkVars.put(types.get(i), workvars[i]);
+		}
+		if(workvars.length != types.size()) System.out.println("Project "+getProject()+": "+types.size()+" types ("+types+") but "+workvars.length+" icons ("+workvars+") defined!\n");
+		return typeWorkVars;
+	}
+
 	private String toTypeString(List<Cnst> types) {
 		StringBuffer sb = new StringBuffer();
 		for(int i=0;i<types.size();i++) {
@@ -762,6 +790,15 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 			if(i!=0) sb.append("$");
 			RGB color = typeColors.get(types.get(i));
 			sb.append(color.red+","+color.green+","+color.blue+",");
+		}
+		return sb.toString();
+	}
+	
+	private String toTypeWorkVarsString(Map<Cnst, String> typeWorkVars) {
+		StringBuffer sb = new StringBuffer();
+		for(int i=0;i<typeWorkVars.size();i++) {
+			if(i!=0) sb.append("$");
+			sb.append(typeWorkVars.get(types.get(i)));
 		}
 		return sb.toString();
 	}
@@ -790,6 +827,15 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	
 	public Map<Cnst, String> getTypeIconURLs() {
 		return typeIconURLs;
+	}
+	
+	public void setTypeWorkVars(Map<Cnst, String> typeWorkVars) throws CoreException {
+		this.typeWorkVars = typeWorkVars;
+		getProject().setPersistentProperty(WORKVARS_PROPERTY, toTypeWorkVarsString(typeWorkVars));
+	}
+	
+	public Map<Cnst, String> getTypeWorkVars() {
+		return typeWorkVars;
 	}
 	
 	public boolean isType(Sym sym) {
