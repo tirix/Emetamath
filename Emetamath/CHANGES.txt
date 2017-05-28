@@ -23,7 +23,7 @@ v0.1.3.v201607XX
 
 v0.1.2.v20160710
 * Re-integrated with the latest MMJ2 (Source, MessageHandler, Progress, etc. )
-* Fixed hover tooltips sizes
+* Fixed hover tooltip sizes
 * Improved progress monitor during the loading / parsing of Metamath files
 * Warning: Locations of many errors are not available anymore, or not correct. These will have to be corrected later on.
 * Added a "Export Proof" action to re-export complete proofs to metamath files.

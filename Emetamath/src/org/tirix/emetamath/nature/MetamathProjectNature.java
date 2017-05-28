@@ -726,7 +726,8 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		// Configure the Working Variables manager
 		for(Cnst type:typeWorkVars.keySet())
 			try {
-				getWorkVarManager().defineWorkVarType(grammar, type.getId(), typeWorkVars.get(type), 200);
+				if(!type.getId().equals(logicStmtTypeParm))
+					getWorkVarManager().defineWorkVarType(grammar, type.getId(), typeWorkVars.get(type), 200);
 			} catch (VerifyException e) {
 				messageHandler.accumException(e);
 			}
