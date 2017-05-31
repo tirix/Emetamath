@@ -222,6 +222,8 @@ public class StepSelectorView extends ViewPart {
 
 	public MetamathProjectNature getNature() {
 		// TODO ugly.. better store the active nature?
+		// Also, does not always work
+		if(!(viewer.getLabelProvider() instanceof MMLabelProvider)) return null;
 		return ((MMLabelProvider)viewer.getLabelProvider()).getNature();
 	}
 

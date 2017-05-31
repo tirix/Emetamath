@@ -70,6 +70,7 @@ public class MetamathUI {
 		stepSelectorView.setData(nature, stepSelectorStore, editor);
 		try {
 			page.showView(StepSelectorView.VIEW_ID);
+			page.activate(editor); // give the focus back to the editor // TODO instead of this, provide a "scan proof" action?
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}

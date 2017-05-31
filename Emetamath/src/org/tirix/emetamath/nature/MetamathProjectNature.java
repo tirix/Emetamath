@@ -412,6 +412,9 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 	    if(workVarManager != null) {
 	    	workVarManager.clear();
 	    }
+	    
+	    // TODO - initialize the existing ProofAsst instance instead of setting it to null
+	    proofAsst = null;
     }
     
     /**
