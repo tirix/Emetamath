@@ -215,8 +215,10 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 	 * @throws CoreException 
 	 */
 	protected void partialBuild(MetamathProjectNature nature, IProgressMonitor monitor) throws CoreException {
+		// delete project markers of files that will be rebuilt
+		//for(IResource r:nature.dependencies.getBuildList().keySet()) r.deleteMarkers(MetamathProjectNature.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
 		// delete all project markers
-		for(IResource r:nature.dependencies.getBuildList().keySet()) r.deleteMarkers(MetamathProjectNature.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
+		nature.getProject().deleteMarkers(MetamathProjectNature.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
 		
 		IResource target = nature.dependencies.getTopBuildFile();
 		long offset = nature.dependencies.getTopBuildFileOffset();
@@ -297,9 +299,7 @@ public class MetamathBuilder extends IncrementalProjectBuilder {
 	static void buildMetamath(MetamathProjectNature nature, IResource resource, long offset, IProgressMonitor monitor) {
 		if (resource instanceof IFile && resource.getName().endsWith(".mm")) {
 			IFile file = (IFile) resource;
-			// TODO why don't we use the MessageHandler from the ProjectNature ?
-			MetamathMessageHandler messageHandler = new MetamathMessageHandler(file);
-			messageHandler.clearMessages(file);
+			MetamathMessageHandler messageHandler = nature.messageHandler;
 			try {
 				SubMonitor progress = SubMonitor.convert(monitor, 100);
 				ResourceSource source = new ResourceSource(file, nature.getProject());

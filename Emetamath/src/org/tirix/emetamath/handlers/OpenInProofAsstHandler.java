@@ -24,8 +24,12 @@ public class OpenInProofAsstHandler extends MetamathEditorActionHandler {
 		ProofAsst proofAsst = nature.getProofAsst();
 		if(proofAsst == null) return null;
 		
-		ProofWorksheet w =
-            proofAsst.getExistingProof((Theorem)obj,
+		Theorem theorem = (Theorem)obj;
+		ProofWorksheet w;
+		if(theorem.getProof() == null || theorem.getProof().length == 0 || theorem.getProof()[0] == null)
+			w = proofAsst.startNewProof(theorem.getLabel());
+		else
+			w = proofAsst.getExistingProof((Theorem)obj,
                                    true,	//proofUnified
                                    HypsOrder.Randomized);
 

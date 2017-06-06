@@ -1,6 +1,9 @@
 v0.1.5.v20170521
 * Added support for setting custom working variable prefix in the Project Property page
 * Added support for setting "statement type" in the Project Property page
+* Fixed the issue that proof unification/step selection was not working properly anymore after changing MM files.
+* Fixed opening a theorem as a "new" proof if its compressed proof is empty, to avoid error message.
+* Fixed clean up of messages before a rebuild.
 
 v0.1.5.v20170515
 * Added ability to add/remove types, and change their colors in the Project Property page
