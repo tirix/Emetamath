@@ -22,7 +22,7 @@
     <div id="page"> 
       <div id="bg"> 
           <div id="content"> 
-            <div class="post"> 
+            <div class="intro"> 
               <h2 class="title">Introduction</h2>
               This Eclipse plugin allows to edit files written in the Metamath language in the Eclipse IDE. 
               It reuses the same core as MMJ2 and adds nice presentation.
@@ -32,29 +32,30 @@
                 <li>MMJ2: <a href="http://wiki.planetmath.org/AsteroidMeta/mmj2/">http://wiki.planetmath.org/AsteroidMeta/mmj2/</a></li>
               </ul> 
             </div>
-            <div id="post"> 
+            <div id="screenshots"> 
               <h2 class="title">Screenshots</h2>
               <a href="snapshot.png"><img src="snapshot.png" width="20%" /></a>
               <a href="stepSelector.png"><img src="stepSelector.png" width="20%" /></a>
               <a href="tooltip.png"><img src="tooltip.png" width="20%" /></a>
               <a href="projectProperties.png"><img src="projectProperties.png" width="20%" /></a>
             </div>
-            <div id="post"> 
+            <div id="download"> 
               <h2 class="title">Download</h2>
-              Here are links to the very first version of the Metamath Plugin for Eclipse:
+              Here are links to the first versions of the Metamath Plugin for Eclipse:
               <ul>
-                <li><a href="release/org.tirix.emetamath_0.1.6.v20170606.jar">0.1.0.v20170606</a> - (<a href="release/CHANGES.txt">Changes</a>)</li>
+                <li><a href="release/org.tirix.emetamath_0.1.6.v20170606.jar">0.1.0.v20170606</a> - (LATEST)</li>
                 <li><a href="release/org.tirix.emetamath_0.1.2.v20160710.jar">0.1.0.v20160710</a></li>
                 <li><a href="release/org.tirix.emetamath_0.1.0.v20110127.jar">0.1.0.v20110127</a></li>
                 <li><a href="release/org.tirix.emetamath_0.1.0.v20110122.jar">0.1.0.v20110122</a></li>
                 <li><a href="release/org.tirix.emetamath_0.1.0.v20110117.jar">0.1.0.v20110117</a></li>
                 <li><a href="release/org.tirix.emetamath_0.1.0.v20110114.jar">0.1.0.v20110114</a></li>
               </ul> 
-              Beware that it's still in the early alpha stages...
+              The change log can be found on <a href="https://github.com/tirix/Emetamath/blob/master/Emetamath/CHANGES.txt">GitHub</a> <br/>
+              It's still in the early stages, please report any issue you have with installing / bootstrapping.
             </div>
-            <div id="post"> 
+            <div id="install"> 
               <h2 class="title">Installation</h2>
-              The plugin is compatible with Eclipse Ganymede. [<a href="http://www.eclipse.org/downloads/packages/eclipse-classic-342/ganymedesr2">download</a>]<br />
+              The plugin is compatible with Eclipse Mars. [<a href="http://www.eclipse.org/mars/">download</a>]<br />
               Currently, only the manual installation is possible: once the eclipse installation is finished, simply copy the emetamath plugin in the <code>eclipse/plugins</code> directory, or replace the previous version.<br />
               <br />
               I've had issues with the size of the <code>set.mm</code> file (it's almost 9Mb). I guess I had to add the following lines to file <code>eclipse/eclipse.ini</code> file:
@@ -64,7 +65,7 @@
 -Xms40m
 -Xmx256m</pre>    
             </div>
-            <div id="post"> 
+            <div id="first_use"> 
               <h2 class="title">First Use</h2>
               <h3 class="title">The Metamath Perspective</h3>
               The metamath perspective allows to have direct access to all features provided by the plugin (views are setup and opened, wizard shortcuts are displayed, etc.). 
@@ -88,7 +89,7 @@
               <br />
               <div class="TODO">TODO: Automatically tag the first metamath file added to a project as "main".</div>
             </div>
-            <div id="post"> 
+            <div id="features"> 
               <h2 class="title">Features</h2>
 
               <h3 class="title">The Project Explorer</h3>
@@ -150,7 +151,10 @@
               The Metamath preferences allow you to set the proof formatting (text mode formula formatting/TMFF), and the bracket highlighting properties.
               Metamath preferences can be accessed through the overall preference menu.<br />
             </div>
-            <div id="post"> 
+            <div id="sources"> 
+              <h2 class="title">Source code</h2>
+              Source code can be found in <a href="https://github.com/tirix/Emetamath">GitHub</a>.
+            <div id="todo"> 
               <h2 class="title">On the To-Do list</h2>
               <div class="TODO">TODO: Add help pages.</div>
               <div class="TODO">TODO: Add proper properties pages.</div>
