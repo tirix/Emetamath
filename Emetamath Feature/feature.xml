@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="Emetamath"
+      label="Emetamath"
+      version="0.1.2"
+      provider-name="Thierry Arnoux"
+      plugin="org.tirix.emetamath">
+
+   <description url="http://www.example.com/description">
+      This feature provides an integrated environment for viewing and editing Metamath files and Metamath Proof files.
+   </description>
+
+   <copyright url="http://arnoux.ch/thierry/metamath/about.html">
+      Copyright (C) 2011~2016 Thierry Arnoux
+   </copyright>
+
+   <license url="http://arnoux.ch/thierry/metamath/about.html">
+      This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+A copy of the license is contained in the file LICENSE.txt and is also available at http://www.gnu.org/licenses/gpl-2.0.html.
+   </license>
+
+   <url>
+      <update label="Tirix" url="http://www.arnoux.ch/thierry/eclipse"/>
+   </url>
+
+   <plugin
+         id="org.tirix.emetamath"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>
