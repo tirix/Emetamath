@@ -2,7 +2,7 @@
 <feature
       id="Emetamath"
       label="Emetamath"
-      version="0.1.2"
+      version="0.1.5"
       provider-name="Thierry Arnoux"
       plugin="org.tirix.emetamath">
 

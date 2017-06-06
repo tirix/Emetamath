@@ -1,4 +1,4 @@
-v0.1.5.v20170521
+v0.1.6.v20170606
 * Added support for setting custom working variable prefix in the Project Property page
 * Added support for setting "statement type" in the Project Property page
 * Fixed the issue that proof unification/step selection was not working properly anymore after changing MM files.
