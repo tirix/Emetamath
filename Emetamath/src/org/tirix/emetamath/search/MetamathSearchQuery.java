@@ -21,10 +21,11 @@ import org.eclipse.search.ui.ISearchResult;
 import org.tirix.emetamath.Activator;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 
-public class MetamathSearchQuery implements ISearchQuery {
-	private MetamathProjectNature nature;
-	private MObj obj;
+public abstract class MetamathSearchQuery implements ISearchQuery {
+	protected MetamathProjectNature nature;
 	private ISearchResult fResult;
+	private MetamathSearchMode mode;
+	protected enum MetamathSearchMode { IN_MM_PROOFS, IN_MM_STATEMENTS };
 	public static final int ALL_OCCURRENCES = 0xFFFFFFFF;
 	public static final int PROOFS = 1;
 	public static final int HYPOTHESIS = 2;
@@ -34,10 +35,10 @@ public class MetamathSearchQuery implements ISearchQuery {
 
 	public static final int MM_FILES = 1;
 	public static final int MMP_FILES = 2;
-
-	public MetamathSearchQuery(MetamathProjectNature nature, MObj obj) {
-		this.obj = obj;
+	
+	public MetamathSearchQuery(MetamathProjectNature nature, MetamathSearchMode mode) {
 		this.nature = nature;
+		this.mode = mode;
 	}
 
 	@Override
@@ -48,11 +49,6 @@ public class MetamathSearchQuery implements ISearchQuery {
 	@Override
 	public boolean canRunInBackground() {
 		return true;
-	}
-
-	@Override
-	public String getLabel() {
-		return "Search for Metamath References of '"+obj+"'";
 	}
 
 	public MetamathProjectNature getNature() {
@@ -69,6 +65,10 @@ public class MetamathSearchQuery implements ISearchQuery {
 		return fResult;
 	}
 
+	public abstract String getSearchingLabel();
+	public abstract boolean checkProofStep(Stmt stmt, RPNStep step);
+	public abstract boolean checkStmtSym(Stmt stmt, Sym sym);
+	
 	@Override
 	public IStatus run(IProgressMonitor monitor)
 			throws OperationCanceledException {
@@ -78,14 +78,15 @@ public class MetamathSearchQuery implements ISearchQuery {
 		int count = 0;
 		int max = Integer.MAX_VALUE; // TODO store this as a Metamath preference !
 		
-		if(obj instanceof Sym) {
-			Map<String, Stmt> stmtTbl = nature.getLogicalSystem().getStmtTbl();
-			monitor.beginTask("Searching "+obj, stmtTbl.size());
-			
+		Map<String, Stmt> stmtTbl = nature.getLogicalSystem().getStmtTbl();
+		monitor.beginTask(getSearchingLabel(), stmtTbl.size());
+		
+		switch(mode) {
+		case IN_MM_STATEMENTS:
 			symLoop:
 			for(Stmt stmt:stmtTbl.values()) {
 				for(Sym sym:stmt.getFormula().getExpr()) {
-					if(sym.equals(obj)) {
+					if(checkStmtSym(stmt, sym)) {
 						result.addMatch(new MetamathMatch(stmt));
 						if(count++ == max) break symLoop;
 					}
@@ -93,16 +94,14 @@ public class MetamathSearchQuery implements ISearchQuery {
 				monitor.worked(1);
 			}
 			monitor.done();
-		}
-		else if(obj instanceof Stmt) {
-			Map<String, Stmt> stmtTbl = nature.getLogicalSystem().getStmtTbl();
-			monitor.beginTask("Searching "+obj, stmtTbl.size());
-			
+			break;
+
+		case IN_MM_PROOFS:
 			stmtLoop:
 			for(Stmt stmt:stmtTbl.values()) {
 				if(stmt instanceof Theorem) {
 					for(RPNStep proofStep:((Theorem)stmt).getProof()) {
-						if(proofStep != null && obj.equals(proofStep.stmt)) {
+						if(checkProofStep(stmt, proofStep)) {
 							result.addMatch(new MetamathMatch(stmt)); 
 							if(count++ == max) break stmtLoop;
 						}
@@ -111,7 +110,8 @@ public class MetamathSearchQuery implements ISearchQuery {
 				monitor.worked(1);
 			}
 			monitor.done();
-		} else {
+			break;
+		default:
 			return new Status(IStatus.ERROR, Activator.PLUGIN_ID, 0, "Object to be searched shall be either a Symbol or Statement", null);
 		}
 		return new Status(IStatus.OK, Activator.PLUGIN_ID, 0, "Found "+result.getMatchCount()+" references", null);

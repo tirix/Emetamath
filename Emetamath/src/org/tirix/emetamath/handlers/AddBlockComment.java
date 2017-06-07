@@ -27,8 +27,8 @@ public class AddBlockComment extends MetamathEditorActionHandler {
 		
 		// first make sure that the selection starts and ends on word boundaries
 		IRegion endRegion = MMRegionProvider.getWord(doc, selection.getOffset() + selection.getLength());
-		int offset = MMRegionProvider.getWord(doc, selection.getOffset()).getOffset();
-		int length = (endRegion.getOffset() + endRegion.getLength()) - offset;
+		int offset = MMRegionProvider.getWord(doc, selection.getOffset()).getOffset()-1;
+		int length = (endRegion.getOffset() + endRegion.getLength()) - offset + 1;
 
 		try {
 			char[] text = doc.get(offset, length).toCharArray();
@@ -40,7 +40,7 @@ public class AddBlockComment extends MetamathEditorActionHandler {
 				}
 			}
 			// also add the enclosing braces $( and $)
-			doc.replace(offset, length, "$( "+new String(text)+" $)");
+			doc.replace(offset, length, "$(\n"+new String(text)+"$)\n");
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 			return null;

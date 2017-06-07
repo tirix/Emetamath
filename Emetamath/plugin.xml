@@ -210,6 +210,12 @@
 	    id="org.tirix.emetamath.SearchReferencesCommand"
 	    description="Search for all references of the selected Metamath element">
     </command>
+		<command
+	    name="Search Incomplete Proofs"
+	    categoryId="org.tirix.emetamath.commandCategory"
+	    id="org.tirix.emetamath.SearchIncompleteProofsCommand"
+	    description="Search all directly or indirectly incomplete Metamath proofs">
+    </command>
       <command
             name="Verify Proofs"
             categoryId="org.tirix.emetamath.commandCategory"
@@ -432,6 +438,21 @@
      </enabledWhen>
       </handler>
       <handler
+            commandId="org.tirix.emetamath.SearchIncompleteProofsCommand"
+            class="org.tirix.emetamath.handlers.SearchIncompleteProofsHandler">
+		     <enabledWhen>
+		        <with
+		              variable="activePart">
+		           <adapt
+		                 type="org.tirix.emetamath.nature.MetamathProjectNature">
+		              <test
+		                    property="org.tirix.emetamath.isLogicalSystemLoaded">
+		              </test>
+		           </adapt>
+		        </with>
+		     </enabledWhen>
+      </handler>
+      <handler
             commandId="org.tirix.emetamath.searchStepSelectionCommand"
             class="org.tirix.emetamath.handlers.SearchStepSelectionHandler">
          <enabledWhen>
@@ -593,6 +614,11 @@
          mnemonic="M1+M2+G"
          style="push">
 			</command>
+			<command
+         commandId="org.tirix.emetamath.SearchIncompleteProofsCommand"
+         icon="icons/mmSearch.gif"
+         style="push">
+			</command>
 		</menuContribution>
   <menuContribution
         locationURI="popup:org.tirix.emetamath.ProofAssistant?after=group.open">
@@ -745,6 +771,11 @@
                   id="org.tirix.emetamath.exportProofMenu"
                   mnemonic="E">
             </command>
+				     <command
+				           commandId="org.tirix.emetamath.SearchIncompleteProofsCommand"
+				           icon="icons/mmSearch.gif"
+				           style="push">
+				     </command>
             <visibleWhen
                   checkEnabled="false">
                <with

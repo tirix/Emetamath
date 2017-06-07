@@ -361,7 +361,7 @@ public class MetamathSearchPage extends DialogPage implements ISearchPage {
 
 	@Override
 	public boolean performAction() {
-		MetamathSearchQuery searchJob= new MetamathSearchQuery(fInitialData.nature, fInitialData.mobj);
+		MetamathSearchQuery searchJob= new MetamathSearchReferenceQuery(fInitialData.nature, fInitialData.mobj);
 		NewSearchUI.runQueryInBackground(searchJob);
 		return true;
 	}

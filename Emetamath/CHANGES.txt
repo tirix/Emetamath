@@ -1,3 +1,6 @@
+v0.1.7.v201706XX
+* Added a new search command for listing (directly or indirectly) incomplete proofs
+
 v0.1.6.v20170606
 * Added support for setting custom working variable prefix in the Project Property page
 * Added support for setting "statement type" in the Project Property page
