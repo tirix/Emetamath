@@ -86,17 +86,24 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 	 * @see PreferencePage#createContents(Composite)
 	 */
 	protected Control createContents(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		composite.setLayout(layout);
-		GridData data = new GridData(GridData.FILL);
-		data.grabExcessHorizontalSpace = true;
-		composite.setLayoutData(data);
-
-//		addFirstSection(composite);
-//		addSeparator(composite);
-		addSecondSection(composite);
-		return composite;
+		try {
+			Composite composite = new Composite(parent, SWT.NONE);
+			GridLayout layout = new GridLayout();
+			composite.setLayout(layout);
+			GridData data = new GridData(GridData.FILL);
+			data.grabExcessHorizontalSpace = true;
+			composite.setLayoutData(data);
+	
+	//		addFirstSection(composite);
+	//		addSeparator(composite);
+			addSecondSection(composite);
+			return composite;
+		}
+		catch(Exception e) {
+			System.out.println("Exception when building Metamath Property page:");
+			e.printStackTrace();
+			throw e;
+		}
 	}
 
 //	private void addFirstSection(Composite parent) {
@@ -125,7 +132,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 		String provableTypeString = "";
 		String logicStmtTypeString = "";
 		try {
-			mainFileName = getNature().getMainFile().getName();
+			mainFileName = getNature().getMainFile().getProjectRelativePath().toString();
 			provableTypeString = getNature().getProvableTypeString();
 			logicStmtTypeString = getNature().getLogicStmtTypeString();
 		} catch (CoreException e1) {
@@ -230,6 +237,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 	}
 
 	private void fillTypesTable(Table table, Map<Cnst, RGB> typeColors, Map<Cnst, String> typeWorkVars) {
+		if(typeWorkVars == null || typeColors == null) return;
 		table.setItemCount(typeColors.size()+1);
 		table.removeAll();
 		
@@ -379,7 +387,7 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 					Object[] result = dialog.getResult();
 					if (result.length == 1) {
 						IFile f = (IFile) result[0];
-						mainFileText.setText(f.getName());
+						mainFileText.setText(f.getProjectRelativePath().toString());
 					}
 				}
 			}
@@ -482,12 +490,12 @@ public class MetamathProjectPropertyPage extends PropertyPage {
 			return false;
 		}
 		try {
+			getNature().setMainFile(newMainFile);
 			getNature().setWebExplorerURL(baseExplorerUrlText.getText());
 			getNature().setProvableType((Cnst)(getNature().getMObj(provableTypeText.getText())));
 			getNature().setLogicStmtType((Cnst)(getNature().getMObj(logicStmtType)));
 			getNature().setTypeColors(getTypeColors());
 			getNature().setTypeWorkVars(getTypeWorkVars());
-			getNature().setMainFile(newMainFile);
 			getNature().setAutoTransformationsEnabled(autoTransformCheckbox.getSelection());
 		} catch (CoreException e) {
 			// TODO display error message

@@ -104,7 +104,8 @@ public class UnifyHandler extends MetamathEditorActionHandler {
 	        }
 	        else {
 	       		System.out.println("Unification completed. No StepSelector, moving to "+w.getProofCursor().getCaretCharNbr());
-	        	editor.displayProofWorksheet(w);
+	       		MetamathUI.showProblemsView();
+	       		editor.displayProofWorksheet(w);
 	        	editor.setCursorPos(inputCursorPos);
 	        	editor.selectAndReveal(inputCursorPos, 0); //w.getProofCursor().getCaretCharNbr(), 0);
 	        	editor.setFocus();

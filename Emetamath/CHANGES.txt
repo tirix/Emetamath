@@ -1,5 +1,6 @@
 v0.1.7.v201706XX
 * Added a new search command for listing (directly or indirectly) incomplete proofs
+* Added support for main Metamath file within sub-directories of the project directory
 
 v0.1.6.v20170606
 * Added support for setting custom working variable prefix in the Project Property page

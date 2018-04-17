@@ -999,7 +999,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		if(mainFile == null || !mainFile.exists()) return;
 		this.mainFile = mainFile;
 		mainFile.setPersistentProperty(ISMAINFILE_PROPERTY, Boolean.toString(true));
-		getProject().setPersistentProperty(MAINFILE_PROPERTY, mainFile.getName());
+		getProject().setPersistentProperty(MAINFILE_PROPERTY, mainFile.getProjectRelativePath().toString());
 		dependencies.setMainFile(mainFile);
 		rebuild();
 	}
@@ -1115,6 +1115,7 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		public final IResource resource;
 		
 		public ResourceSource(IResource resource, IContainer rootContainer) {
+System.out.println("New Source:"+resource);
 			this.rootContainer = rootContainer;
 			this.resource = resource;
 		}
