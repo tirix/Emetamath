@@ -1,7 +1,7 @@
 # Emetamath
 A metamath plugin for Eclipse
 
-See http://arnoux.ch/thierry/metamath
+See http://emetamath.tirix.org/
 
 This Eclipse plugin allows to edit files written in the Metamath language in the Eclipse IDE. It reuses the same core as MMJ2 and adds nice presentation.
 Eclipse: http://www.eclipse.org/
