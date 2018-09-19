@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Metamath
 Bundle-SymbolicName: org.tirix.emetamath;singleton:=true
-Bundle-Version: 0.1.6.v20170606
+Bundle-Version: 0.1.7.v20180417
 Bundle-Activator: org.tirix.emetamath.Activator
 Bundle-Vendor: Thierry Arnoux
 Require-Bundle: org.eclipse.ui,
