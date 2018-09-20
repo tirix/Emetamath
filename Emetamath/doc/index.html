@@ -57,14 +57,11 @@
             <div id="install"> 
               <h2 class="title">Installation</h2>
               The plugin is compatible with Eclipse Oxygen. [<a href="http://www.eclipse.org/oxygen/">download</a>]<br />
-              Currently, only the manual installation is possible: once the eclipse installation is finished, simply copy the emetamath plugin in the <code>eclipse/plugins</code> directory, or replace the previous version.<br />
+              Currently, only the manual installation is possible: once the eclipse installation is finished, simply copy the emetamath plugin in the <code>eclipse/dropins</code> directory, or replace the previous version.<br />
               <br />
-              I've had issues with the size of the <code>set.mm</code> file (it's almost 9Mb). I guess I had to add the following lines to file <code>eclipse/eclipse.ini</code> file:
-              <pre>--launcher.XXMaxPermSize
-256m
--vmargs
--Xms40m
--Xmx256m</pre>    
+              I've had issues with the size of the <code>set.mm</code> file (it's almost 35Mb). I had to add the following lines to file <code>eclipse/eclipse.ini</code> file:
+              <pre>-Xms256m
+-Xmx2048m</pre>Simply find the lines starting with "-Xms" and "-Xmx" and replace them with those values. They specify the heap size allocated to Eclipse.   
             </div>
             <div id="first_use"> 
               <h2 class="title">First Use</h2>
