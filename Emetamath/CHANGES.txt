@@ -1,3 +1,6 @@
+v0.1.8.v2019XXXX
+* Added a buttons to the Proof Explorer view to hide essential hypothesis (VarLog), and to collapse the view.
+
 v0.1.7.v20180417
 * Added a new search command for listing (directly or indirectly) incomplete proofs
 * Added support for main Metamath file within sub-directories of the project directory

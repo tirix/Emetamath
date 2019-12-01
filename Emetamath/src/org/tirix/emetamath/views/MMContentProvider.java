@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import mmj.lang.BookManager;
 import mmj.lang.Chapter;
 import mmj.lang.LangConstants;
+import mmj.lang.LogHyp;
 import mmj.lang.MObj;
 import mmj.lang.Section;
 
@@ -22,6 +23,7 @@ import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
 public class MMContentProvider implements ITreeContentProvider, SystemLoadListener {
 	MetamathProjectNature nature;
 	MObj[][] sectionMObjArray;
+	boolean showEssentials;
 	
 	public void setNature(MetamathProjectNature nature) {
 		this.nature = nature;
@@ -64,7 +66,8 @@ public class MMContentProvider implements ITreeContentProvider, SystemLoadListen
 			for(int i=0; i<LangConstants.SECTION_NBR_CATEGORIES;i++)
 				if(sectionMObjArray[((Section)element).getSectionNbr()+i-1] != null) 
 					for(MObj obj:sectionMObjArray[((Section)element).getSectionNbr()+i-1])
-						children.add(obj);
+						if(showEssentials || !(obj instanceof LogHyp))
+							children.add(obj);
 			return children.toArray(); 
 			//return sectionMObjArray[((Section)element).getSectionNbr()-1];
 		}
@@ -105,6 +108,10 @@ public class MMContentProvider implements ITreeContentProvider, SystemLoadListen
 			return count > 0; 
 		}
 		return false;
+	}
+
+	public void showEssentials(boolean show) {
+		this.showEssentials = show;
 	}
 
 	@Override

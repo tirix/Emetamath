@@ -7,10 +7,18 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.ToolBar;
+import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.internal.browser.ToolbarLayout;
 import org.eclipse.ui.part.IContributedContentsView;
 import org.eclipse.ui.part.IPage;
 import org.eclipse.ui.part.IPageBookViewPage;
@@ -18,12 +26,16 @@ import org.eclipse.ui.part.IPageSite;
 import org.eclipse.ui.part.MessagePage;
 import org.eclipse.ui.part.PageBook;
 import org.eclipse.ui.part.PageBookView;
+import org.tirix.eclipse.MMLayout.TopCenterLayout;
+import org.tirix.emetamath.Activator;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 
 public class ProofExplorerView extends PageBookView implements ISelectionProvider, ISelectionChangedListener {
 	public static final String VIEW_ID = "org.tirix.emetamath.views.ProofExplorerView";
     private Map<MetamathProjectNature, IPageBookViewPage> natureToPage;
-	
+    private Image hideEssentialImage = Activator.getImage("icons/mmHideEssential.gif"); 
+    private Image collapseAllImage = Activator.getImage("icons/collapseall.png"); 
+
 	public ProofExplorerView() {
 		natureToPage  = new HashMap<MetamathProjectNature, IPageBookViewPage>();
 	}
@@ -46,13 +58,57 @@ public class ProofExplorerView extends PageBookView implements ISelectionProvide
         return page;
     }
 
-    /**
-     * The <code>PageBookView</code> implementation of this <code>IWorkbenchPart</code>
-     * method creates a <code>PageBook</code> control with its default page showing.
-     */
-    public void createPartControl(Composite parent) {
-        super.createPartControl(parent);
-    }
+	/**
+	 * The <code>PageBookView</code> implementation of this
+	 * <code>IWorkbenchPart</code> method creates a <code>PageBook</code> control
+	 * with its default page showing.
+	 */
+	public void createPartControl(Composite parent) {
+		Composite composite = new Composite(parent, SWT.NONE);
+		composite.setLayout(new TopCenterLayout(SWT.DEFAULT, 3));
+
+		// The Tool bar
+		Composite toolbarComp = new Composite(composite, SWT.NONE);
+		toolbarComp.setLayout(new ToolbarLayout());
+		toolbarComp.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING | GridData.FILL_HORIZONTAL));
+
+		createToolbar(toolbarComp);
+
+		super.createPartControl(composite);
+	}
+
+	private ToolBar createToolbar(Composite parent) {
+		ToolBar toolbar = new ToolBar(parent, SWT.FLAT);
+
+		// "Collapse all" button
+		ToolItem collapseAll = new ToolItem(toolbar, SWT.NONE);
+		collapseAll.setImage(collapseAllImage);
+		collapseAll.setHotImage(collapseAllImage);
+		collapseAll.setDisabledImage(collapseAllImage);
+		collapseAll.setToolTipText("Collapse All");
+		collapseAll.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent event) {
+				ProofExplorerViewPage page = getProofExplorerPage();
+				if (page != null)
+					page.collapseAll();
+			}
+		});
+
+		// "Hide Essential" button
+		ToolItem hideEssential = new ToolItem(toolbar, SWT.CHECK);
+		hideEssential.setImage(hideEssentialImage);
+		hideEssential.setHotImage(hideEssentialImage);
+		hideEssential.setDisabledImage(hideEssentialImage);
+		hideEssential.setToolTipText("Hide Essential Hypothesis");
+		hideEssential.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent event) {
+				ProofExplorerViewPage page = getProofExplorerPage();
+				if (page != null)
+					page.showEssentials(!hideEssential.getSelection());
+			}
+		});
+		return toolbar;
+	}
 
     /* (non-Javadoc)
      * Get the nature of the given part, and create the ProofExplorerViewPage.
@@ -101,6 +157,13 @@ public class ProofExplorerView extends PageBookView implements ISelectionProvide
         }
         return super.getAdapter(key);
     }
+
+	protected ProofExplorerViewPage getProofExplorerPage() {
+		IPage page = getCurrentPage();
+		if (!(page instanceof ProofExplorerViewPage))
+			return null;
+		return (ProofExplorerViewPage) page;
+	}
 
     /* (non-Javadoc)
      * Method declared on PageBookView.

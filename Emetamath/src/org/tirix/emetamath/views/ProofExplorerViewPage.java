@@ -239,4 +239,16 @@ public class ProofExplorerViewPage extends Page implements ISelectionProvider, I
 	public ShowInContext getShowInContext() {
 		return new ShowInContext(fNature, treeViewer.getSelection());
 	}
+
+	public void collapseAll() {
+		treeViewer.collapseAll();
+	}
+
+	public void showEssentials(boolean show) {
+		if(treeViewer.getContentProvider() instanceof MMContentProvider) {
+			MMContentProvider provider = (MMContentProvider)treeViewer.getContentProvider();
+			provider.showEssentials(show);
+			treeViewer.refresh(false);
+		}
+	}
 }
