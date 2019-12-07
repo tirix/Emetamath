@@ -807,6 +807,10 @@ public class MetamathProjectNature implements IProjectNature, DependencyListener
 		return sb.toString();
 	}
 	
+	public List<Cnst> getTypes() {
+		return types;
+	}
+	
 	public Map<Cnst, RGB> getDefaultTypeColors() {
 		// TODO there should be a way to guess which are the types, and assign them default colors.
 		List<Cnst> defaultTypes = parseTypesString(TYPES_DEFAULT_VALUE);

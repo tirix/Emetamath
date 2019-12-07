@@ -1,5 +1,6 @@
 v0.1.8.v2019XXXX
-* Added a buttons to the Proof Explorer view to hide essential hypothesis (VarLog), and to collapse the view.
+* Added a button to the Proof Explorer view to hide essential hypothesis (VarLog), and to collapse the view.
+* Holding CTRL + left or right arrow now selects the next level formula part. Holding also SHIFT selects it.
 
 v0.1.7.v20180417
 * Added a new search command for listing (directly or indirectly) incomplete proofs

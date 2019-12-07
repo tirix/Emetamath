@@ -3,11 +3,16 @@ package org.tirix.emetamath.editors;
 import java.util.Map;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.text.ITextViewerExtension8.EnrichMode;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.text.TextViewer;
+import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ST;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorInput;
@@ -16,10 +21,12 @@ import org.eclipse.ui.internal.browser.WebBrowserView;
 import org.eclipse.ui.part.IShowInSource;
 import org.eclipse.ui.part.IShowInTargetList;
 import org.eclipse.ui.part.ShowInContext;
+import org.eclipse.ui.texteditor.ITextEditorActionDefinitionIds;
 import org.eclipse.ui.texteditor.SourceViewerDecorationSupport;
 import org.tirix.emetamath.Activator;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
+import org.tirix.emetamath.popup.actions.NextLevelFormulaAction;
 import org.tirix.emetamath.preferences.PreferenceConstants;
 import org.tirix.emetamath.views.ProofBrowserView;
 import org.tirix.emetamath.views.ProofExplorerView;
@@ -161,7 +168,38 @@ public class MetamathEditor extends TextEditor implements IShowInSource {
 		}
 		return super.getAdapter(required);
 	}
-	
+
+	/*
+	 * @see org.eclipse.ui.texteditor.AbstractTextEditor#createNavigationActions()
+	 */
+	@Override
+	protected void createNavigationActions() {
+		super.createNavigationActions();
+
+		ISourceViewer viewer = getSourceViewer();
+		StyledText textWidget = viewer.getTextWidget();
+
+		IAction action = new NextLevelFormulaAction(this, viewer, ST.WORD_PREVIOUS);
+		action.setActionDefinitionId(ITextEditorActionDefinitionIds.WORD_PREVIOUS);
+		setAction(ITextEditorActionDefinitionIds.WORD_PREVIOUS, action);
+		textWidget.setKeyBinding(SWT.CTRL | SWT.ARROW_LEFT, SWT.NULL);
+
+		action= new NextLevelFormulaAction(this, viewer, ST.WORD_NEXT);
+		action.setActionDefinitionId(ITextEditorActionDefinitionIds.WORD_NEXT);
+		setAction(ITextEditorActionDefinitionIds.WORD_NEXT, action);
+		textWidget.setKeyBinding(SWT.CTRL | SWT.ARROW_RIGHT, SWT.NULL);
+
+		action= new NextLevelFormulaAction(this, viewer, ST.SELECT_WORD_PREVIOUS);
+		action.setActionDefinitionId(ITextEditorActionDefinitionIds.SELECT_WORD_PREVIOUS);
+		setAction(ITextEditorActionDefinitionIds.SELECT_WORD_PREVIOUS, action);
+		textWidget.setKeyBinding(SWT.CTRL | SWT.SHIFT | SWT.ARROW_LEFT, SWT.NULL);
+
+		action= new NextLevelFormulaAction(this, viewer, ST.SELECT_WORD_NEXT);
+		action.setActionDefinitionId(ITextEditorActionDefinitionIds.SELECT_WORD_NEXT);
+		setAction(ITextEditorActionDefinitionIds.SELECT_WORD_NEXT, action);
+		textWidget.setKeyBinding(SWT.CTRL | SWT.SHIFT | SWT.ARROW_RIGHT, SWT.NULL);
+	}
+
 //	TODO Can be removed, preferences have been added
 //	public void setTabWidthPreference() {
 //		getSourceViewer().getTextWidget().setTabs(2);

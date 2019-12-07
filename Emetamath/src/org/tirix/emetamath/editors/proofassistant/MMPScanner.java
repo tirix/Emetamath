@@ -9,12 +9,15 @@ import org.eclipse.jface.text.rules.IToken;
 import org.eclipse.jface.text.rules.IWordDetector;
 import org.eclipse.jface.text.rules.Token;
 import org.eclipse.jface.text.rules.WhitespaceRule;
+import org.eclipse.jface.text.rules.WordRule;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
 import org.tirix.emetamath.editors.ColorManager;
 import org.tirix.emetamath.editors.IMMColorConstants;
+import org.tirix.emetamath.editors.MMRegionProvider;
 import org.tirix.emetamath.editors.MMScanner;
 import org.tirix.emetamath.editors.MMWhitespaceDetector;
+import org.tirix.emetamath.editors.MMScanner.MMTokenDetector;
 import org.tirix.emetamath.nature.MetamathProjectNature;
 import org.tirix.emetamath.nature.MetamathProjectNature.SystemLoadListener;
 
@@ -23,7 +26,10 @@ import mmj.lang.Cnst;
 public class MMPScanner extends MMScanner {
 	//private static final IToken TOKEN_ERROR = new Token( new TextAttribute( new Color(Display.getCurrent(), 255, 255, 0), new Color(Display.getCurrent(), 255, 0, 0), SWT.BOLD));
 	private static final IToken TOKEN_ERROR = new Token( new Color(Display.getCurrent(), 0, 0, 0) );
-	
+	public static final IToken TOKEN_LABEL = new Token("label");
+	public static final IToken TOKEN_KEYWORD = new Token( "step");
+	public static final IToken TOKEN_FORMULA = new Token( "formula");
+
 	public MMPScanner(final MetamathProjectNature nature, final ColorManager manager) {
 		IToken mmLabel = new Token( new TextAttribute( manager.getColor(IMMColorConstants.LABEL)));
 		IToken mmKeyword = new Token( new TextAttribute( manager.getColor(IMMColorConstants.KEYWORD)));
@@ -52,6 +58,25 @@ public class MMPScanner extends MMScanner {
 			public void systemLoaded() {
 				((MMSymbolRule)rules[2]).setVariableTokens(createVariableTokens(nature, manager));
 			}});
+	}
+	
+	/**
+	 * A simple scanner to differentiate step name, labels, and formula
+	 */
+	public MMPScanner() {
+		setDefaultReturnToken(TOKEN_LABEL);
+
+		final IRule[] rules = new IRule[3];
+		// Add generic whitespace rule.
+		rules[0] = new WhitespaceRule(new MMWhitespaceDetector());
+
+		// Add rule for parsing metamath proof lines.
+		rules[1] = new MMPRule(new MMLabelDetector(), TOKEN_KEYWORD, TOKEN_LABEL);
+
+		// Add rule for detecting Metamath symbols.
+		rules[2] = new WordRule(new MMTokenDetector(), TOKEN_FORMULA);
+
+		setRules(rules);
 	}
 	
 	public static class MMPRule implements IRule {
